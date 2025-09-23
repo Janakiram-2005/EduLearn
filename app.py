@@ -12,7 +12,7 @@ from functools import wraps
 # --- 1. CONFIGURATION & SETUP ---
 load_dotenv()
 app = Flask(__name__, static_folder='static')
-CORS(app, resources={r"/api/*": {"origins": "*"}})
+CORS(app, resources={r"/api/*": {"origins": "https://edulearn-tekj.onrender.com"}})
 
 # --- 2. DATABASE & SECURITY CONFIG ---
 MONGO_URI = os.getenv("MONGO_URI")
@@ -24,7 +24,7 @@ if not MONGO_URI:
 
 # --- 3. DATABASE CONNECTION ---
 try:
-    client = MongoClient(MONGO_URI)
+    client = MongoClient(MONGO_URI) 
     db = client.get_database("school_db")
     users_collection = db.users
     teachers_collection = db.teachers

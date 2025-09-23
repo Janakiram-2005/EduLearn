@@ -162,6 +162,73 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        /* --- Credentials Modal Styles --- */
+        .modal-container {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            display: none; /* Hidden by default */
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            transition: opacity 0.3s;
+        }
+        .modal-container.show {
+            display: flex;
+        }
+        .modal-content {
+            background: #ffffff;
+            padding: 25px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 450px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            transform: scale(0.95);
+            transition: transform 0.3s ease;
+        }
+        .modal-container.show .modal-content {
+            transform: scale(1);
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        .modal-header h3 {
+            color: #7b2ff7;
+            margin: 0;
+            font-size: 1.5rem;
+        }
+        .modal-header .close-btn {
+            font-size: 2rem;
+            cursor: pointer;
+            background: none;
+            border: none;
+            color: #aaa;
+            line-height: 1;
+        }
+        .modal-body h4 {
+            font-size: 1.1rem;
+            color: #555;
+            margin-top: 10px;
+            margin-bottom: 8px;
+        }
+        .modal-body p {
+            font-size: 1rem;
+            color: #333;
+            line-height: 1.6;
+        }
+        .modal-body code {
+            background: #f0f0f0;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+            color: #d32f2f;
+        }
     </style>
 </head>
 <body>
@@ -222,10 +289,29 @@
             </div>
 
             <footer class="auth-footer">
-                <button id="dev-skip-btn" style="background: transparent; border: 1px solid #adb5bd; color: #6c757d; padding: 6px 12px; border-radius: 5px; cursor: pointer; font-size: 0.8rem;">
-                    Dev: Skip to Homepage
+                <button id="creds-btn" style="background: transparent; border: 1px solid #adb5bd; color: #6c757d; padding: 6px 12px; border-radius: 5px; cursor: pointer; font-size: 0.8rem;">
+                    Testing Credentials
                 </button>
             </footer>
+        </div>
+    </div>
+
+    <div id="credentials-modal" class="modal-container">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Testing Credentials</h3>
+                <button class="close-btn" id="close-creds-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <h4>School User Login</h4>
+                <p><strong>Username:</strong> govt_1</p>
+                <p><strong>Password:</strong> 123456</p>
+                <hr style="margin: 15px 0; border-color: #eee;">
+                <h4>Admin Login</h4>
+                <p>To access the admin panel, manually type <code>/admin_login.html</code> after the main URL.</p>
+                <p><strong>Username:</strong> admin</p>
+                <p><strong>Password:</strong> 123456</p>
+            </div>
         </div>
     </div>
 
@@ -235,7 +321,7 @@
             let isLogin = true;
             let isLoading = false;
             const formData = { school_name: '', username: '', email: '', password: '', confirmPassword: '' };
-const API_BASE_URL = "https://edulearn-tekj.onrender.com/api";
+            const API_BASE_URL = "http://127.0.0.1:5001/api";
 
             // --- DOM REFERENCES ---
             const form = document.getElementById('auth-form');
@@ -249,7 +335,9 @@ const API_BASE_URL = "https://edulearn-tekj.onrender.com/api";
             const generalError = document.getElementById('general-error');
             const allInputs = form.querySelectorAll('input');
             const allErrorMessages = form.querySelectorAll('.error-message');
-            const devSkipBtn = document.getElementById('dev-skip-btn');
+            const credsBtn = document.getElementById('creds-btn');
+            const credsModal = document.getElementById('credentials-modal');
+            const closeCredsModalBtn = document.getElementById('close-creds-modal');
 
             // --- FORM LOGIC ---
             function updateUIForAuthMode() {
@@ -327,7 +415,7 @@ const API_BASE_URL = "https://edulearn-tekj.onrender.com/api";
                     if (response.ok) {
                         if (isLogin) {
                             localStorage.setItem("authToken", data.token);
-                            localStorage.setItem("username", data.username);
+                            localStorage.setItem("username", formData.username); // Store username for display
                             window.location.href = 'homepage.html';
                         } else {
                             alert("Registration successful! Please log in.");
@@ -361,7 +449,19 @@ const API_BASE_URL = "https://edulearn-tekj.onrender.com/api";
 
             form.addEventListener('submit', handleSubmit);
             document.querySelector('.toggle-btn').addEventListener('click', toggleAuthMode);
-            devSkipBtn.addEventListener('click', () => { window.location.href = 'homepage.html'; });
+            
+            // Modal event listeners
+            credsBtn.addEventListener('click', () => {
+                credsModal.classList.add('show');
+            });
+            closeCredsModalBtn.addEventListener('click', () => {
+                credsModal.classList.remove('show');
+            });
+            credsModal.addEventListener('click', (e) => {
+                if (e.target === credsModal) {
+                    credsModal.classList.remove('show');
+                }
+            });
 
             // --- Animated Geometric Background ---
             const canvas = document.getElementById('geometric-canvas');
@@ -430,4 +530,3 @@ const API_BASE_URL = "https://edulearn-tekj.onrender.com/api";
     </script>
 </body>
 </html>
-

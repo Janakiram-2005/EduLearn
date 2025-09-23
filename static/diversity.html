@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kingdom Classifier Challenge</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --header-bg: #ffffff;
+            --page-bg: #f0f4f8;
+            --panel-bg: #ffffff;
+            --border-color: #e2e8f0;
+            --text-dark: #1e293b;
+            --text-light: #64748b;
+            --accent-blue: #3b82f6;
+            --accent-green: #22c55e;
+            --accent-red: #ef4444;
+            --primary-blue: #007bff;
+            --secondary-gray: #6c757d;
+            /* Kingdom Colors */
+            --monera-color: #f97316;
+            --protista-color: #a855f7;
+            --fungi-color: #84cc16;
+            --plantae-color: #16a34a;
+            --animalia-color: #3b82f6;
+        }
+
+        /* --- Base Layout --- */
+        body { font-family: 'Poppins', sans-serif; background-color: var(--page-bg); color: var(--text-dark); margin: 0; height: 100vh; overflow: hidden; }
+        .page-container { display: flex; flex-direction: column; height: 100vh; }
+        .header {
+            position: fixed; top: 0; left: 0; width: 100%; height: 60px;
+            background-color: var(--header-bg); display: flex; align-items: center; justify-content: space-between;
+            padding: 0 24px; border-bottom: 1px solid var(--border-color); box-shadow: 0 2px 4px rgba(0,0,0,0.05); z-index: 1000; box-sizing: border-box;
+        }
+        .header-section { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .header-section.center { text-align: center; font-size: 1.2em; font-weight: bold; }
+        .header-section.right { display: flex; justify-content: flex-end; }
+        .button {
+            padding: 8px 16px; margin-left: 10px; cursor: pointer;
+            border: none; border-radius: 6px; font-weight: 600; color: white;
+            transition: transform 0.1s, background-color 0.2s;
+        }
+        .button:active { transform: scale(0.95); }
+        .main-content {
+            margin-top: 60px; padding: 24px; display: flex;
+            flex-grow: 1; overflow: hidden; box-sizing: border-box;
+            gap: 24px; justify-content: center;
+        }
+        .panel {
+            background-color: var(--panel-bg); border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: 1px solid var(--border-color);
+            box-sizing: border-box; overflow-y: auto;
+            height: calc(100vh - 108px);
+            transition: width 400ms ease-in-out, min-width 400ms ease-in-out, margin 400ms ease-in-out;
+        }
+        #info-panel {
+            padding: 24px 32px;
+            width: 100%;
+            max-width: 700px;
+            margin: 0 auto;
+            flex-shrink: 0;
+        }
+        #activity-panel { display: none; flex-grow: 1; min-width: 400px; padding: 24px; flex-direction: column; }
+        
+        .main-content.activity-visible { justify-content: flex-start; }
+        .main-content.activity-visible #info-panel { width: 340px; min-width: 340px; margin: 0; }
+        .main-content.activity-visible #activity-panel { display: flex; }
+        
+        /* --- Info Panel Content Styling --- */
+        #info-panel h1 { color: var(--accent-blue); margin-top: 0; }
+        #info-panel h3 { margin-top: 24px; border-bottom: 2px solid var(--accent-blue); padding-bottom: 5px; }
+        #info-panel p, #info-panel li { color: var(--text-light); line-height: 1.6; }
+        #info-panel ul { padding-left: 20px; }
+
+        /* --- GAME STYLES --- */
+        #scoreboard {
+            display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; gap: 15px;
+            background-color: #eef2f5; padding: 10px 20px; border-radius: 12px; margin-bottom: 20px;
+        }
+        .score-display { font-size: 1.2em; font-weight: 600; display: flex; gap: 20px; }
+        .score-display span { font-size: 1.4em; color: var(--accent-blue); }
+        #restart-btn { padding: 6px 12px; font-size: 0.9rem; background-color: var(--accent-red); }
+        
+        #organism-area { flex-grow: 1; display: flex; justify-content: center; align-items: center; min-height: 150px; }
+        #organism-card {
+            background-color: white; border: 2px solid var(--border-color); border-radius: 12px;
+            padding: 20px 30px; text-align: center; cursor: grab; user-select: none;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1); transition: all 0.2s ease;
+        }
+        #organism-card.dragging { opacity: 0.5; transform: scale(1.05); }
+        #organism-image { font-size: 4rem; }
+        #organism-name { font-size: 1.5rem; font-weight: 600; margin-top: 10px; }
+
+        #kingdom-zones { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 15px; padding-top: 20px; border-top: 1px solid var(--border-color); }
+        .kingdom-zone { padding: 20px; border-radius: 12px; text-align: center; border: 3px dashed var(--border-color); transition: all 0.2s ease; }
+        .kingdom-zone.drag-over { transform: scale(1.05); border-color: var(--accent-blue); }
+        .kingdom-zone h3 { margin: 0; font-size: 1.1em; }
+        
+        #monera { border-color: var(--monera-color); } #protista { border-color: var(--protista-color); }
+        #fungi { border-color: var(--fungi-color); } #plantae { border-color: var(--plantae-color); }
+        #animalia { border-color: var(--animalia-color); }
+        .correct-feedback { background-color: #dcfce7 !important; border-style: solid !important; border-color: var(--accent-green) !important; }
+        .incorrect-feedback { background-color: #fee2e2 !important; border-style: solid !important; border-color: var(--accent-red) !important; }
+
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6);
+            display: none; justify-content: center; align-items: center; z-index: 2000;
+        }
+        .modal-content {
+            background-color: white; padding: 40px; border-radius: 12px; text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3); animation: fadeIn 0.5s;
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+    </style>
+</head>
+<body class="page-container">
+    <header class="header">
+        <div class="header-section">Class 9 - Kingdom Classification</div>
+        <div id="header-title" class="header-section center">Information</div>
+        <div class="header-section right">
+            <button id="back-btn" class="button" style="background-color: var(--secondary-gray);">Back</button>
+            <button id="toggle-view-btn" class="button" style="background-color: var(--primary-blue);">Activity</button>
+            <button id="difficulty-btn" class="button" style="background-color: var(--accent-blue);">Mode: Easy</button>
+        </div>
+    </header>
+
+    <main class="main-content" id="main-content">
+        <section id="info-panel" class="panel">
+            <h1>👑 The Five Kingdoms of Life</h1>
+            <p>In biology, organisms are classified into broad groups called kingdoms. This system helps scientists understand the relationships between different forms of life.</p>
+            <h3>The Five Kingdoms</h3>
+            <ul>
+                <li style="color: var(--monera-color);"><b>Monera:</b> Unicellular organisms that lack a nucleus (prokaryotes). E.g., bacteria.</li>
+                <li style="color: var(--protista-color);"><b>Protista:</b> Mostly unicellular organisms that have a nucleus (eukaryotes). E.g., amoeba, algae.</li>
+                <li style="color: var(--fungi-color);"><b>Fungi:</b> Organisms that absorb nutrients from others. E.g., mushrooms, yeast.</li>
+                <li style="color: var(--plantae-color);"><b>Plantae:</b> Multicellular organisms that make their own food (autotrophs). E.g., trees, ferns.</li>
+                <li style="color: var(--animalia-color);"><b>Animalia:</b> Multicellular organisms that consume other organisms (heterotrophs). E.g., lions, worms.</li>
+            </ul>
+        </section>
+
+        <section id="activity-panel" class="panel">
+            <div id="scoreboard">
+                <div class="score-display">
+                    <div>Score: <span id="score-value">0</span></div>
+                    <div>Lives: <span id="lives-value"></span></div>
+                </div>
+                <button id="restart-btn" class="button">Restart</button>
+            </div>
+            <div id="organism-area">
+                <div id="organism-card" draggable="true">
+                    <div id="organism-image"></div>
+                    <div id="organism-name"></div>
+                </div>
+            </div>
+            <div id="kingdom-zones">
+                <div class="kingdom-zone" id="monera" data-kingdom="monera"><h3>Monera</h3></div>
+                <div class="kingdom-zone" id="protista" data-kingdom="protista"><h3>Protista</h3></div>
+                <div class="kingdom-zone" id="fungi" data-kingdom="fungi"><h3>Fungi</h3></div>
+                <div class="kingdom-zone" id="plantae" data-kingdom="plantae"><h3>Plantae</h3></div>
+                <div class="kingdom-zone" id="animalia" data-kingdom="animalia"><h3>Animalia</h3></div>
+            </div>
+        </section>
+    </main>
+
+    <div id="completion-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h2 id="modal-title"></h2>
+            <p id="final-score-text"></p>
+            <button id="play-again-btn" class="button" style="background-color: var(--accent-green);">Play Again</button>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const organismsByDifficulty = {
+            easy: [
+                { name: "Lion", kingdom: "animalia", image: "🦁" },
+                { name: "Mango Tree", kingdom: "plantae", image: "🌳" },
+                { name: "Mushroom", kingdom: "fungi", image: "🍄" },
+                { name: "E. coli", kingdom: "monera", image: "🦠" }
+            ],
+            medium: [
+                { name: "Earthworm", kingdom: "animalia", image: "🪱" },
+                { name: "Fern", kingdom: "plantae", image: "🌿" },
+                { name: "Yeast", kingdom: "fungi", image: "🍞" },
+                { name: "Amoeba", kingdom: "protista", image: "💧" }
+            ],
+            hard: [
+                { name: "Penicillium", kingdom: "fungi", image: "🔬" },
+                { name: "Plasmodium", kingdom: "protista", image: "🦟" },
+                { name: "Cyanobacteria", kingdom: "monera", image: "🔵" },
+                { name: "Coral", kingdom: "animalia", image: "🐠" }
+            ]
+        };
+
+        const mainContent = document.querySelector('.main-content');
+        const headerTitle = document.getElementById('header-title');
+        const toggleViewBtn = document.getElementById('toggle-view-btn');
+        const difficultyBtn = document.getElementById('difficulty-btn');
+        const backBtn = document.getElementById('back-btn');
+        const restartBtn = document.getElementById('restart-btn');
+        const organismCard = document.getElementById('organism-card');
+        const organismImage = document.getElementById('organism-image');
+        const organismName = document.getElementById('organism-name');
+        const kingdomZones = document.querySelectorAll('.kingdom-zone');
+        const scoreDisplay = document.getElementById('score-value');
+        const livesDisplay = document.getElementById('lives-value');
+        const completionModal = document.getElementById('completion-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const finalScoreText = document.getElementById('final-score-text');
+        const playAgainBtn = document.getElementById('play-again-btn');
+
+        const difficultySettings = { easy: "Easy", medium: "Medium", hard: "Hard" };
+        const difficulties = ['easy', 'medium', 'hard'];
+        let difficultyIndex = 0;
+        let showActivity = false;
+        let score, lives, currentOrganismIndex, shuffledOrganisms;
+        
+        function updateLayout() {
+            mainContent.classList.toggle('activity-visible', showActivity);
+            headerTitle.textContent = showActivity ? 'Activity' : 'Information';
+            toggleViewBtn.textContent = showActivity ? 'Information' : 'Activity';
+        }
+        
+        function shuffle(array) {
+            return [...array].sort(() => Math.random() - 0.5);
+        }
+
+        function startGame() {
+            const currentDifficultyKey = difficulties[difficultyIndex];
+            score = 0;
+            lives = 5;
+            currentOrganismIndex = 0;
+            shuffledOrganisms = shuffle(organismsByDifficulty[currentDifficultyKey]);
+            updateScoreboard();
+            loadNextOrganism();
+            completionModal.style.display = 'none';
+            organismCard.style.display = 'block';
+        }
+
+        function updateScoreboard() {
+            scoreDisplay.textContent = score;
+            livesDisplay.textContent = '❤️'.repeat(lives);
+        }
+
+        function loadNextOrganism() {
+            if (currentOrganismIndex >= shuffledOrganisms.length) {
+                endGame(true); return;
+            }
+            if (lives <= 0) {
+                endGame(false); return;
+            }
+            const organism = shuffledOrganisms[currentOrganismIndex];
+            organismImage.textContent = organism.image;
+            organismName.textContent = organism.name;
+            organismCard.style.pointerEvents = 'auto';
+        }
+
+        function checkAnswer(chosenKingdom) {
+            organismCard.style.pointerEvents = 'none';
+            const correctKingdom = shuffledOrganisms[currentOrganismIndex].kingdom;
+            const chosenZone = document.getElementById(chosenKingdom);
+
+            if (chosenKingdom === correctKingdom) {
+                score++;
+                showFeedback(chosenZone, true);
+            } else {
+                lives--;
+                showFeedback(chosenZone, false);
+                const correctZone = document.getElementById(correctKingdom);
+                correctZone.classList.add('correct-feedback');
+                setTimeout(() => correctZone.classList.remove('correct-feedback'), 1200);
+            }
+            
+            updateScoreboard();
+            currentOrganismIndex++;
+            setTimeout(loadNextOrganism, 1500);
+        }
+        
+        function showFeedback(zone, isCorrect) {
+            const feedbackClass = isCorrect ? 'correct-feedback' : 'incorrect-feedback';
+            zone.classList.add(feedbackClass);
+            setTimeout(() => zone.classList.remove(feedbackClass), 1200);
+        }
+
+        function endGame(didWin) {
+            organismCard.style.display = 'none';
+            modalTitle.textContent = didWin ? '🎉 Congratulations! 🎉' : '💔 Game Over 💔';
+            finalScoreText.textContent = didWin ? `You classified all organisms with a score of ${score}!` : `You ran out of lives. Your final score: ${score}.`;
+            completionModal.style.display = 'flex';
+        }
+
+        organismCard.addEventListener('dragstart', () => organismCard.classList.add('dragging'));
+        organismCard.addEventListener('dragend', () => organismCard.classList.remove('dragging'));
+
+        kingdomZones.forEach(zone => {
+            zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+            zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+            zone.addEventListener('drop', e => {
+                e.preventDefault();
+                zone.classList.remove('drag-over');
+                checkAnswer(zone.dataset.kingdom);
+            });
+        });
+
+        toggleViewBtn.addEventListener('click', () => {
+            showActivity = !showActivity;
+            updateLayout();
+            if (showActivity) startGame();
+        });
+        
+        difficultyBtn.addEventListener('click', () => {
+            difficultyIndex = (difficultyIndex + 1) % difficulties.length;
+            const newDifficulty = difficulties[difficultyIndex];
+            difficultyBtn.textContent = `Mode: ${difficultySettings[newDifficulty]}`;
+            if (showActivity) startGame();
+        });
+
+        restartBtn.addEventListener('click', startGame);
+        playAgainBtn.addEventListener('click', startGame);
+        backBtn.addEventListener('click', () => window.history.back());
+        
+        updateLayout();
+    });
+    </script>
+</body>
+</html>

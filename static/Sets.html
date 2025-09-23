@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sets: Set Sorter</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --header-bg: #ffffff;
+            --page-bg: #f3f4f6;
+            --panel-bg: #ffffff;
+            --border-color: #e5e7eb;
+            --text-dark: #1f2937;
+            --text-light: #4b5563;
+            --accent-blue: #3b82f6;
+            --accent-blue-dark: #2563eb;
+            --secondary-gray: #6b7280;
+        }
+
+        body { font-family: 'Poppins', sans-serif; background-color: var(--page-bg); color: var(--text-dark); margin: 0; height: 100vh; overflow: hidden; }
+        .page-container { display: flex; flex-direction: column; height: 100vh; }
+        .header {
+            position: fixed; top: 0; left: 0; width: 100%; height: 60px;
+            background-color: var(--header-bg); display: flex; align-items: center; justify-content: space-between;
+            padding: 0 24px; border-bottom: 1px solid var(--border-color);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05); z-index: 1000; box-sizing: border-box;
+        }
+        .header-section { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .header-section.center { text-align: center; font-size: 1.2em; font-weight: bold; }
+        .header-section.right { display: flex; justify-content: flex-end; }
+        .button {
+            padding: 8px 16px; margin-left: 10px; cursor: pointer;
+            border: none; border-radius: 6px; font-weight: 600; color: white;
+            transition: transform 0.1s, background-color 0.2s;
+        }
+        .button:active:not(:disabled) { transform: scale(0.95); }
+        .button:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        .main-content {
+            margin-top: 60px; padding: 24px; display: flex;
+            flex-grow: 1; overflow: hidden; box-sizing: border-box;
+            gap: 24px; justify-content: center;
+        }
+        .panel {
+            background-color: var(--panel-bg); border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: 1px solid var(--border-color);
+            box-sizing: border-box; overflow-y: auto;
+            height: calc(100vh - 108px);
+            transition: width 400ms ease-in-out, min-width 400ms ease-in-out;
+        }
+        #info-panel {
+            padding: 32px 48px;
+            width: 100%;
+            max-width: 700px;
+            flex-shrink: 0;
+        }
+        #activity-panel { display: none; flex-grow: 1; padding: 0; flex-direction: column; }
+        
+        .main-content.activity-visible { justify-content: flex-start; }
+        .main-content.activity-visible #info-panel { width: 340px; min-width: 340px; padding: 24px 32px; }
+        .main-content.activity-visible #activity-panel { display: flex; }
+
+        /* --- Activity Specific Styles --- */
+        .activity-area {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            text-align: center;
+        }
+        .bottom-control-bar {
+            height: 60px;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            padding: 0 20px;
+            background-color: #f9fafb;
+            border-top: 1px solid var(--border-color);
+            flex-shrink: 0;
+        }
+        .option-btn { background-color: #f3f4f6; color: #1f2937; padding: 1.25rem; font-size: 1.1rem; font-weight: 600; border-radius: 0.75rem; transition: transform 0.2s, box-shadow 0.2s, background-color 0.2s; border: 2px solid #e5e7eb; cursor: pointer; }
+        .option-btn:hover:not(:disabled) { transform: translateY(-3px); box-shadow: 0 4px 10px rgba(59, 130, 246, 0.2); }
+        .option-btn.correct { background-color: #22c55e; border-color: #16a34a; color: white; }
+        .option-btn.incorrect { background-color: #ef4444; border-color: #dc2626; color: white; }
+    </style>
+</head>
+<body class="page-container">
+    <header class="header">
+        <div class="header-section font-bold" style="color: var(--accent-blue);">Class 11 - Sets</div>
+        <div id="header-title" class="header-section center">Information</div>
+        <div class="header-section right">
+            <button id="back-btn" class="button" style="background-color: var(--secondary-gray);">Back</button>
+            <button id="activity-info-btn" class="button" style="background-color: var(--accent-blue);">Start Activity</button>
+            <button id="difficulty-btn" class="button" style="background-color: #1f2937;">Difficulty: Easy</button>
+        </div>
+    </header>
+
+    <main class="main-content" id="main-content">
+        <section id="info-panel" class="panel">
+            <h2 class="text-3xl font-bold mb-6 text-center" style="color: var(--accent-blue-dark);">Introduction to Sets</h2>
+            <div class="space-y-4">
+                <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                    <h3 class="text-xl font-semibold text-gray-800">What is a Set?</h3>
+                    <p class="mt-2 text-gray-600">A set is a well-defined collection of distinct objects. The objects that make up a set are called its elements. Sets are usually denoted by capital letters, e.g., A = {1, 2, 3}.</p>
+                </div>
+                <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                    <h3 class="text-xl font-semibold text-gray-800">Common Set Operations</h3>
+                    <ul class="list-disc list-inside mt-3 space-y-2 text-gray-600">
+                        <li><b>Union (A &cup; B):</b> The set of all elements which are in A, or in B, or in both.</li>
+                        <li><b>Intersection (A &cap; B):</b> The set of all elements which are common to both A and B.</li>
+                        <li><b>Difference (A - B):</b> The set of elements which are in A but not in B.</li>
+                        <li><b>Complement (A'):</b> The set of all elements in the universal set (U) that are not in A.</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="activity-panel" class="panel">
+             <div id="game-body" class="activity-area">
+                 <div class="w-full max-w-lg">
+                    <h2 id="level-title" class="text-2xl font-bold text-gray-800 text-left mb-2"></h2>
+                    <div id="question-context" class="my-4 p-4 bg-gray-100 rounded-lg text-left text-gray-700"></div>
+                    <p id="question-text" class="text-xl my-4 min-h-[56px]"></p>
+                    <div id="options-container" class="grid grid-cols-2 gap-4 mt-6"></div>
+                    <form id="answer-form" class="hidden justify-center items-center gap-2 sm:gap-4 mt-6">
+                        <input type="text" id="answer-input" class="text-center text-xl font-bold w-48 p-3 rounded-lg border-2 border-gray-300 focus:border-blue-500 focus:ring-blue-500" placeholder="Answer" required autocomplete="off">
+                        <button type="submit" class="button text-lg px-6 py-3" style="background-color: var(--accent-blue);">Submit</button>
+                    </form>
+                    <p id="feedback-text" class="mt-4 font-semibold text-lg h-7"></p>
+                    <div id="level-complete-container" class="hidden text-center py-8">
+                        <h3 class="text-3xl font-bold" style="color: var(--accent-blue);">Challenge Complete!</h3>
+                        <p id="level-complete-score" class="text-xl mt-2 text-gray-700"></p>
+                        <button id="next-level-btn" class="button mt-6 text-lg py-3 px-8" style="background-color: var(--accent-blue);">Next Challenge</button>
+                    </div>
+                 </div>
+            </div>
+            <footer class="bottom-control-bar">
+                 <div class="text-center mr-4"><p class="text-xs text-gray-500">SCORE</p><p id="score" class="text-2xl font-bold text-gray-900">0</p></div>
+                 <button id="reset-game-btn" class="button" style="background-color: var(--secondary-gray);">Reset Game</button>
+            </footer>
+        </section>
+    </main>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- DOM Elements ---
+            const mainContent = document.getElementById('main-content');
+            const infoSection = document.getElementById('info-section');
+            const activitySection = document.getElementById('activity-panel');
+            const activityInfoBtn = document.getElementById('activity-info-btn');
+            const difficultyBtn = document.getElementById('difficulty-btn');
+            const backBtn = document.getElementById('back-btn');
+            const headerTitle = document.getElementById('header-title');
+            
+            // --- Game Elements ---
+            const levelTitle=document.getElementById('level-title'),scoreDisplay=document.getElementById('score'),questionContext=document.getElementById('question-context'),questionText=document.getElementById('question-text'),optionsContainer=document.getElementById('options-container'),answerForm=document.getElementById('answer-form'),answerInput=document.getElementById('answer-input'),feedbackText=document.getElementById('feedback-text'),levelCompleteContainer=document.getElementById('level-complete-container'),levelCompleteScore=document.getElementById('level-complete-score'),nextLevelBtn=document.getElementById('next-level-btn'),resetGameBtn=document.getElementById('reset-game-btn');
+            
+            // --- Game Data & State ---
+            const problems = {
+                easy: [ { U: '1,2,3,4,5,6', A: '1,2,3', B: '3,4,5', el: 3, a: 'A ∩ B' }, { U: 'a,b,c,d,e', A: 'a,b', B: 'c,d', el: 'e', a: "(A ∪ B)'" }, { U: '1,2,3,4,5', A: '2,4', B: '1,3,5', el: 2, a: 'A' }, { U: 'p,q,r,s', A: 'p,q', B: 'p,r', el: 'q', a: 'A - B' }, { U: '1,2,3,4,5', A: '1,2', B: '1,2,3', el: 1, a: 'A ∩ B' } ],
+                medium: [ { U: 'Integers from 1 to 10', A: 'Prime numbers', B: 'Even numbers', el: 2, a: 'A ∩ B' }, { U: 'Integers from 1 to 10', A: 'Multiples of 3', B: 'Odd numbers', el: 9, a: 'A ∩ B' }, { U: 'Letters in "mathematics"', A: 'Vowels', B: 'Letters in "cat"', el: 'm', a: 'A - B' }, { U: '1..12', A: 'Factors of 12', B: 'Factors of 8', el: 6, a: 'A - B' }, { U: '1..10', A: '{x | x > 5}', B: '{x | x is even}', el: 7, a: 'A - B' } ],
+                hard: [ { q: "If A has 4 elements and B has 6, what is the maximum number of elements in A ∪ B?", a: "10" }, { q: "If n(A)=20, n(B)=25 and n(A∪B)=40, then n(A∩B)=?", a: "5" }, { q: "In a class of 50, 30 like Math, 25 like Science. 10 like both. How many like neither?", a: "5" }, { q: "If A = {x: x is a prime number < 10} and B = {x: x is an even number < 10}, find n(A-B).", a: "3" }, { q: "Which law is this: (A ∪ B)' = A' ∩ B'?", a: "De Morgan's Law" } ]
+            };
+            
+            const levelOrder = ['easy', 'medium', 'hard'];
+            let currentLevelIndex = 0;
+            let score = 0;
+            let isAnswered = false;
+            let currentQuestion = null;
+            let shuffledProblems = [];
+            
+            // --- UI & Layout ---
+            function updateLayout(isActivityVisible) {
+                mainContent.classList.toggle('activity-visible', isActivityVisible);
+                headerTitle.textContent = isActivityVisible ? 'Activity: Set Sorter' : 'Information';
+                activityInfoBtn.textContent = isActivityVisible ? 'Information' : 'Start Activity';
+            }
+
+            // --- Game Logic ---
+            function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+            function initializeGame() { resetGame(); }
+            function resetGame() { score = 0; scoreDisplay.textContent = score; resetLevel(); }
+            function resetLevel() {
+                const currentLevel = levelOrder[currentLevelIndex];
+                const originalProblems = problems[currentLevel];
+                shuffledProblems = [...originalProblems].sort(() => Math.random() - 0.5);
+                loadQuestion();
+            }
+
+            function loadQuestion() {
+                if (shuffledProblems.length === 0) { showLevelComplete(); return; }
+                currentQuestion = shuffledProblems.pop();
+                isAnswered = false;
+                
+                levelCompleteContainer.classList.add('hidden');
+                feedbackText.textContent = "";
+                const currentLevel = levelOrder[currentLevelIndex];
+                levelTitle.textContent = `${capitalize(currentLevel)} Challenge`;
+                
+                if (currentLevel === 'hard') {
+                    questionContext.style.display = 'none';
+                    questionText.innerHTML = currentQuestion.q;
+                    answerForm.style.display = 'flex';
+                    optionsContainer.style.display = 'none';
+                    answerInput.value = '';
+                    answerInput.disabled = false;
+                    answerForm.querySelector('button').disabled = false;
+                    answerInput.focus();
+                } else {
+                    questionContext.style.display = 'block';
+                    answerForm.style.display = 'none';
+                    optionsContainer.style.display = 'grid';
+                    questionContext.innerHTML = `<p><b>Universal Set U:</b> {${currentQuestion.U}}</p><p><b>Set A:</b> {${currentQuestion.A}}</p><p><b>Set B:</b> {${currentQuestion.B}}</p>`;
+                    questionText.innerHTML = `Where does the element <b>'${currentQuestion.el}'</b> belong?`;
+                    
+                    const options = ["A ∩ B", "A - B", "B - A", "(A ∪ B)'", "A ∪ B", "A", "B"];
+                    const correctAns = currentQuestion.a;
+                    let displayOptions = [correctAns];
+                    while (displayOptions.length < 4) {
+                        let randomOpt = options[Math.floor(Math.random() * options.length)];
+                        if (!displayOptions.includes(randomOpt)) {
+                            displayOptions.push(randomOpt);
+                        }
+                    }
+                    
+                    optionsContainer.innerHTML = '';
+                    shuffleArray(displayOptions).forEach(o => createOptionButton(o));
+                }
+            }
+
+            function shuffleArray(array) {
+                for (let i = array.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [array[i], array[j]] = [array[j], array[i]]; }
+                return array;
+            }
+
+            function createOptionButton(value) {
+                const optionBtn = document.createElement('button');
+                optionBtn.className = 'option-btn';
+                optionBtn.dataset.value = value;
+                optionBtn.innerHTML = value.replace('U', '&cup;').replace('n', '&cap;').replace("'", '&prime;');
+                optionBtn.addEventListener('click', handleAnswerClick);
+                optionsContainer.appendChild(optionBtn);
+            }
+
+            function handleAnswerClick(e) {
+                if (isAnswered) return;
+                isAnswered = true;
+                const clickedBtn = e.currentTarget;
+                const clickedValue = clickedBtn.dataset.value;
+                const correctValue = currentQuestion.a;
+
+                document.querySelectorAll('.option-btn').forEach(btn => btn.disabled = true);
+                
+                if (clickedValue === correctValue) {
+                    score += 10;
+                    scoreDisplay.textContent = score;
+                    clickedBtn.classList.add('correct');
+                    feedbackText.textContent = "Correct!";
+                    feedbackText.style.color = '#22c55e';
+                } else {
+                    clickedBtn.classList.add('incorrect');
+                    feedbackText.textContent = `Not quite! The answer was ${correctValue.replace('U', '∪').replace('n', '∩')}.`;
+                    feedbackText.style.color = '#ef4444';
+                    // Highlight the correct one
+                    const correctBtn = optionsContainer.querySelector(`[data-value="${correctValue}"]`);
+                    if(correctBtn) correctBtn.classList.add('correct');
+                }
+                setTimeout(loadQuestion, 2500);
+            }
+            
+            function handleAnswerSubmit(e) {
+                e.preventDefault();
+                if (isAnswered) return;
+                isAnswered = true;
+                answerInput.disabled = true;
+                answerForm.querySelector('button').disabled = true;
+                
+                const userAnswer = answerInput.value.trim();
+                const correctValue = currentQuestion.a;
+                
+                if (userAnswer.toLowerCase() === correctValue.toLowerCase()) {
+                    score += 15;
+                    scoreDisplay.textContent = score;
+                    feedbackText.textContent = "Correct!";
+                    feedbackText.style.color = '#22c55e';
+                } else {
+                    feedbackText.textContent = `Sorry, the correct answer is ${correctValue}.`;
+                    feedbackText.style.color = '#ef4444';
+                }
+                setTimeout(loadQuestion, 2500);
+            }
+
+            function showLevelComplete() {
+                questionContext.style.display = 'none';
+                questionText.textContent = "";
+                optionsContainer.style.display = 'none';
+                answerForm.style.display = 'none';
+                levelCompleteContainer.classList.remove('hidden');
+                levelCompleteScore.textContent = `Your final score for this challenge: ${score}.`;
+                if (currentLevelIndex >= levelOrder.length - 1) {
+                    nextLevelBtn.textContent = "Restart Challenges";
+                } else {
+                     nextLevelBtn.textContent = "Next Challenge";
+                }
+            }
+            
+            function handleNextLevel() {
+                if (currentLevelIndex >= levelOrder.length - 1) {
+                    currentLevelIndex = 0;
+                } else {
+                    currentLevelIndex++;
+                }
+                difficultyBtn.textContent = `Difficulty: ${capitalize(levelOrder[currentLevelIndex])}`;
+                resetGame();
+            }
+
+            // --- Event Listeners ---
+            activityInfoBtn.addEventListener('click', () => {
+                const isActivityVisible = !mainContent.classList.contains('activity-visible');
+                updateLayout(isActivityVisible);
+                if (isActivityVisible) {
+                    initializeGame();
+                }
+            });
+            
+            difficultyBtn.addEventListener('click', () => {
+                currentLevelIndex = (currentLevelIndex + 1) % levelOrder.length;
+                const newDifficulty = capitalize(levelOrder[currentLevelIndex]);
+                difficultyBtn.textContent = `Difficulty: ${newDifficulty}`;
+                if (mainContent.classList.contains('activity-visible')) {
+                    resetGame();
+                }
+            });
+            
+            resetGameBtn.addEventListener('click', resetGame);
+            nextLevelBtn.addEventListener('click', handleNextLevel);
+            answerForm.addEventListener('submit', handleAnswerSubmit);
+            backBtn.addEventListener('click', () => { window.history.back(); });
+
+            // Initial setup
+            updateLayout(false);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Introduction to Databases</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --header-bg: #ffffff; --page-bg: #f0f2f5; --panel-bg: #ffffff;
+            --border-color: #e5e7eb; --text-dark: #1f2937; --accent-blue: #3b82f6;
+            --secondary-gray: #6c757d; --primary-blue-btn: #007bff; --accent-red: #ef4444;
+        }
+        body { font-family: 'Poppins', sans-serif; background-color: var(--page-bg); color: var(--text-dark); margin: 0; height: 100vh; overflow: hidden; }
+        .page-container { display: flex; flex-direction: column; height: 100vh; }
+        .header {
+            position: fixed; top: 0; left: 0; width: 100%; height: 60px;
+            background-color: var(--header-bg); display: flex; align-items: center; justify-content: space-between;
+            padding: 0 24px; border-bottom: 1px solid var(--border-color);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05); z-index: 1000;
+        }
+        .header-section { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .header-section.center { text-align: center; font-size: 1.2em; font-weight: bold; }
+        .header-section.right { display: flex; justify-content: flex-end; }
+        .button {
+            padding: 8px 16px; margin-left: 10px; cursor: pointer;
+            border: none; border-radius: 6px; font-weight: 600; color: white;
+            white-space: nowrap; transition: transform 0.1s;
+        }
+        .button:active:not(:disabled) { transform: scale(0.95); }
+        .button:disabled { opacity: 0.6; cursor: not-allowed; }
+        .main-content { margin-top: 60px; padding: 24px; display: flex; gap: 24px; flex-grow: 1; overflow: hidden; justify-content: center; }
+        .panel {
+            background-color: var(--panel-bg); border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: 1px solid var(--border-color);
+            overflow-y: auto; padding: 32px 48px; height: calc(100vh - 108px);
+            transition: width 400ms ease-in-out;
+        }
+        #info-panel { flex-shrink: 0; }
+        #activity-panel { display: none; flex-grow: 1; padding: 0; flex-direction: column; }
+        .main-content.activity-visible { justify-content: flex-start; }
+        .main-content.activity-visible #info-panel { width: 340px; min-width: 340px; padding: 24px 32px; }
+        .main-content.activity-visible #activity-panel { display: flex; }
+        
+        .activity-area { flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; }
+        .bottom-control-bar { height: 60px; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; background-color: var(--page-bg); border-top: 1px solid var(--border-color); flex-shrink: 0; border-radius: 0 0 12px 12px;}
+        .status-bar { font-weight: bold; color: var(--text-dark); font-size: 1.2rem;}
+        .reset-button { padding: 8px 16px; cursor: pointer; background-color: var(--accent-red); color: white; border: none; border-radius: 6px; font-weight: 600; }
+        .info-panel-content { background-color: #ffffff; padding: 1.5rem; border-radius: 0.75rem; border: 1px solid #e5e7eb; }
+        .info-panel-content table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+        .info-panel-content th, .info-panel-content td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        .info-panel-content th { background-color: #f2f2f2; }
+        .info-panel-content pre { background-color: #f8f9fa; border: 1px solid #e9ecef; padding: 15px; border-radius: 5px; overflow-x: auto; }
+
+        /* Game Styles */
+        .game-container { text-align: center; width:100%; max-width: 600px;}
+        .sort-btn { padding: 1rem 2rem; font-size: 1.2rem; border-radius: 0.5rem; }
+        .data-btn { background-color: #ffc107; }
+        .info-btn { background-color: #3b82f6; color: white; }
+        .schema-column { background-color: #64748b; color: white; padding: 0.5rem 1rem; border-radius: 999px; cursor: grab; }
+        .schema-column:active { cursor: grabbing; }
+        .schema-table { border: 2px dashed #9ca3af; min-height: 200px; width:100%; padding: 1rem; background-color: #f8fafc; border-radius: 8px; }
+        .sql-query { background-color: #1e293b; color: #93c5fd; font-family: monospace; padding: 1rem; border-radius: 0.5rem; margin: 1rem 0; text-align: left;}
+        .sql-table { width: 100%; border-collapse: collapse; text-align: left; }
+        .sql-table th, .sql-table td { border: 1px solid #ddd; padding: 8px; }
+    </style>
+</head>
+<body class="page-container">
+    <header class="header">
+        <div class="header-section font-bold text-lg" style="color: var(--accent-blue);">Databases 101</div>
+        <div id="header-title" class="header-section center">Information</div>
+        <div class="header-section right">
+            <button id="back-btn" class="button" style="background-color: var(--secondary-gray);">Back</button>
+            <button id="activity-info-btn" class="button" style="background-color: var(--primary-blue-btn);">Activity</button>
+            <button id="difficulty-btn" class="button" style="background-color: var(--accent-blue);">Difficulty: Easy</button>
+        </div>
+    </header>
+
+    <main id="main-content" class="main-content">
+        <section id="info-panel" class="panel">
+            <h2 class="text-3xl font-bold mb-6 text-center" style="color: var(--accent-blue);">Introduction to Databases</h2>
+            <div class="space-y-4">
+                <div class="info-panel-content">
+                    <h3 class="text-xl font-semibold text-gray-900">What is a Database? 🗄️</h3>
+                    <p class="mt-2 text-gray-600">A <b>database</b> is an organized collection of data. Think of it as a digital filing cabinet, making information easy to find and manage.</p>
+                </div>
+                <div class="info-panel-content">
+                    <h3 class="text-xl font-semibold text-gray-900">Key Concepts</h3>
+                    <ul class="list-disc list-inside mt-2 text-gray-600">
+                        <li><b>Data vs. Information:</b> Data is raw facts (e.g., "16"), while information is data with context (e.g., "Age: 16").</li>
+                        <li><b>Tables, Rows, Columns:</b> A database uses tables to store data. Each row is a record, and each column is a field.</li>
+                        <li><b>SQL:</b> A language used to talk to databases (e.g., `SELECT * FROM Students`).</li>
+                    </ul>
+                </div>
+                <div class="info-panel-content">
+                    <h3 class="text-xl font-semibold text-gray-900">Game Modes</h3>
+                    <ul class="list-disc list-inside mt-2 text-gray-600">
+                        <li><b>Easy (Sorting Showdown):</b> Classify items as raw 'Data' or meaningful 'Information'.</li>
+                        <li><b>Medium (Table Architect):</b> Drag and drop columns to build a database table.</li>
+                        <li><b>Hard (SQL Treasure Hunt):</b> Use SQL queries to find the correct data treasure.</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="activity-panel" class="panel">
+            <div id="activity-area" class="activity-area"></div>
+            <footer class="bottom-control-bar">
+                <div id="status-bar" class="status-bar">Score: 0</div>
+                <button id="reset-btn" class="reset-button">Reset</button>
+            </footer>
+        </section>
+    </main>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const gameData = {
+                easy: {
+                    title: "Sorting Showdown", instruction: "Is the item 'Data' or 'Information'? Click the correct button.",
+                    items: [
+                        { text: 'Sita', type: 'Data' }, { text: 'Age: 14', type: 'Information' }, { text: '14', type: 'Data' },
+                        { text: 'Sita is 14 years old.', type: 'Information' }, { text: '2025-10-01', type: 'Data' }
+                    ]
+                },
+                medium: {
+                    title: "Table Architect", instruction: "Drag the columns into the table to build the 'Students' schema.",
+                    columns: ["StudentID (PK)", "FirstName", "LastName", "Grade"],
+                    distractors: ["ShoeSize", "FavoriteColor"]
+                },
+                hard: {
+                    title: "SQL Treasure Hunt", instruction: "Read the SQL query and click the button with the correct result.",
+                    queries: [
+                        { query: "SELECT Name FROM Students WHERE Grade > 10;", table: `<thead><tr><th>ID</th><th>Name</th><th>Grade</th></tr></thead><tbody><tr><td>1</td><td>Arjun</td><td>11</td></tr><tr><td>2</td><td>Priya</td><td>10</td></tr><tr><td>3</td><td>Rohan</td><td>12</td></tr></tbody>`, answer: "Arjun, Rohan", options: ["Arjun, Priya", "Priya, Rohan"] },
+                        { query: "SELECT Item FROM Inventory WHERE Quantity < 5;", table: `<thead><tr><th>ID</th><th>Item</th><th>Quantity</th></tr></thead><tbody><tr><td>1</td><td>Apples</td><td>8</td></tr><tr><td>2</td><td>Bananas</td><td>3</td></tr><tr><td>3</td><td>Oranges</td><td>6</td></tr></tbody>`, answer: "Bananas", options: ["Apples", "Oranges"] }
+                    ]
+                }
+            };
+            
+            const difficulties = ['easy', 'medium', 'hard'];
+            let difficultyIdx = 0, score = 0, showActivity = false, currentQuestionIndex = 0;
+
+            const mainContent = document.getElementById('main-content'), infoPanel = document.getElementById('info-panel'), activityPanel = document.getElementById('activity-panel'), activityInfoBtn = document.getElementById('activity-info-btn'), backBtn = document.getElementById('back-btn'), headerTitle = document.getElementById('header-title'), difficultyBtn = document.getElementById('difficulty-btn'), activityArea = document.getElementById('activity-area'), statusBar = document.getElementById('status-bar'), resetBtn = document.getElementById('reset-btn');
+
+            function updateLayout() {
+                mainContent.classList.toggle('activity-visible', showActivity);
+                infoPanel.style.width = showActivity ? '340px' : `${Math.min(800, window.innerWidth - 48)}px`;
+                headerTitle.textContent = showActivity ? 'Database Games' : 'Information';
+                activityInfoBtn.textContent = showActivity ? 'Information' : 'Activity';
+                updateScoreDisplay();
+            }
+
+            function startGame() {
+                score = 0;
+                currentQuestionIndex = 0;
+                gameData.easy.items.sort(() => .5 - Math.random());
+                gameData.hard.queries.sort(() => .5 - Math.random());
+                loadGame();
+            }
+
+            function loadGame() {
+                const difficulty = difficulties[difficultyIdx];
+                activityArea.innerHTML = ''; 
+                switch(difficulty) {
+                    case 'easy': renderSortingShowdown(gameData.easy); break;
+                    case 'medium': renderTableArchitect(gameData.medium); break;
+                    case 'hard': renderSqlHunt(gameData.hard); break;
+                }
+                updateScoreDisplay();
+            }
+
+            function renderSortingShowdown(level) {
+                if (currentQuestionIndex >= level.items.length) { showCompletionScreen(level.title); return; }
+                const item = level.items[currentQuestionIndex];
+                activityArea.innerHTML = `
+                    <div class="game-container">
+                        <h2 class="text-2xl font-bold">${level.title}</h2>
+                        <p class="text-gray-500">${level.instruction}</p>
+                        <div class="my-8 p-6 text-2xl font-bold bg-gray-200 rounded-lg">${item.text}</div>
+                        <div class="flex gap-4">
+                            <button class="sort-btn data-btn button">Data</button>
+                            <button class="sort-btn info-btn button">Information</button>
+                        </div>
+                    </div>`;
+                activityArea.querySelectorAll('.sort-btn').forEach(btn => {
+                    btn.onclick = (e) => {
+                        const choice = e.target.textContent;
+                        if (choice === item.type) {
+                            score += 10;
+                            currentQuestionIndex++;
+                            loadGame();
+                        } else {
+                            alert('Incorrect! Try again.');
+                        }
+                    };
+                });
+            }
+
+            function renderTableArchitect(level) {
+                 activityArea.innerHTML = `
+                    <div class="game-container w-full max-w-lg">
+                         <h2 class="text-2xl font-bold">${level.title}</h2>
+                         <p class="text-gray-500">${level.instruction}</p>
+                         <div id="schema-table" class="schema-table flex flex-col gap-2 mt-4">Drop columns here</div>
+                         <div id="parts-bin" class="flex flex-wrap gap-2 justify-center mt-4"></div>
+                         <button id="check-btn" class="button mt-4" style="background-color: #22c55e;">Check Table</button>
+                    </div>`;
+                const partsBin = activityArea.querySelector('#parts-bin');
+                const allParts = [...level.columns, ...level.distractors].sort(() => 0.5 - Math.random());
+                allParts.forEach(part => partsBin.innerHTML += `<div class="schema-column" draggable="true">${part}</div>`);
+                setupDragDrop(level);
+            }
+
+            function renderSqlHunt(level) {
+                if (currentQuestionIndex >= level.queries.length) { showCompletionScreen(level.title); return; }
+                const query = level.queries[currentQuestionIndex];
+                 activityArea.innerHTML = `
+                    <div class="game-container w-full max-w-2xl">
+                        <h2 class="text-2xl font-bold">${level.title}</h2>
+                        <p class="text-gray-500">${level.instruction}</p>
+                        <div class="sql-query">${query.query}</div>
+                        <table class="w-full text-center border-collapse border border-gray-300 sql-table">${query.table}</table>
+                        <div class="flex gap-4 mt-4">
+                           ${[query.answer, ...query.options].sort(() => 0.5-Math.random()).map(opt => `<button class="button info-btn">${opt}</button>`).join('')}
+                        </div>
+                    </div>`;
+                activityArea.querySelectorAll('.info-btn').forEach(btn => btn.onclick = (e) => {
+                    if(e.target.textContent === query.answer) {
+                        score += 20;
+                        currentQuestionIndex++;
+                        loadGame();
+                    } else {
+                        alert('Wrong treasure! Try again.');
+                    }
+                });
+            }
+            
+            function setupDragDrop(level) {
+                const dropZone = activityArea.querySelector('#schema-table');
+                activityArea.querySelectorAll('.schema-column').forEach(item => {
+                    item.addEventListener('dragstart', e => e.dataTransfer.setData('text/plain', e.target.textContent));
+                });
+                dropZone.addEventListener('dragover', e => e.preventDefault());
+                dropZone.addEventListener('drop', e => {
+                    e.preventDefault();
+                    if(dropZone.textContent === 'Drop columns here') dropZone.innerHTML = '';
+                    const text = e.dataTransfer.getData('text/plain');
+                    const matchingItem = Array.from(activityArea.querySelectorAll(`#parts-bin > .schema-column`)).find(i => i.textContent === text);
+                    if(matchingItem) dropZone.appendChild(matchingItem);
+                });
+                activityArea.querySelector('#check-btn').onclick = () => {
+                    const userColumns = Array.from(dropZone.children).map(c => c.textContent);
+                    if(userColumns.length === level.columns.length && userColumns.every((val, index) => val === level.columns[index])) {
+                        score += 50;
+                        showCompletionScreen(level.title);
+                    } else {
+                        alert('Schema is incorrect! The order and items must be perfect.');
+                    }
+                };
+            }
+
+            function showCompletionScreen(title) {
+                activityArea.innerHTML = `<div class="text-center"><h2 class="text-3xl font-bold text-green-600">${title} Complete!</h2><p class="text-xl mt-4">Current Score: ${score}</p><button id="continue-btn" class="button mt-4" style="background-color:var(--accent-blue)">Continue</button></div>`;
+                activityArea.querySelector('#continue-btn').onclick = startGame;
+            }
+
+            function updateScoreDisplay() { statusBar.textContent = `Score: ${score}`; }
+            
+            activityInfoBtn.addEventListener('click', () => { showActivity = !showActivity; if(showActivity) startGame(); updateLayout(); });
+            backBtn.addEventListener('click', () => { if (showActivity) { showActivity = false; updateLayout(); } else { window.history.back(); } });
+            difficultyBtn.addEventListener('click', () => {
+                difficultyIdx = (difficultyIdx + 1) % difficulties.length;
+                difficultyBtn.textContent = `Difficulty: ${capitalize(difficulties[difficultyIdx])}`;
+                if (showActivity) startGame();
+            });
+            resetBtn.addEventListener('click', () => { if(showActivity) startGame(); });
+            
+            updateLayout();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fractions to Decimals Challenge</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <style>
+        :root {
+            --header-bg: #ffffff;
+            --page-bg: #f4f7f9;
+            --panel-bg: #ffffff;
+            --border-color: #e0e0e0;
+            --text-dark: #1e293b;
+            --text-light: #475569;
+            --accent-blue: #3b82f6;
+            --accent-green: #10b981;
+            --accent-red: #ef4444;
+            --primary-blue: #007bff;
+            --secondary-gray: #6c757d;
+        }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: white;
+            color: var(--text-dark);
+            margin: 0;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .page-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        .header {
+            position: fixed; top: 0; left: 0; width: 100%; height: 60px;
+            background-color: var(--header-bg);
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 24px;
+            border-bottom: 1px solid var(--border-color);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            z-index: 1000;
+            box-sizing: border-box;
+        }
+        .header-section { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .header-section.center { text-align: center; font-size: 1.2em; font-weight: bold; }
+        .header-section.right { display: flex; justify-content: flex-end; }
+        .button {
+            padding: 8px 16px; margin-left: 10px; cursor: pointer;
+            border: none; border-radius: 6px; font-weight: 600; color: white;
+            transition: transform 0.1s;
+        }
+        .button:active { transform: scale(0.95); }
+        .main-content {
+            margin-top: 60px; padding: 24px; display: flex;
+            flex-grow: 1; overflow: hidden; box-sizing: border-box;
+            gap: 24px; justify-content: center;
+        }
+        .panel {
+            background-color: var(--page-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            border: 1px solid var(--border-color);
+            box-sizing: border-box;
+            overflow-y: auto;
+            height: calc(100vh - 108px);
+            transition: width 400ms ease-in-out, min-width 400ms ease-in-out, margin 400ms ease-in-out;
+        }
+        #info-panel {
+            padding: 24px 32px;
+            width: 100%;
+            max-width: 700px;
+            margin: 0 auto;
+            flex-shrink: 0;
+        }
+        #activity-panel {
+            display: none;
+            flex-grow: 1;
+            min-width: 400px;
+            padding: 24px;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .main-content.activity-visible { justify-content: flex-start; }
+        .main-content.activity-visible #info-panel { width: 340px; min-width: 340px; margin: 0; }
+        .main-content.activity-visible #activity-panel { display: flex; }
+
+        /* --- ACTIVITY-SPECIFIC STYLES --- */
+        #game-container {
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+        }
+        #question-box {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border: 1px solid var(--border-color);
+        }
+        #question-text {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary-blue);
+            margin-bottom: 1.5rem;
+        }
+        #answer-input {
+            width: 80%;
+            padding: 12px;
+            font-size: 1.2rem;
+            text-align: center;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+        }
+        #answer-input:focus {
+            outline: none;
+            border-color: var(--primary-blue);
+        }
+        #submit-btn {
+            background-color: var(--accent-green);
+            padding: 12px 24px;
+            font-size: 1.1rem;
+        }
+        #feedback {
+            margin-top: 1rem;
+            font-size: 1.2rem;
+            font-weight: 600;
+            min-height: 30px;
+        }
+        #score-display {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-top: 2rem;
+            color: var(--text-light);
+        }
+    </style>
+</head>
+<body class="page-container">
+    
+    <header class="header">
+        <div class="header-section">Class 6 - Fractions & Decimals</div>
+        <div id="header-title" class="header-section center">Information</div>
+        <div class="header-section right">
+            <button id="back-btn" class="button" style="background-color: var(--secondary-gray);">Back</button>
+            <button id="toggle-view-btn" class="button" style="background-color: var(--primary-blue);">Activity</button>
+            <button id="difficulty-btn" class="button" style="background-color: var(--accent-green);">Mode: Easy</button>
+        </div>
+    </header>
+
+    <main class="main-content" id="main-content">
+        <section id="info-panel" class="panel">
+            <h1 class="text-3xl font-bold mb-4" style="color: var(--primary-blue);">Understanding Fractions & Decimals</h1>
+            <p class="mb-6 text-slate-700">Fractions and decimals are two different ways to represent parts of a whole number. Learning to convert between them is a key math skill.</p>
+            
+            <div style="display: flex; flex-direction: column; gap: 1.5rem; font-size: 1.1rem;">
+                <div>
+                    <h2 class="text-xl font-semibold">What is a Fraction? 🍰</h2>
+                    <p class="mt-2 text-slate-600">A fraction has a <span class="font-semibold" style="color:var(--primary-blue)">Numerator</span> (top number) and a <span class="font-semibold" style="color:var(--primary-blue)">Denominator</span> (bottom number).</p>
+                    <p class="text-2xl font-bold text-center my-4"><sup>Numerator</sup>&frasl;<sub>Denominator</sub></p>
+                </div>
+                <div>
+                    <h2 class="text-xl font-semibold">Converting Fractions to Decimals ⚙️</h2>
+                    <p class="mt-2 text-slate-600">To convert a fraction to a decimal, you simply **divide the numerator by the denominator**.</p>
+                    <p class="mt-2 font-semibold">Example: Convert <sup>3</sup>&frasl;<sub>4</sub> to a decimal.</p>
+                    <pre style="background:#e2e8f0; padding: 12px; border-radius: 8px; margin-top: 8px; text-align: center;">3 ÷ 4 = 0.75</pre>
+                </div>
+            </div>
+            <p class="mt-8 text-center text-slate-500">Click "Activity" to test your conversion skills!</p>
+        </section>
+
+        <section id="activity-panel" class="panel">
+            <div id="game-container">
+                <div id="question-box">
+                    <h2>🎯 Convert to Decimal</h2>
+                    <p id="question-text">1/2</p>
+                    <input type="text" id="answer-input" placeholder="e.g., 0.5">
+                    <button id="submit-btn" class="button">Check</button>
+                    <p id="feedback"></p>
+                </div>
+                <p id="score-display">Score: 0</p>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- UI Elements ---
+            const mainContent = document.getElementById('main-content');
+            const headerTitle = document.getElementById('header-title');
+            const toggleViewBtn = document.getElementById('toggle-view-btn');
+            const difficultyBtn = document.getElementById('difficulty-btn');
+            const backBtn = document.getElementById('back-btn');
+
+            // --- Game Elements ---
+            const questionText = document.getElementById('question-text');
+            const answerInput = document.getElementById('answer-input');
+            const submitBtn = document.getElementById('submit-btn');
+            const feedback = document.getElementById('feedback');
+            const scoreDisplay = document.getElementById('score-display');
+
+            // --- Game Data & Settings ---
+            const fractions = {
+                easy: [ { n: 1, d: 2 }, { n: 1, d: 4 }, { n: 3, d: 4 }, { n: 1, d: 5 }, { n: 2, d: 5 }, { n: 4, d: 5 }, { n: 1, d: 10 }, { n: 7, d: 10 } ],
+                medium: [ { n: 1, d: 8 }, { n: 3, d: 8 }, { n: 5, d: 8 }, { n: 1, d: 20 }, { n: 3, d: 50 }, { n: 7, d: 25 } ],
+                hard: [ { n: 1, d: 3 }, { n: 2, d: 3 }, { n: 1, d: 6 }, { n: 5, d: 6 }, { n: 1, d: 9 } ]
+            };
+            const difficulties = ['easy', 'medium', 'hard'];
+            let difficultyIdx = 0;
+            
+            // --- Game State ---
+            let showActivity = false;
+            let currentQuestion = {};
+            let score = 0;
+
+            function updateLayout() {
+                mainContent.classList.toggle('activity-visible', showActivity);
+                headerTitle.textContent = showActivity ? 'Activity' : 'Information';
+                toggleViewBtn.textContent = showActivity ? 'Information' : 'Activity';
+            }
+
+            function startGame() {
+                score = 0;
+                updateScoreDisplay();
+                nextQuestion();
+            }
+
+            function nextQuestion() {
+                const currentDifficulty = difficulties[difficultyIdx];
+                const availableFractions = fractions[currentDifficulty];
+                const randomIndex = Math.floor(Math.random() * availableFractions.length);
+                currentQuestion = availableFractions[randomIndex];
+
+                questionText.textContent = `${currentQuestion.n}/${currentQuestion.d}`;
+                answerInput.value = "";
+                feedback.textContent = "";
+                answerInput.focus();
+            }
+
+            function checkAnswer() {
+                const userAnswer = parseFloat(answerInput.value);
+                const correctAnswer = currentQuestion.n / currentQuestion.d;
+                
+                // Allow for slight rounding differences, especially for repeating decimals
+                if (Math.abs(userAnswer - correctAnswer) < 0.01) {
+                    feedback.textContent = "✅ Correct! Great job!";
+                    feedback.style.color = 'var(--accent-green)';
+                    score += 10;
+                    updateScoreDisplay();
+                    setTimeout(nextQuestion, 1500);
+                } else {
+                    feedback.textContent = `❌ Not quite. The answer is ${correctAnswer.toFixed(3)}`;
+                    feedback.style.color = 'var(--accent-red)';
+                }
+            }
+
+            function updateScoreDisplay() {
+                scoreDisplay.textContent = `Score: ${score}`;
+            }
+
+            // --- Event Listeners ---
+            toggleViewBtn.addEventListener('click', () => {
+                showActivity = !showActivity;
+                updateLayout();
+                if (showActivity) {
+                    startGame();
+                }
+            });
+
+            difficultyBtn.addEventListener('click', () => {
+                difficultyIdx = (difficultyIdx + 1) % difficulties.length;
+                const newDifficulty = difficulties[difficultyIdx];
+                difficultyBtn.textContent = `Mode: ${newDifficulty.charAt(0).toUpperCase() + newDifficulty.slice(1)}`;
+                if (showActivity) {
+                    startGame();
+                }
+            });
+
+            submitBtn.addEventListener('click', checkAnswer);
+            answerInput.addEventListener('keyup', (event) => {
+                if (event.key === 'Enter') {
+                    checkAnswer();
+                }
+            });
+
+            backBtn.addEventListener('click', () => {
+                window.history.back();
+            });
+
+            // Initial setup
+            updateLayout();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relations & Functions: Function Machine</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --header-bg: #ffffff;
+            --page-bg: #f0f2f5;
+            --panel-bg: #ffffff;
+            --border-color: #e5e7eb;
+            --text-dark: #1f2937;
+            --text-light: #475569;
+            --accent-violet: #8b5cf6;
+            --accent-violet-dark: #7c3aed;
+            --primary-blue: #007bff;
+            --secondary-gray: #6c757d;
+            --accent-red: #ef4444;
+            --accent-green: #22c55e;
+        }
+        body { font-family: 'Poppins', sans-serif; background-color: var(--page-bg); color: var(--text-dark); margin: 0; height: 100vh; overflow: hidden; }
+        .page-container { display: flex; flex-direction: column; height: 100vh; }
+        .header {
+            position: fixed; top: 0; left: 0; width: 100%; height: 60px;
+            background-color: var(--header-bg); display: flex; align-items: center; justify-content: space-between;
+            padding: 0 24px; border-bottom: 1px solid var(--border-color);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05); z-index: 1000; box-sizing: border-box;
+        }
+        .header-section { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .header-section.center { text-align: center; font-size: 1.2em; font-weight: bold; }
+        .header-section.right { display: flex; justify-content: flex-end; }
+        .button {
+            padding: 8px 16px; margin-left: 10px; cursor: pointer;
+            border: none; border-radius: 6px; font-weight: 600; color: white;
+            transition: transform 0.1s, background-color 0.2s;
+        }
+        .button:active { transform: scale(0.95); }
+        .main-content {
+            margin-top: 60px; padding: 24px; display: flex;
+            flex-grow: 1; overflow: hidden; box-sizing: border-box;
+            gap: 24px; justify-content: center;
+        }
+        .panel {
+            background-color: var(--panel-bg); border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: 1px solid var(--border-color);
+            box-sizing: border-box; overflow-y: auto;
+            height: calc(100vh - 108px);
+            transition: width 400ms ease-in-out, min-width 400ms ease-in-out, margin 400ms ease-in-out;
+        }
+        #info-panel {
+            padding: 24px 32px;
+            width: 100%;
+            max-width: 700px;
+            margin: 0 auto;
+            flex-shrink: 0;
+        }
+        #activity-panel { display: none; flex-grow: 1; min-width: 400px; padding: 24px; flex-direction: column; }
+        
+        .main-content.activity-visible { justify-content: flex-start; }
+        .main-content.activity-visible #info-panel { width: 340px; min-width: 340px; margin: 0; }
+        .main-content.activity-visible #activity-panel { display: flex; }
+
+        /* --- Info & Game Styles --- */
+        .info-panel-content { background-color: #f3e8ff; padding: 1.5rem; border-radius: 0.75rem; border: 1px solid #e9d5ff; }
+        .info-panel-content h3 { color: var(--accent-violet-dark); }
+        .game-card { background-color: white; border-radius: 8px; padding: 20px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); }
+        #question-text { font-size: 1.5rem; font-weight: 600; color: #111827; }
+        #answer-input { -moz-appearance: textfield; }
+        #answer-input::-webkit-outer-spin-button, #answer-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        .feedback { font-size: 1.1rem; font-weight: 600; text-align: center; min-height: 28px; margin-top: 20px;}
+        .feedback-correct { color: var(--accent-green); }
+        .feedback-incorrect { color: var(--accent-red); }
+    </style>
+</head>
+<body class="page-container">
+    <header class="header">
+        <div class="header-section">Class 11 - Relations & Functions</div>
+        <div id="header-title" class="header-section center">Information</div>
+        <div class="header-section right">
+            <button id="back-btn" class="button" style="background-color: var(--secondary-gray);">Back</button>
+            <button id="toggle-view-btn" class="button" style="background-color: var(--primary-blue);">Activity</button>
+            <button id="difficulty-btn" class="button" style="background-color: var(--accent-violet);">Mode: Easy</button>
+        </div>
+    </header>
+
+    <main class="main-content" id="main-content">
+        <section id="info-panel" class="panel">
+            <h2 class="text-3xl font-bold mb-6 text-center text-gray-800">Relations & Functions</h2>
+            <div class="space-y-4">
+                <div class="info-panel-content">
+                    <h3 class="text-xl font-semibold">Key Concepts</h3>
+                    <ul class="list-disc list-inside mt-3 space-y-2 text-gray-600">
+                        <li><b>Relation:</b> A set of ordered pairs (x, y).</li>
+                        <li><b>Function:</b> A special relation where every input (x) has exactly one output (y).</li>
+                        <li><b>Domain:</b> The set of all possible input values (x).</li>
+                        <li><b>Range:</b> The set of all possible output values (y).</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="activity-panel" class="panel">
+            <div id="game-area"></div>
+        </section>
+    </main>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const mainContent = document.getElementById('main-content');
+            const headerTitle = document.getElementById('header-title');
+            const toggleViewBtn = document.getElementById('toggle-view-btn');
+            const difficultyBtn = document.getElementById('difficulty-btn');
+            const backBtn = document.getElementById('back-btn');
+            const gameArea = document.getElementById('game-area');
+
+            let showActivity = false;
+            let difficultyIdx = 0;
+            const difficulties = ['easy', 'medium', 'hard'];
+            let score = 0;
+            let isAnswered = false;
+
+            const problems = {
+                easy:[{q:"If f(x) = 2x + 5, find f(3).",a:"11"},{q:"If f(x) = x² - 1, find f(-2).",a:"3"},{q:"What is the domain of f(x) = 3x - 1?",a:"R"},{q:"If A={1,2}, B={a,b}, find n(A x B).",a:"4"},{q:"If f(x)=x+7, for what value of x is f(x)=10?",a:"3"}],
+                medium:[{q:"Find the domain of f(x) = 1/(x-2).",a:"R-{2}"},{q:"Find the range of f(x) = |x|.",a:"[0, inf)"},{q:"If f(x) = x² and g(x) = x+1, find f(g(2)).",a:"9"},{q:"A relation R from {2,3,4,5} to {3,6,7,10} is defined by xRy if x divides y. Find the domain of R.",a:"{2,3,5}"},{q:"Find the range of the function f(x) = 2 - 3x, x ∈ R, x > 0.",a:"(-inf, 2)"}],
+                hard:[{q:"Find the domain of f(x) = √(9 - x²).",a:"[-3, 3]"},{q:"Find the range of f(x) = 1/(x-5).",a:"R-{0}"},{q:"If f(x) = 2x+1 and g(x) = x-3, find (f+g)(x).",a:"3x-2"},{q:"If R is a relation on Z defined by R = {(a,b): a,b ∈ Z, a-b is an integer}. What type of relation is R?",a:"Equivalence"},{q:"Find the range of f(x) = x²/(1+x²).",a:"[0, 1)"}]
+            };
+
+            function updateLayout() {
+                mainContent.classList.toggle('activity-visible', showActivity);
+                headerTitle.textContent = showActivity ? 'Activity' : 'Information';
+                toggleViewBtn.textContent = showActivity ? 'Information' : 'Activity';
+            }
+
+            function startGame() {
+                isAnswered = false;
+                const difficulty = difficulties[difficultyIdx];
+                const questions = problems[difficulty];
+                const question = questions[Math.floor(Math.random() * questions.length)];
+
+                gameArea.innerHTML = `
+                    <div class="game-card">
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-2xl font-bold">${capitalize(difficulty)} Challenge</h2>
+                            <div class="text-xl font-bold">Score: <span id="score-display">${score}</span></div>
+                        </div>
+                        <p id="question-text" class="text-2xl my-6 text-center">${question.q.replace(/²/g, '²')}</p>
+                        <form id="answer-form" class="flex justify-center items-center gap-4 mt-6">
+                            <input type="text" id="answer-input" class="answer-input text-center text-xl font-bold w-48 p-3 rounded-lg border-2 border-gray-300" placeholder="Answer" required>
+                            <button type="submit" class="button text-lg px-6 py-3" style="background-color: var(--accent-violet);">Submit</button>
+                        </form>
+                        <p id="feedback" class="feedback"></p>
+                    </div>`;
+
+                document.getElementById('answer-form').addEventListener('submit', (e) => handleAnswerSubmit(e, question));
+            }
+            
+            function handleAnswerSubmit(e, question) {
+                e.preventDefault();
+                if (isAnswered) return;
+                isAnswered = true;
+
+                const answerInput = document.getElementById('answer-input');
+                const feedbackEl = document.getElementById('feedback');
+                const scoreDisplay = document.getElementById('score-display');
+                
+                const userAnswer = answerInput.value.trim().toLowerCase().replace(/\s/g, '');
+                const correctAnswer = question.a.toLowerCase().replace(/\s/g, '');
+
+                if (userAnswer === correctAnswer) {
+                    score += 10;
+                    feedbackEl.textContent = "Correct!";
+                    feedbackEl.className = "feedback feedback-correct";
+                } else {
+                    feedbackEl.textContent = `Incorrect. The correct answer is ${question.a}.`;
+                    feedbackEl.className = "feedback feedback-incorrect";
+                }
+                scoreDisplay.textContent = score;
+                setTimeout(startGame, 2500); // Load next question
+            }
+            
+            function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+            // --- Event Listeners ---
+            toggleViewBtn.addEventListener('click', () => {
+                showActivity = !showActivity;
+                updateLayout();
+                if (showActivity) {
+                    score = 0; // Reset score when entering activity
+                    startGame();
+                }
+            });
+
+            difficultyBtn.addEventListener('click', () => {
+                difficultyIdx = (difficultyIdx + 1) % difficulties.length;
+                const newDifficulty = difficulties[difficultyIdx];
+                difficultyBtn.textContent = `Mode: ${capitalize(newDifficulty)}`;
+                if (showActivity) {
+                    score = 0;
+                    startGame();
+                }
+            });
+            
+            backBtn.addEventListener('click', () => {
+                window.history.back();
+            });
+            
+            updateLayout();
+        });
+    </script>
+</body>
+</html>

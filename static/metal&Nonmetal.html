@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chemistry Hub - Metals & Non-Metals</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* --- CORE TEMPLATE & GLOBAL STYLES (Light Theme) --- */
+        :root {
+            --header-bg: #ffffff;
+            --page-bg: #f4f7f9;
+            --panel-bg: #ffffff;
+            --border-color: #e0e0e0;
+            --text-dark: #1e293b;
+            --text-light: #475569;
+            --accent-amber: #f59e0b;
+            --accent-green: #34d399;
+            --accent-red: #f87171;
+            --accent-blue: #60a5fa;
+            --primary-blue: #007bff;
+            --secondary-gray: #6c757d;
+        }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--page-bg);
+            color: var(--text-dark);
+            margin: 0;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .page-container { display: flex; flex-direction: column; height: 100vh; }
+        .header {
+            position: fixed; top: 0; left: 0; width: 100%; height: 60px;
+            background-color: var(--header-bg);
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 24px;
+            border-bottom: 1px solid var(--border-color);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            z-index: 1000;
+            box-sizing: border-box;
+        }
+        .header-section { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .header-section.center { text-align: center; font-size: 1.2em; font-weight: bold; }
+        .header-section.right { display: flex; justify-content: flex-end; }
+        .button {
+            padding: 8px 16px; margin-left: 10px; cursor: pointer;
+            border: none; border-radius: 6px; font-weight: 600; color: white;
+            transition: transform 0.1s;
+        }
+        .button:active { transform: scale(0.95); }
+        .main-content {
+            margin-top: 60px; padding: 24px; display: flex;
+            flex-grow: 1; overflow: hidden; box-sizing: border-box;
+            gap: 24px; justify-content: center;
+        }
+        .panel {
+            background-color: var(--panel-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            border: 1px solid var(--border-color);
+            box-sizing: border-box;
+            overflow-y: auto; padding: 24px 32px;
+            height: calc(100vh - 108px);
+        }
+        #info-panel { flex-shrink: 0; transition: width 400ms ease-in-out, margin 400ms ease-in-out; }
+        #activity-panel { display: none; flex-grow: 1; padding: 0; flex-direction: column; }
+        .main-content.activity-visible { justify-content: flex-start; }
+        .main-content.activity-visible #info-panel { width: 340px; min-width: 340px; }
+        .main-content.activity-visible #activity-panel { display: flex; }
+
+        /* --- ACTIVITY-SPECIFIC STYLES --- */
+        .activity-area { flex-grow: 1; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; padding: 1.5rem; }
+        .bottom-control-bar { height: 60px; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; background-color: var(--page-bg); border-top: 1px solid var(--border-color); flex-shrink: 0; }
+        .status-bar { font-weight: bold; color: var(--text-dark); }
+        .reset-button { padding: 8px 16px; cursor: pointer; background-color: var(--accent-red); color: white; border: none; border-radius: 6px; font-weight: 600; }
+        .game-header { display: flex; justify-content: space-between; align-items: flex-start; width: 100%; max-width: 600px; margin: 0 auto 1rem; }
+        .feedback { min-height: 30px; margin-top: 1rem; font-weight: 600; font-size: 1.1rem; }
+        .correct { color: var(--accent-green); }
+        .incorrect { color: var(--accent-red); }
+        .shake { animation: shake 0.5s ease-in-out; }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 20%, 60% { transform: translateX(-8px); } 40%, 80% { transform: translateX(8px); } }
+
+        /* Game 1: Sorter */
+        .card-pool { display: flex; justify-content: center; flex-wrap: wrap; gap: 15px; background: #e2e8f0; padding: 15px; border-radius: 12px; min-height: 80px; }
+        .sorter-card { padding: 10px 20px; background: var(--panel-bg); border: 1px solid var(--border-color); border-radius: 8px; font-weight: 600; cursor: grab; user-select: none; }
+        .sorter-card:active { cursor: grabbing; }
+        .bins-container { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; width: 100%; margin-top: 1.5rem; }
+        .bin { min-height: 200px; background-color: #f1f5f9; border: 3px dashed #cbd5e1; border-radius: 15px; padding: 1rem; }
+        .bin h3 { margin-top: 0; }
+        .bin.drag-over { border-color: var(--accent-yellow); border-style: solid; }
+        .bin .sorter-card { margin: 5px auto; cursor: default; background-color: var(--accent-green); color: white; }
+        .bin#metals-bin h3 { color: var(--accent-amber); }
+        .bin#nonmetals-bin h3 { color: var(--accent-green); }
+
+        /* Game 2: Conductivity Test */
+        .conductivity-test { display: flex; flex-direction: column; align-items: center; gap: 1.5rem; }
+        .circuit { display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .wire { height: 10px; background: #9ca3af; }
+        .material-slot { width: 100px; height: 50px; border: 3px dashed var(--border-color); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 600; }
+        .material-slot.drag-over { border-color: var(--accent-yellow); }
+        .bulb { width: 80px; height: 80px; background: #4b5569; border-radius: 50%; position: relative; transition: background-color 0.5s, box-shadow 0.5s; }
+        .bulb.glow { background: #fef08a; box-shadow: 0 0 30px #fde047; }
+        .material-pool { display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center; }
+        .material { padding: 10px 20px; background: var(--bg-light); color: var(--text-light); border-radius: 8px; font-weight: 600; cursor: grab; }
+
+        /* Game 3: Reaction Simulator */
+        .selection-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 1rem; margin: 1rem 0; width: 100%; max-width: 600px; }
+        .selection-btn { background: #e2e8f0; padding: 1rem; border-radius: 8px; cursor: pointer; transition: background-color 0.2s; font-weight: 600; border: 1px solid var(--border-color); }
+        .selection-btn.selected { background: var(--accent-blue); color: white; }
+        .reaction-display { min-height: 100px; background: var(--page-bg); border-radius: 12px; margin-top: 1rem; padding: 1rem; font-size: 1.5rem; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+        .reaction-options { margin-top: 1rem; display: flex; justify-content: center; gap: 1rem; }
+        
+        /* Modal & Confetti */
+        .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); justify-content: center; align-items: center; }
+        .modal.active { display: flex; }
+        .modal-content { background: var(--panel-bg); padding: 40px 50px; border-radius: 20px; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.2); position: relative; }
+        .confetti { position: absolute; width: 10px; height: 10px; opacity: 0.9; animation: fall 3s linear forwards; }
+        @keyframes fall { to { transform: translateY(100vh) rotate(360deg); opacity: 0; } }
+    </style>
+</head>
+<body class="page-container">
+    
+    <header class="header">
+        <div class="header-section">Grade 8 - Chemistry</div>
+        <div id="header-title" class="header-section center">Information</div>
+        <div class="header-section right">
+            <button id="back-btn" class="button" style="background-color: var(--secondary-gray);">Back</button>
+            <button id="toggle-view-btn" class="button" style="background-color: var(--primary-blue);">Activity</button>
+            <button id="difficulty-btn" class="button" style="background-color: var(--accent-amber);">Difficulty: Easy</button>
+        </div>
+    </header>
+
+    <main class="main-content" id="main-content">
+        <section id="info-panel" class="panel">
+            <h1 class="text-3xl font-bold mb-4" style="color: var(--accent-amber);">Metals & Non-Metals</h1>
+            <div style="display:flex; flex-direction:column; gap:1.5rem;">
+                <div>
+                    <h2 class="text-xl font-semibold">Properties of Metals 🪙</h2>
+                    <p class="mt-2 text-gray-600">Metals are usually solid, shiny, and good conductors of heat and electricity. Examples include Iron, Copper, and Silver.</p>
+                </div>
+                <div>
+                    <h2 class="text-xl font-semibold">Properties of Non-Metals 🌱</h2>
+                    <p class="mt-2 text-gray-600">Non-Metals are typically not shiny and are poor conductors. They can be solids, liquids, or gases. Examples include Oxygen, Carbon, and Sulphur.</p>
+                </div>
+                 <div>
+                    <h2 class="text-xl font-semibold">How to Play the Games</h2>
+                     <ul class="list-disc list-inside mt-2 text-gray-600">
+                        <li><b>Easy (Sorter):</b> Drag elements into the 'Metals' or 'Non-Metals' bins.</li>
+                        <li><b>Medium (Conductivity Test):</b> Drag a material to see if it lights up the bulb.</li>
+                        <li><b>Hard (Reaction Simulator):</b> Mix elements with reactants and predict the outcome.</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="activity-panel" class="panel">
+            <div class="activity-area" id="activity-area"></div>
+            <footer class="bottom-control-bar">
+                <div id="status-bar" class="status-bar">Good luck!</div>
+                <button id="reset-btn" class="reset-button">Reset</button>
+            </footer>
+        </section>
+    </main>
+
+    <div class="modal" id="end-game-modal">
+        <div class="modal-content"><h2 id="modal-title"></h2><p id="modal-score"></p><button class="button" id="modal-close-btn" style="background-color: var(--primary-blue);">Play Again</button></div>
+    </div>
+
+    <script src="./neutralino.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            try { Neutralino.init(); } catch (e) { console.error("Neutralino not found."); }
+            
+            const difficulties = ['Easy', 'Medium', 'Hard'];
+            let showActivity = false, difficultyIdx = 0;
+
+            const mainContent = document.getElementById('main-content');
+            const infoPanel = document.getElementById('info-panel');
+            const activityArea = document.getElementById('activity-area');
+            const headerTitle = document.getElementById('header-title');
+            const toggleViewBtn = document.getElementById('toggle-view-btn');
+            const difficultyBtn = document.getElementById('difficulty-btn');
+            const backBtn = document.getElementById('back-btn');
+            const resetBtn = document.getElementById('reset-btn');
+            const modal = document.getElementById('end-game-modal');
+            const modalCloseBtn = document.getElementById('modal-close-btn');
+            
+            function updateLayout() {
+                if (showActivity) mainContent.classList.add('activity-visible');
+                else mainContent.classList.remove('activity-visible');
+                infoPanel.style.width = showActivity ? '340px' : `${Math.min(700, window.innerWidth - 48)}px`;
+                headerTitle.textContent = showActivity ? `Activity (${difficulties[difficultyIdx]})` : 'Information';
+                toggleViewBtn.textContent = showActivity ? 'Information' : 'Activity';
+            }
+
+            function startGame() {
+                const difficulty = difficulties[difficultyIdx];
+                if (difficulty === 'Easy') initSorterGame();
+                else if (difficulty === 'Medium') initConductivityTest();
+                else if (difficulty === 'Hard') initReactionSimulator();
+            }
+            
+            function showEndModal(title, scoreText) {
+                document.getElementById('modal-title').textContent = title;
+                document.getElementById('modal-score').textContent = scoreText;
+                modal.classList.add('active');
+            }
+            
+            let initSorterGame = () => {}, initConductivityTest = () => {}, initReactionSimulator = () => {};
+
+            // --- Game 1: Metal vs Non-Metal Sorter (Easy) ---
+            (() => {
+                const allElements = [{ name: "Iron", type: "Metal" }, { name: "Copper", type: "Metal" }, { name: "Aluminium", type: "Metal" }, { name: "Oxygen", type: "Non-Metal" }, { name: "Sulphur", type: "Non-Metal" }, { name: "Carbon", type: "Non-Metal" }, { name: "Silver", type: "Metal" }, { name: "Gold", type: "Metal" }, { name: "Nitrogen", type: "Non-Metal" }, { name: "Phosphorus", type: "Non-Metal" }];
+                let sorterScore, currentElements;
+
+                initSorterGame = () => {
+                    sorterScore = 0;
+                    currentElements = [...allElements].sort(() => 0.5 - Math.random()).slice(0, 6);
+                    activityArea.innerHTML = `
+                        <div class="game-header w-full max-w-lg"><h2>Metal vs Non-Metal Sorter</h2><div class="stat-display">Score: <span id="sorter-score">${sorterScore}</span></div></div>
+                        <h3>Drag each element to the correct bin!</h3>
+                        <div class="card-pool" id="card-pool"></div>
+                        <div class="bins-container">
+                            <div class="bin" id="metals-bin" data-type="Metal"><h3>Metals 🪙</h3></div>
+                            <div class="bin" id="nonmetals-bin" data-type="Non-Metal"><h3>Non-Metals 🌱</h3></div>
+                        </div>`;
+                    
+                    const cardPool = document.getElementById('card-pool');
+                    currentElements.forEach(el => {
+                        const card = document.createElement('div');
+                        card.className = 'sorter-card'; card.textContent = el.name; card.draggable = true;
+                        card.dataset.type = el.type;
+                        card.addEventListener('dragstart', e => e.dataTransfer.setData('text/plain', el.type));
+                        cardPool.appendChild(card);
+                    });
+                    document.querySelectorAll('.bin').forEach(bin => {
+                        bin.addEventListener('dragover', e => { e.preventDefault(); bin.classList.add('drag-over'); });
+                        bin.addEventListener('dragleave', e => e.currentTarget.classList.remove('drag-over'));
+                        bin.addEventListener('drop', handleSorterDrop);
+                    });
+                };
+
+                function handleSorterDrop(e) {
+                    const bin = e.currentTarget;
+                    bin.classList.remove('drag-over');
+                    const droppedType = e.dataTransfer.getData('text/plain');
+                    const draggedCard = document.querySelector('.sorter-card:hover');
+
+                    if (bin.dataset.type === droppedType) {
+                        bin.appendChild(draggedCard);
+                        draggedCard.draggable = false;
+                        sorterScore += 10;
+                        document.getElementById('sorter-score').textContent = sorterScore;
+                        if (document.getElementById('card-pool').children.length === 0) {
+                            showEndModal("Metal Master! 🪙", `Final Score: ${sorterScore}`);
+                        }
+                    } else {
+                        bin.classList.add('shake');
+                        setTimeout(() => bin.classList.remove('shake'), 500);
+                    }
+                }
+            })();
+
+            // --- Game 2: Conductivity Test (Medium) ---
+            (() => {
+                const allMaterials = [{ name: "Aluminium", isMetal: true }, { name: "Plastic", isMetal: false }, { name: "Silver", isMetal: true }, { name: "Wood", isMetal: false }, { name: "Carbon Rod", isMetal: true }, { name: "Rubber", isMetal: false }, { name: "Gold", isMetal: true }, { name: "Glass", isMetal: false }];
+                let currentMaterials, materialIndex;
+                
+                initConductivityTest = () => {
+                    currentMaterials = [...allMaterials].sort(() => 0.5 - Math.random()).slice(0, 5);
+                    materialIndex = 0;
+                    loadConductivityProblem();
+                };
+
+                function loadConductivityProblem() {
+                    if(materialIndex >= currentMaterials.length) {
+                        showEndModal("Circuit Pro! 💡", "You've tested all the materials!");
+                        return;
+                    }
+                    activityArea.innerHTML = `
+                        <div class="game-header w-full max-w-lg"><h2>Conductivity Test</h2></div>
+                        <div class="conductivity-test">
+                            <h3>Drag the material into the gap to test it.</h3>
+                            <div class="circuit">
+                                <div class="wire" style="width: 80px;"></div>
+                                <div class="material-slot" id="material-slot"></div>
+                                <div class="wire" style="width: 40px;"></div>
+                                <div class="bulb" id="bulb"></div>
+                                <div class="wire" style="width: 40px;"></div>
+                            </div>
+                            <div class="material-pool" id="material-pool"></div>
+                            <p id="conductivity-feedback" class="feedback"></p>
+                        </div>`;
+                    
+                    const material = currentMaterials[materialIndex];
+                    const pool = document.getElementById('material-pool');
+                    const el = document.createElement('div');
+                    el.className = 'material'; el.textContent = material.name; el.draggable = true;
+                    el.addEventListener('dragstart', e => e.dataTransfer.setData('application/json', JSON.stringify(material)));
+                    pool.appendChild(el);
+
+                    const slot = document.getElementById('material-slot');
+                    slot.addEventListener('dragover', e => { e.preventDefault(); slot.classList.add('drag-over'); });
+                    slot.addEventListener('dragleave', e => e.currentTarget.classList.remove('drag-over'));
+                    slot.addEventListener('drop', handleConductivityDrop);
+                }
+
+                function handleConductivityDrop(e) {
+                    const slot = e.currentTarget;
+                    slot.classList.remove('drag-over');
+                    const material = JSON.parse(e.dataTransfer.getData('application/json'));
+                    slot.textContent = material.name;
+                    document.getElementById('material-pool').innerHTML = '';
+                    const feedback = document.getElementById('conductivity-feedback');
+                    if (material.isMetal) {
+                        document.getElementById('bulb').classList.add('glow');
+                        feedback.textContent = "It's a conductor! Metals conduct electricity.💡";
+                        feedback.className = "feedback correct";
+                    } else {
+                        document.getElementById('bulb').classList.remove('glow');
+                        feedback.textContent = "It's an insulator. Non-metals are poor conductors.❌";
+                        feedback.className = "feedback incorrect";
+                    }
+                    materialIndex++;
+                    setTimeout(loadConductivityProblem, 3000);
+                }
+            })();
+
+            // --- Game 3: Reaction Simulator (Hard) ---
+            (() => {
+                const labElements = [{ name: "Iron (Metal)", type: "Metal" }, { name: "Sulphur (Non-Metal)", type: "Non-Metal" }, { name: "Copper (Metal)", type: "Metal" }, { name: "Carbon (Non-Metal)", type: "Non-Metal" }];
+                const labReactants = ["Acid", "Oxygen", "Water"];
+                const labReactions = { "Metal,Acid": "Salt + H₂ Gas", "Non-Metal,Oxygen": "Acidic Oxide", "Metal,Oxygen": "Basic Oxide", "Metal,Water": "Metal Hydroxide + H₂", "Non-Metal,Acid": "No Reaction", "Non-Metal,Water": "No Reaction" };
+                let selectedElement, selectedReactant, labBadges, currentLabSet;
+
+                initReactionSimulator = () => {
+                    labBadges = 0;
+                    currentLabSet = [...Object.keys(labReactions)].sort(() => 0.5 - Math.random()).slice(0, 3);
+                    loadReactionProblem(0);
+                };
+
+                function loadReactionProblem(level) {
+                     if(level >= currentLabSet.length){
+                        showEndModal("Reaction Pro 🔬", `You earned ${labBadges} badge(s)!`);
+                        return;
+                    }
+                    selectedElement = null; selectedReactant = null;
+                    activityArea.innerHTML = `
+                        <div class="game-header w-full max-w-lg"><h2>Reaction Simulator</h2><div class="stat-display">Badges: <span>${labBadges} ⭐</span></div></div>
+                        <h3>1. Select an Element & Reactant</h3>
+                        <div class="selection-grid" id="element-selection"></div>
+                        <div class="selection-grid" id="reactant-selection"></div>
+                        <h3>2. Observe the Reaction</h3>
+                        <div class="reaction-display"></div>
+                        <h3 class="mt-4">3. What is the result?</h3>
+                        <div class="reaction-options"></div>`;
+
+                    const elSelection = document.getElementById('element-selection');
+                    const rSelection = document.getElementById('reactant-selection');
+                    
+                    labElements.forEach(el => { const btn = document.createElement('button'); btn.className = 'selection-btn'; btn.textContent = el.name; btn.onclick = () => { select(el, elSelection, 'element'); }; elSelection.appendChild(btn); });
+                    labReactants.forEach(r => { const btn = document.createElement('button'); btn.className = 'selection-btn'; btn.textContent = r; btn.onclick = () => { select(r, rSelection, 'reactant'); }; rSelection.appendChild(btn); });
+
+                    function select(item, container, type) {
+                        Array.from(container.children).forEach(c => c.classList.remove('selected'));
+                        event.currentTarget.classList.add('selected');
+                        if (type === 'element') selectedElement = item;
+                        else selectedReactant = item;
+                        if(selectedElement && selectedReactant) runReaction(level);
+                    }
+                }
+
+                function runReaction(level) {
+                    const key = `${selectedElement.type},${selectedReactant}`;
+                    const result = labReactions[key] || "No Reaction";
+                    document.querySelector('.reaction-display').textContent = result;
+
+                    const options = new Set([result]);
+                    while(options.size < 3) options.add(Object.values(labReactions)[Math.floor(Math.random()*Object.values(labReactions).length)]);
+                    
+                    const optionsEl = document.querySelector('.reaction-options');
+                    optionsEl.innerHTML = '';
+                    [...options].sort(()=>0.5-Math.random()).forEach(opt => {
+                        const btn = document.createElement('button');
+                        btn.className = 'button'; btn.textContent = opt;
+                        btn.style.backgroundColor = 'var(--bg-light)';
+                        btn.onclick = () => {
+                            if (opt === result && result !== "No Reaction") {
+                                labBadges++;
+                            }
+                            loadReactionProblem(level + 1);
+                        };
+                        optionsEl.appendChild(btn);
+                    });
+                }
+            })();
+            
+            // --- Main Event Listeners ---
+            backBtn.addEventListener('click', () => {  window.history.back();  });
+            toggleViewBtn.addEventListener('click', () => {
+                showActivity = !showActivity;
+                if (showActivity) startGame();
+                updateLayout();
+            });
+            difficultyBtn.addEventListener('click', () => {
+                difficultyIdx = (difficultyIdx + 1) % difficulties.length;
+                const newDifficulty = difficulties[difficultyIdx];
+                difficultyBtn.textContent = `Difficulty: ${newDifficulty}`;
+                if (showActivity) {
+                    startGame();
+                    updateLayout(); // Update title
+                }
+            });
+            resetBtn.addEventListener('click', startGame);
+            modalCloseBtn.addEventListener('click', () => {
+                modal.classList.remove('active');
+                startGame();
+            });
+            
+            updateLayout();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chemistry Hub - Biomolecules & Polymers</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* --- CORE TEMPLATE & GLOBAL STYLES (Light Theme) --- */
+        :root {
+            --header-bg: #ffffff;
+            --page-bg: #f4f7f9;
+            --panel-bg: #ffffff;
+            --border-color: #e0e0e0;
+            --text-dark: #1e293b;
+            --text-light: #475569;
+            --accent-lime: #a3e635;
+            --accent-green: #22c55e;
+            --accent-red: #ef4444;
+            --accent-yellow: #f59e0b;
+            --primary-blue: #007bff;
+            --secondary-gray: #6c757d;
+        }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--page-bg);
+            color: var(--text-dark);
+            margin: 0;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .page-container { display: flex; flex-direction: column; height: 100vh; }
+        .header {
+            position: fixed; top: 0; left: 0; width: 100%; height: 60px;
+            background-color: var(--header-bg);
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 24px;
+            border-bottom: 1px solid var(--border-color);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            z-index: 1000;
+            box-sizing: border-box;
+        }
+        .header-section { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .header-section.center { text-align: center; font-size: 1.2em; font-weight: bold; }
+        .header-section.right { display: flex; justify-content: flex-end; }
+        .button {
+            padding: 8px 16px; margin-left: 10px; cursor: pointer;
+            border: none; border-radius: 6px; font-weight: 600; color: white;
+            transition: transform 0.1s;
+        }
+        .button:active { transform: scale(0.95); }
+        .main-content {
+            margin-top: 60px; padding: 24px; display: flex;
+            flex-grow: 1; overflow: hidden; box-sizing: border-box;
+            gap: 24px; justify-content: center;
+        }
+        .panel {
+            background-color: var(--panel-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            border: 1px solid var(--border-color);
+            box-sizing: border-box;
+            overflow-y: auto; padding: 24px 32px;
+            height: calc(100vh - 108px);
+        }
+        #info-panel { flex-shrink: 0; transition: width 400ms ease-in-out, margin 400ms ease-in-out; }
+        #activity-panel { display: none; flex-grow: 1; padding: 0; flex-direction: column; }
+        .main-content.activity-visible { justify-content: flex-start; }
+        .main-content.activity-visible #info-panel { width: 340px; min-width: 340px; }
+        .main-content.activity-visible #activity-panel { display: flex; }
+
+        /* --- ACTIVITY-SPECIFIC STYLES --- */
+        .activity-area { flex-grow: 1; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; padding: 1.5rem; }
+        .bottom-control-bar { height: 60px; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; background-color: var(--page-bg); border-top: 1px solid var(--border-color); flex-shrink: 0; }
+        .status-bar { font-weight: bold; color: var(--text-dark); }
+        .reset-button { padding: 8px 16px; cursor: pointer; background-color: var(--accent-red); color: white; border: none; border-radius: 6px; font-weight: 600; }
+        .game-header { display: flex; justify-content: space-between; align-items: center; width: 100%; max-width: 700px; margin: 0 auto 1rem; }
+        .feedback { min-height: 30px; margin-top: 1rem; font-weight: 600; font-size: 1.1rem; }
+        .correct { color: var(--accent-green); }
+        .incorrect { color: var(--accent-red); }
+        .shake { animation: shake 0.5s ease-in-out; }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 20%, 60% { transform: translateX(-8px); } 40%, 80% { transform: translateX(8px); } }
+
+        /* Game 1: Monomer Invasion */
+        .invasion-area { width: 100%; height: 400px; background: #e2e8f0; border-radius: 12px; overflow: hidden; position: relative; border: 1px solid var(--border-color); }
+        .polymer-site { position: absolute; width: 120px; height: 120px; border: 3px dashed var(--text-light); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.2rem; transition: all 0.3s; cursor: pointer; }
+        .polymer-site.glow { border-color: var(--accent-green); box-shadow: 0 0 15px var(--accent-green); }
+        .monomer { position: absolute; width: 40px; height: 40px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; color: var(--text-dark); transition: all 0.5s; background-color: white; border: 2px solid var(--text-dark);}
+        @keyframes scroll-left { from { left: 100%; } to { left: -50px; } }
+
+        /* Game 2: Polymer Lab Escape */
+        .escape-room-area { width: 100%; padding: 1rem; background: var(--page-bg); border-radius: 12px; }
+        .puzzle-prompt { font-size: 1.2rem; margin-bottom: 1.5rem; color: var(--accent-yellow); font-weight: 600; }
+        .monomer-pool, .polymer-chain { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; min-height: 60px; padding: 1rem; border-radius: 8px; }
+        .monomer-pool { background: #e2e8f0; }
+        .polymer-chain { background: var(--text-light); color: white; }
+        .monomer-chip { padding: 10px 20px; background: var(--panel-bg); color: var(--text-dark); border: 1px solid var(--border-color); border-radius: 8px; font-weight: 600; cursor: pointer; }
+        
+        /* Game 3: Enzyme Strategy */
+        .enzyme-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; width: 100%; max-width: 400px; height: 400px; background: #e2e8f0; padding: 5px; border-radius: 12px; }
+        .grid-cell { background: #cbd5e1; border-radius: 4px; position: relative; cursor: pointer; }
+        .enzyme, .substrate { position: absolute; width: 80%; height: 80%; top: 10%; left: 10%; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: bold; }
+        .enzyme { background: var(--accent-green); color: white; }
+        .substrate { background: var(--accent-blue); color: white; transition: all 0.5s linear; }
+
+        /* Modal */
+        .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); justify-content: center; align-items: center; }
+        .modal.active { display: flex; }
+        .modal-content { background: var(--panel-bg); padding: 40px 50px; border-radius: 20px; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.2); position: relative; }
+    </style>
+</head>
+<body class="page-container">
+    
+    <header class="header">
+        <div class="header-section">Grade 12 - Chemistry</div>
+        <div id="header-title" class="header-section center">Information</div>
+        <div class="header-section right">
+            <button id="back-btn" class="button" style="background-color: var(--secondary-gray);">Back</button>
+            <button id="toggle-view-btn" class="button" style="background-color: var(--primary-blue);">Activity</button>
+            <button id="difficulty-btn" class="button" style="background-color: var(--accent-lime); color: var(--text-dark);">Difficulty: Easy</button>
+        </div>
+    </header>
+
+    <main class="main-content" id="main-content">
+        <section id="info-panel" class="panel">
+            <h1 class="text-3xl font-bold mb-4" style="color: var(--accent-lime); text-shadow: 1px 1px var(--text-dark);">Biomolecules & Polymers</h1>
+            <div style="display:flex; flex-direction:column; gap:1.5rem;">
+                <div>
+                    <h2 class="text-xl font-semibold">What are Biomolecules? 🧬</h2>
+                    <p class="mt-2 text-gray-600">Biomolecules are the essential organic molecules in living organisms. They are the building blocks of life!</p>
+                    <ul class="list-disc list-inside mt-2 text-gray-600">
+                        <li><b>Monomers:</b> Small, simple molecules (e.g., glucose, amino acids).</li>
+                        <li><b>Polymers:</b> Large molecules made by linking many monomers (e.g., starch, proteins).</li>
+                    </ul>
+                </div>
+                 <div>
+                    <h2 class="text-xl font-semibold">How to Play the Games</h2>
+                     <ul class="list-disc list-inside mt-2 text-gray-600">
+                        <li><b>Easy (Invasion Defense):</b> Direct moving monomers to their correct polymerization site.</li>
+                        <li><b>Medium (Lab Escape):</b> Solve puzzles about monomers and polymers to escape the lab.</li>
+                        <li><b>Hard (Enzyme Strategy):</b> Place enzymes on a grid to efficiently convert substrates into products.</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="activity-panel" class="panel">
+            <div class="activity-area" id="activity-area"></div>
+            <footer class="bottom-control-bar">
+                <div id="status-bar" class="status-bar">Good luck!</div>
+                <button id="reset-btn" class="reset-button">Reset</button>
+            </footer>
+        </section>
+    </main>
+
+    <div class="modal" id="end-game-modal">
+        <div class="modal-content"><h2 id="modal-title"></h2><p id="modal-score"></p><button class="button" id="modal-close-btn" style="background-color: var(--primary-blue);">Play Again</button></div>
+    </div>
+
+    <script src="./neutralino.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            try { Neutralino.init(); } catch (e) { console.error("Neutralino not found."); }
+            
+            const difficulties = ['Easy', 'Medium', 'Hard'];
+            let showActivity = false, difficultyIdx = 0;
+            let activeIntervals = [];
+
+            const mainContent = document.getElementById('main-content');
+            const infoPanel = document.getElementById('info-panel');
+            const activityArea = document.getElementById('activity-area');
+            const headerTitle = document.getElementById('header-title');
+            const toggleViewBtn = document.getElementById('toggle-view-btn');
+            const difficultyBtn = document.getElementById('difficulty-btn');
+            const backBtn = document.getElementById('back-btn');
+            const resetBtn = document.getElementById('reset-btn');
+            const modal = document.getElementById('end-game-modal');
+            const modalCloseBtn = document.getElementById('modal-close-btn');
+            
+            function updateLayout() {
+                if (showActivity) mainContent.classList.add('activity-visible');
+                else mainContent.classList.remove('activity-visible');
+                infoPanel.style.width = showActivity ? '340px' : `${Math.min(700, window.innerWidth - 48)}px`;
+                headerTitle.textContent = showActivity ? `Activity (${difficulties[difficultyIdx]})` : 'Information';
+                toggleViewBtn.textContent = showActivity ? 'Information' : 'Activity';
+            }
+
+            function startGame() {
+                activeIntervals.forEach(clearInterval);
+                const difficulty = difficulties[difficultyIdx];
+                if (difficulty === 'Easy') initInvasionGame();
+                else if (difficulty === 'Medium') initEscapeGame();
+                else if (difficulty === 'Hard') initEnzymeGame();
+            }
+            
+            function showEndModal(title, scoreText) {
+                activeIntervals.forEach(clearInterval);
+                document.getElementById('modal-title').textContent = title;
+                document.getElementById('modal-score').textContent = scoreText;
+                modal.classList.add('active');
+            }
+            
+            let initInvasionGame = () => {}, initEscapeGame = () => {}, initEnzymeGame = () => {};
+
+            // --- Game 1: Monomer Invasion Defense (Easy) ---
+            (() => {
+                const sites = [ { name: 'Protein', type: 'Amino Acid', x: '15%', y: '50%' }, { name: 'Starch', type: 'Glucose', x: '85%', y: '20%' }, { name: 'DNA', type: 'Nucleotide', x: '85%', y: '80%' } ];
+                const monomers = [{name: "Glucose", type: "Glucose"}, {name: "Amino Acid", type: "Amino Acid"}, {name: "Nucleotide", type: "Nucleotide"}];
+                let score;
+
+                initInvasionGame = () => {
+                    score = 0;
+                    activityArea.innerHTML = `
+                        <div class="game-header w-full max-w-lg"><h2>Monomer Invasion</h2><div class="stat-display">Score: <span id="invasion-score">0</span></div></div>
+                        <h3>Direct monomers to the correct polymer site!</h3>
+                        <div class="invasion-area" id="invasion-area"></div>`;
+                    
+                    const area = document.getElementById('invasion-area');
+                    sites.forEach(site => {
+                        const el = document.createElement('div');
+                        el.className = 'polymer-site'; el.textContent = site.name;
+                        el.style.left = site.x; el.style.top = site.y;
+                        el.style.transform = 'translate(-50%, -50%)';
+                        el.onclick = () => directMonomer(site.type);
+                        area.appendChild(el);
+                    });
+                    
+                    const spawnInterval = setInterval(spawnMonomer, 1800);
+                    activeIntervals.push(spawnInterval);
+                    setTimeout(() => {
+                        clearInterval(spawnInterval);
+                        showEndModal("Invasion Over!", `Final Score: ${score}`);
+                    }, 25000);
+                };
+            
+                function spawnMonomer() {
+                    const area = document.getElementById('invasion-area');
+                    if(!area) return;
+                    const monomerData = monomers[Math.floor(Math.random() * monomers.length)];
+                    const monomerEl = document.createElement('div');
+                    monomerEl.className = 'monomer';
+                    monomerEl.textContent = monomerData.name.substring(0,1);
+                    monomerEl.dataset.type = monomerData.type;
+                    monomerEl.style.left = `-40px`;
+                    monomerEl.style.top = `${10 + Math.random() * 80}%`;
+                    area.appendChild(monomerEl);
+                    setTimeout(() => monomerEl.style.left = '110%', 100);
+                    setTimeout(() => monomerEl.remove(), 7000);
+                }
+                
+                function directMonomer(targetType) {
+                    const area = document.getElementById('invasion-area');
+                    const monomer = area.querySelector(`.monomer[data-type="${targetType}"]`);
+                    let scoreEl = document.getElementById('invasion-score');
+                    let score = parseInt(scoreEl.textContent);
+                    if (monomer) {
+                        const siteEl = Array.from(area.querySelectorAll('.polymer-site')).find(s => s.textContent === targetType);
+                        monomer.style.left = siteEl.style.left;
+                        monomer.style.top = siteEl.style.top;
+                        score += 10;
+                        scoreEl.textContent = score;
+                        setTimeout(() => monomer.remove(), 500);
+                    } else {
+                        score -= 5;
+                        scoreEl.textContent = score;
+                    }
+                }
+            })();
+
+            // --- Game 2: Polymer Lab Escape (Medium) ---
+            (() => {
+                const allPuzzles = [
+                    { q: "Assemble the polymer: PROTEIN", pool: ["Amino Acid", "Glucose", "Amino Acid", "Nucleotide", "Amino Acid"], solution: ["Amino Acid", "Amino Acid", "Amino Acid"] },
+                    { q: "What monomer is missing to build STARCH?", chain: ["Glucose", "Glucose"], answer: "Glucose" },
+                    { q: "What does the polymerization of Amino Acids produce?", options: ["Protein", "Starch", "DNA"], answer: "Protein" },
+                    { q: "Assemble the polymer: DNA", pool: ["Nucleotide", "Glucose", "Amino Acid", "Nucleotide"], solution: ["Nucleotide", "Nucleotide"] }
+                ];
+                let stage, currentPuzzles;
+
+                initEscapeGame = () => {
+                    stage = 0;
+                    currentPuzzles = [...allPuzzles].sort(()=>0.5-Math.random()).slice(0,3);
+                    loadEscapeStage();
+                };
+
+                function loadEscapeStage() {
+                    if (stage >= currentPuzzles.length) {
+                        showEndModal("Lab Escape Champion 🧪", "You've escaped the Polymer Lab!");
+                        return;
+                    }
+                    const puzzle = currentPuzzles[stage];
+                    activityArea.innerHTML = `<div class="game-header w-full"><h2>Polymer Lab Escape</h2><div class="stat-display">Stage: <span>${stage + 1}/${currentPuzzles.length}</span></div></div><div id="escape-room-area" class="escape-room-area"></div>`;
+                    const area = document.getElementById('escape-room-area');
+                    
+                    if (puzzle.pool) { // Assemble type
+                        area.innerHTML = `<h3 class="puzzle-prompt">${puzzle.q}</h3><div class="polymer-chain" id="polymer-chain"></div><div class="monomer-pool" id="monomer-pool"></div>`;
+                        puzzle.pool.forEach(item => {
+                            const chip = document.createElement('div');
+                            chip.className = 'monomer-chip'; chip.textContent = item;
+                            chip.onclick = () => { document.getElementById('polymer-chain').appendChild(chip); checkPolymer(puzzle.solution); };
+                            document.getElementById('monomer-pool').appendChild(chip);
+                        });
+                    } else { // Missing monomer or product type
+                        area.innerHTML = `<h3 class="puzzle-prompt">${puzzle.q}</h3><div class="polymer-chain">${puzzle.chain ? puzzle.chain.join(' - ') + ' - [?]' : ''}</div><div class="monomer-pool" id="monomer-pool"></div>`;
+                         const options = new Set([puzzle.answer, "Amino Acid", "Nucleotide", "Glucose", "Protein", "Starch"]);
+                         options.delete(puzzle.answer);
+                         const finalOptions = [puzzle.answer, ...[...options].slice(0,2)].sort(()=>0.5-Math.random());
+                         finalOptions.forEach(opt => {
+                             const btn = document.createElement('button'); btn.className = "monomer-chip"; btn.textContent = opt;
+                             btn.onclick = () => checkAnswer(opt === puzzle.answer);
+                             document.getElementById('monomer-pool').appendChild(btn);
+                         });
+                    }
+                }
+                function checkPolymer(solution) {
+                    const chain = document.getElementById('polymer-chain');
+                    const current = Array.from(chain.children).map(c => c.textContent);
+                    if (current.length === solution.length) {
+                        if (JSON.stringify(current) === JSON.stringify(solution)) {
+                             stage++; loadEscapeStage();
+                        } else {
+                            chain.classList.add('shake');
+                            setTimeout(() => { loadEscapeStage(); }, 1000);
+                        }
+                    }
+                }
+                function checkAnswer(isCorrect) {
+                     if (isCorrect) { stage++; loadEscapeStage(); } 
+                     else { document.getElementById('monomer-pool').classList.add('shake'); setTimeout(() => document.getElementById('monomer-pool').classList.remove('shake'), 500); }
+                }
+            })();
+
+            // --- Game 3: Enzyme Strategy Simulator (Hard) ---
+            (() => {
+                let score, enzymesPlaced, maxEnzymes;
+                initEnzymeGame = () => {
+                    score = 0; enzymesPlaced = 0; maxEnzymes = 5;
+                    activityArea.innerHTML = `
+                        <div class="game-header w-full max-w-lg"><h2>Enzyme Strategy</h2><div class="stat-display">Score: <span id="enzyme-score">0</span></div></div>
+                        <h3>Place ${maxEnzymes} enzymes to convert substrates!</h3>
+                        <div class="enzyme-grid" id="enzyme-grid"></div>`;
+                    
+                    const grid = document.getElementById('enzyme-grid');
+                    for(let i=0; i<36; i++) grid.appendChild(document.createElement('div')).className = 'grid-cell';
+                    
+                    const spawnInterval = setInterval(() => {
+                        const cell = grid.children[Math.floor(Math.random() * 36)];
+                        if(cell.children.length === 0) {
+                            const sub = document.createElement('div');
+                            sub.className = 'substrate'; sub.textContent = 'S';
+                            cell.appendChild(sub);
+                            moveSubstrate(sub);
+                        }
+                    }, 2000);
+                    activeIntervals.push(spawnInterval);
+
+                    grid.addEventListener('click', e => {
+                        if (e.target.classList.contains('grid-cell') && e.target.children.length === 0 && enzymesPlaced < maxEnzymes) {
+                            const enzyme = document.createElement('div');
+                            enzyme.className = 'enzyme'; enzyme.textContent = 'E';
+                            e.target.appendChild(enzyme);
+                            enzymesPlaced++;
+                        }
+                    });
+
+                    setTimeout(() => {
+                        clearInterval(spawnInterval);
+                        showEndModal("Enzyme Strategist ⚡", `Game over! Final Score: ${score}`);
+                    }, 30000);
+                };
+
+                function moveSubstrate(sub) {
+                    if(!document.body.contains(sub)) return;
+                    const grid = document.getElementById('enzyme-grid');
+                    const currentCell = sub.parentElement;
+                    const currentIndex = Array.from(grid.children).indexOf(currentCell);
+                    const moves = [-1, 1, -6, 6].filter(m => {
+                        const newIndex = currentIndex + m;
+                        return newIndex >= 0 && newIndex < 36 && !(m === -1 && currentIndex % 6 === 0) && !(m === 1 && currentIndex % 6 === 5);
+                    });
+                    const nextIndex = currentIndex + moves[Math.floor(Math.random() * moves.length)];
+                    const nextCell = grid.children[nextIndex];
+
+                    if (nextCell && nextCell.children.length > 0 && nextCell.children[0].classList.contains('enzyme')) {
+                        score += 10; document.getElementById('enzyme-score').textContent = score;
+                        sub.remove();
+                    } else if (nextCell) {
+                        nextCell.appendChild(sub);
+                        setTimeout(() => moveSubstrate(sub), 800);
+                    } else {
+                        sub.remove();
+                    }
+                }
+            })();
+            
+            // --- Main Event Listeners ---
+            backBtn.addEventListener('click', () => {  window.history.back();  });
+            toggleViewBtn.addEventListener('click', () => {
+                showActivity = !showActivity;
+                if (showActivity) startGame();
+                updateLayout();
+            });
+            difficultyBtn.addEventListener('click', () => {
+                difficultyIdx = (difficultyIdx + 1) % difficulties.length;
+                const newDifficulty = difficulties[difficultyIdx];
+                difficultyBtn.textContent = `Difficulty: ${newDifficulty}`;
+                if (showActivity) {
+                    startGame();
+                    updateLayout();
+                }
+            });
+            resetBtn.addEventListener('click', startGame);
+            modalCloseBtn.addEventListener('click', () => {
+                modal.classList.remove('active');
+                startGame();
+            });
+            
+            updateLayout();
+        });
+    </script>
+</body>
+</html>

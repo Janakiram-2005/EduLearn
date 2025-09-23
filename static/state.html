@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>States of Matter: Memory Game</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* --- CORE TEMPLATE & GLOBAL STYLES (Light Theme) --- */
+        :root {
+            --header-bg: #ffffff;
+            --page-bg: #f0f4f8; /* Light blue-gray background */
+            --panel-bg: #ffffff;
+            --border-color: #d1d9e6;
+            --text-dark: #1e293b;
+            --text-light: #475569;
+            --accent-blue: #4a90e2; /* Bright blue for theme */
+            --accent-green: #50c878; /* Emerald green for success */
+            --accent-red: #ef4444;
+            --primary-blue: #007bff;
+            --secondary-gray: #6c757d;
+        }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--page-bg);
+            color: var(--text-dark);
+            margin: 0;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .page-container { display: flex; flex-direction: column; height: 100vh; }
+        .header {
+            position: fixed; top: 0; left: 0; width: 100%; height: 60px;
+            background-color: var(--header-bg);
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 24px;
+            border-bottom: 1px solid var(--border-color);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            z-index: 1000;
+            box-sizing: border-box;
+        }
+        .header-section { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .header-section.center { text-align: center; font-size: 1.2em; font-weight: bold; }
+        .header-section.right { display: flex; justify-content: flex-end; }
+        .button {
+            padding: 8px 16px; margin-left: 10px; cursor: pointer;
+            border: none; border-radius: 6px; font-weight: 600; color: white;
+            transition: transform 0.1s;
+        }
+        .button:active { transform: scale(0.95); }
+        .main-content {
+            margin-top: 60px; padding: 24px; display: flex;
+            flex-grow: 1; overflow: hidden; box-sizing: border-box;
+            gap: 24px; justify-content: center;
+        }
+        .panel {
+            background-color: var(--panel-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            border: 1px solid var(--border-color);
+            box-sizing: border-box;
+            overflow-y: auto; padding: 24px 32px;
+            height: calc(100vh - 108px);
+        }
+        #info-panel { flex-shrink: 0; transition: width 400ms ease-in-out, margin 400ms ease-in-out; }
+        #activity-panel { display: none; flex-grow: 1; padding: 0; flex-direction: column; }
+        .main-content.activity-visible { justify-content: flex-start; }
+        .main-content.activity-visible #info-panel { width: 340px; min-width: 340px; }
+        .main-content.activity-visible #activity-panel { display: flex; }
+
+        /* --- ACTIVITY-SPECIFIC STYLES --- */
+        .activity-area { flex-grow: 1; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1.5rem; }
+        .bottom-control-bar { height: 60px; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; background-color: var(--page-bg); border-top: 1px solid var(--border-color); flex-shrink: 0; }
+        .status-bar { font-weight: bold; color: var(--text-dark); }
+        .reset-button { padding: 8px 16px; cursor: pointer; background-color: var(--accent-red); color: white; border: none; border-radius: 6px; font-weight: 600; }
+        
+        .scoreboard { display: flex; justify-content: space-around; align-items: center; background: #f8fafc; border-radius: 12px; padding: 15px; margin-bottom: 25px; border: 1px solid var(--border-color); width:100%; max-width: 600px; }
+        .stat { font-size: 1.1em; font-weight: 600; }
+        .stat span { font-weight: 700; color: var(--accent-blue); }
+        
+        .game-board { display: grid; gap: 15px; perspective: 1000px; width:100%; max-width: 600px;}
+        .card { background-color: transparent; width: 100%; aspect-ratio: 1 / 1; cursor: pointer; border-radius: 12px; }
+        .card-inner { position: relative; width: 100%; height: 100%; transition: transform 0.6s; transform-style: preserve-3d; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border-radius: 12px; }
+        .card.flipped .card-inner { transform: rotateY(180deg); }
+        .card-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; display: flex; flex-direction: column; justify-content: center; align-items: center; border-radius: 12px; border: 1px solid var(--border-color); }
+        .card-front { background-color: var(--accent-blue); color: white; font-size: 3rem; }
+        .card-back { background-color: var(--panel-bg); transform: rotateY(180deg); }
+        .card-emoji { font-size: 2.5rem; line-height: 1; }
+        .card-text { font-size: 0.9rem; font-weight: 600; margin-top: 5px; }
+        .card.matched .card-inner { transform: scale(0.95); box-shadow: 0 0 10px var(--accent-green); border: 2px solid var(--accent-green); cursor: default; }
+        
+        .win-modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); justify-content: center; align-items: center; }
+        .win-modal.active { display: flex; }
+        .win-modal-content { background: var(--panel-bg); padding: 40px 50px; border-radius: 20px; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.2); position: relative; }
+        .restart-button-win { background: var(--accent-green); color: white; border: none; padding: 12px 25px; border-radius: 8px; font-size: 1.1em; font-weight: 600; cursor: pointer; margin-top: 20px; transition: transform 0.2s, box-shadow 0.2s; }
+        .restart-button-win:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(80, 200, 120, 0.4); }
+        .confetti { position: absolute; width: 10px; height: 10px; opacity: 0.7; animation: fall 3s linear forwards; }
+        @keyframes fall { to { transform: translateY(100vh); opacity: 0; } }
+    </style>
+</head>
+<body class="page-container">
+    
+    <header class="header">
+        <div class="header-section">Class 6 - Chemistry</div>
+        <div id="header-title" class="header-section center">Information</div>
+        <div class="header-section right">
+            <button id="back-btn" class="button" style="background-color: var(--secondary-gray);">Back</button>
+            <button id="toggle-view-btn" class="button" style="background-color: var(--primary-blue);">Activity</button>
+            <button id="difficulty-btn" class="button" style="background-color: var(--accent-green);">Difficulty: Easy</button>
+        </div>
+    </header>
+
+    <main class="main-content" id="main-content">
+        <section id="info-panel" class="panel">
+            <h1 class="text-3xl font-bold mb-4" style="color: var(--accent-blue);">States of Matter</h1>
+            <div style="display:flex; flex-direction:column; gap:1.5rem;">
+                <div>
+                    <h2 class="text-xl font-semibold">What are States of Matter?</h2>
+                    <p class="mt-2 text-gray-600">Matter is anything that has mass and takes up space. The three main states of matter we see every day are solid, liquid, and gas.</p>
+                </div>
+                <div>
+                    <h2 class="text-xl font-semibold">Comparing the Three States</h2>
+                    <table style="width:100%; border-collapse: collapse; margin-top: 1rem;">
+                        <tr style="background-color: #f1f5f9;"><th style="border: 1px solid #ccc; padding: 8px;">Property</th><th style="border: 1px solid #ccc; padding: 8px;">Solid</th><th style="border: 1px solid #ccc; padding: 8px;">Liquid</th><th style="border: 1px solid #ccc; padding: 8px;">Gas</th></tr>
+                        <tr><td style="border: 1px solid #ccc; padding: 8px;"><b>Shape</b></td><td style="border: 1px solid #ccc; padding: 8px;">Fixed</td><td style="border: 1px solid #ccc; padding: 8px;">Takes shape of container</td><td style="border: 1px solid #ccc; padding: 8px;">Fills container</td></tr>
+                        <tr><td style="border: 1px solid #ccc; padding: 8px;"><b>Volume</b></td><td style="border: 1px solid #ccc; padding: 8px;">Fixed</td><td style="border: 1px solid #ccc; padding: 8px;">Fixed</td><td style="border: 1px solid #ccc; padding: 8px;">Not fixed</td></tr>
+                        <tr><td style="border: 1px solid #ccc; padding: 8px;"><b>Particles</b></td><td style="border: 1px solid #ccc; padding: 8px;">Tightly packed</td><td style="border: 1px solid #ccc; padding: 8px;">Close but can move</td><td style="border: 1px solid #ccc; padding: 8px;">Far apart</td></tr>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <section id="activity-panel" class="panel">
+            <div class="activity-area">
+                <div class="scoreboard">
+                    <div class="stat">Attempts: <span id="attempts">0</span></div>
+                    <div class="stat">Matches: <span id="matches">0</span></div>
+                    <div class="stat">Time: <span id="time">0</span>s</div>
+                </div>
+                <div class="game-board" id="game-board"></div>
+            </div>
+            <footer class="bottom-control-bar">
+                <div id="status-bar" class="status-bar">Find the matching pairs!</div>
+                <button id="reset-btn" class="reset-button">Reset</button>
+            </footer>
+        </section>
+    </main>
+
+    <div class="win-modal" id="win-modal">
+        <div class="win-modal-content">
+            <h2>You Win!</h2>
+            <p>Great job matching all the pairs!</p>
+            <p>Your Time: <span id="final-time"></span>s</p>
+            <p>Total Attempts: <span id="final-attempts"></span></p>
+            <button class="restart-button-win" id="restart-button">Play Again</button>
+        </div>
+    </div>
+
+    <script src="./neutralino.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            try { Neutralino.init(); } catch (e) { console.error("Neutralino not found."); }
+
+            // --- Game Data ---
+            const allCardPairs = [
+                { name: 'Ice Cube', emoji: '❄️', id: 1 }, { name: 'Solid', emoji: 'State', id: 1 },
+                { name: 'Juice', emoji: '🥤', id: 2 }, { name: 'Liquid', emoji: 'State', id: 2 },
+                { name: 'Air', emoji: '🌬️', id: 3 }, { name: 'Gas', emoji: 'State', id: 3 },
+                { name: 'Rock', emoji: '🪨', id: 4 }, { name: 'Solid', emoji: 'State', id: 4 },
+                { name: 'Water', emoji: '💧', id: 5 }, { name: 'Liquid', emoji: 'State', id: 5 },
+                { name: 'Steam', emoji: '☁️', id: 6 }, { name: 'Gas', emoji: 'State', id: 6 },
+                { name: 'Wood Log', emoji: '🪵', id: 7 }, { name: 'Solid', emoji: 'State', id: 7 },
+                { name: 'Lava', emoji: '🌋', id: 8 }, { name: 'Liquid', emoji: 'State', id: 8 }
+            ];
+            
+            const difficulties = ['Easy', 'Medium', 'Hard'];
+            const difficultySettings = {
+                Easy: { pairs: 3, gridCols: 3 },   // 6 cards -> 3x2
+                Medium: { pairs: 5, gridCols: 5 }, // 10 cards -> 5x2
+                Hard: { pairs: 8, gridCols: 4 }    // 16 cards -> 4x4
+            };
+            
+            let showActivity = false, flippedCards = [], matchedPairs = 0, attempts = 0, gameLocked = false, timerInterval, seconds = 0, difficultyIdx = 0;
+
+            const mainContent = document.getElementById('main-content');
+            const infoPanel = document.getElementById('info-panel');
+            const toggleViewBtn = document.getElementById('toggle-view-btn');
+            const backBtn = document.getElementById('back-btn');
+            const headerTitle = document.getElementById('header-title');
+            const difficultyBtn = document.getElementById('difficulty-btn');
+            const gameBoard = document.getElementById('game-board');
+            const attemptsEl = document.getElementById('attempts');
+            const matchesEl = document.getElementById('matches');
+            const timeEl = document.getElementById('time');
+            const winModal = document.getElementById('win-modal');
+            const finalTimeEl = document.getElementById('final-time');
+            const finalAttemptsEl = document.getElementById('final-attempts');
+            const restartBtn = document.getElementById('restart-button');
+            const resetBtn = document.getElementById('reset-btn');
+
+            function updateLayout() {
+                if (showActivity) mainContent.classList.add('activity-visible');
+                else mainContent.classList.remove('activity-visible');
+                infoPanel.style.width = showActivity ? '340px' : `${Math.min(700, window.innerWidth - 48)}px`;
+                headerTitle.textContent = showActivity ? 'Activity' : 'Information';
+                toggleViewBtn.textContent = showActivity ? 'Information' : 'Activity';
+            }
+
+            function createGameBoard() {
+                const difficulty = difficulties[difficultyIdx];
+                const settings = difficultySettings[difficulty];
+                
+                // Shuffle all pairs and take a slice for the current difficulty
+                const shuffledPairs = [...allCardPairs].sort(() => 0.5 - Math.random());
+                let gameCards = [];
+                const usedIds = new Set();
+                for(const card of shuffledPairs) {
+                    if(usedIds.size < settings.pairs && !usedIds.has(card.id)) {
+                        usedIds.add(card.id);
+                    }
+                }
+                gameCards = allCardPairs.filter(card => usedIds.has(card.id));
+                gameCards.sort(() => 0.5 - Math.random());
+
+
+                gameBoard.innerHTML = '';
+                gameBoard.style.gridTemplateColumns = `repeat(${settings.gridCols}, 1fr)`;
+                
+                gameCards.forEach(item => {
+                    const card = document.createElement('div');
+                    card.className = 'card';
+                    card.dataset.id = item.id;
+                    card.innerHTML = `<div class="card-inner"><div class="card-face card-front">❓</div><div class="card-face card-back"><div class="card-emoji">${item.emoji}</div><div class="card-text">${item.name}</div></div></div>`;
+                    card.addEventListener('click', handleCardClick);
+                    gameBoard.appendChild(card);
+                });
+            }
+
+            function handleCardClick(e) {
+                const clickedCard = e.currentTarget;
+                if (gameLocked || clickedCard.classList.contains('flipped') || clickedCard.classList.contains('matched')) return;
+                clickedCard.classList.add('flipped');
+                flippedCards.push(clickedCard);
+                if (flippedCards.length === 2) {
+                    gameLocked = true;
+                    attempts++;
+                    updateScoreboard();
+                    setTimeout(checkForMatch, 1000);
+                }
+            }
+
+            function checkForMatch() {
+                const [card1, card2] = flippedCards;
+                if (card1.dataset.id === card2.dataset.id) {
+                    card1.classList.add('matched');
+                    card2.classList.add('matched');
+                    matchedPairs++;
+                } else {
+                    card1.classList.remove('flipped');
+                    card2.classList.remove('flipped');
+                }
+                flippedCards = [];
+                gameLocked = false;
+                updateScoreboard();
+                if (matchedPairs === difficultySettings[difficulties[difficultyIdx]].pairs) {
+                    winGame();
+                }
+            }
+
+            function winGame() {
+                clearInterval(timerInterval);
+                finalTimeEl.textContent = seconds;
+                finalAttemptsEl.textContent = attempts;
+                winModal.classList.add('active');
+                createConfetti();
+            }
+            
+            function updateScoreboard() {
+                attemptsEl.textContent = attempts;
+                matchesEl.textContent = matchedPairs;
+                timeEl.textContent = seconds;
+            }
+
+            function startTimer() {
+                clearInterval(timerInterval);
+                timerInterval = setInterval(() => { seconds++; updateScoreboard(); }, 1000);
+            }
+
+            function resetGame() {
+                flippedCards = []; matchedPairs = 0; attempts = 0; seconds = 0; gameLocked = false;
+                winModal.classList.remove('active');
+                updateScoreboard();
+                createGameBoard();
+                startTimer();
+            }
+            
+            function createConfetti() {
+                const container = winModal.querySelector('.win-modal-content');
+                for (let i = 0; i < 50; i++) {
+                    const c = document.createElement('div');
+                    c.className = 'confetti';
+                    c.style.left = `${Math.random() * 100}%`;
+                    c.style.backgroundColor = `hsl(${Math.random() * 360}, 70%, 60%)`;
+                    c.style.animationDelay = `${Math.random() * 3}s`;
+                    c.style.transform = `rotate(${Math.random() * 360}deg)`;
+                    container.appendChild(c);
+                }
+            }
+            
+            backBtn.addEventListener('click', () => { window.history.back(); });
+            toggleViewBtn.addEventListener('click', () => {
+                showActivity = !showActivity;
+                if (showActivity) resetGame();
+                else clearInterval(timerInterval);
+                updateLayout();
+            });
+            difficultyBtn.addEventListener('click', () => {
+                difficultyIdx = (difficultyIdx + 1) % difficulties.length;
+                const newDifficulty = difficulties[difficultyIdx];
+                difficultyBtn.textContent = `Difficulty: ${newDifficulty}`;
+                if (showActivity) resetGame();
+            });
+            restartBtn.addEventListener('click', resetGame);
+            resetBtn.addEventListener('click', resetGame);
+            
+            updateLayout();
+        });
+    </script>
+</body>
+</html>

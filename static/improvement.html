@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Farm Manager Challenge</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --header-bg: #ffffff;
+            --page-bg: #f0fdf4; /* Light Green */
+            --panel-bg: #ffffff;
+            --border-color: #dcfce7;
+            --text-dark: #14532d; /* Dark Green */
+            --text-light: #4d7c0f; /* Olive Green */
+            --accent-green: #22c55e;
+            --accent-red: #ef4444;
+            --primary-blue: #007bff;
+            --secondary-gray: #6c757d;
+            --growth-bar-color: #84cc16; /* Lime Green */
+        }
+        
+        body { font-family: 'Poppins', sans-serif; background-color: var(--page-bg); color: var(--text-dark); margin: 0; height: 100vh; overflow: hidden; }
+        .page-container { display: flex; flex-direction: column; height: 100vh; }
+        .header {
+            position: fixed; top: 0; left: 0; width: 100%; height: 60px;
+            background-color: var(--header-bg); display: flex; align-items: center; justify-content: space-between;
+            padding: 0 24px; border-bottom: 1px solid var(--border-color); box-shadow: 0 2px 4px rgba(0,0,0,0.05); z-index: 1000; box-sizing: border-box;
+        }
+        .header-section { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .header-section.center { text-align: center; font-size: 1.2em; font-weight: bold; }
+        .header-section.right { display: flex; justify-content: flex-end; }
+        .button {
+            padding: 8px 16px; margin-left: 10px; cursor: pointer;
+            border: none; border-radius: 6px; font-weight: 600; color: white;
+            transition: transform 0.1s, background-color 0.2s;
+        }
+        .button:active { transform: scale(0.95); }
+        .main-content {
+            margin-top: 60px; padding: 24px; display: flex;
+            flex-grow: 1; overflow: hidden; box-sizing: border-box;
+            gap: 24px; justify-content: center;
+        }
+        .panel {
+            background-color: var(--panel-bg); border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: 1px solid var(--border-color);
+            box-sizing: border-box; overflow-y: auto;
+            height: calc(100vh - 108px);
+            transition: width 400ms ease-in-out, min-width 400ms ease-in-out, margin 400ms ease-in-out;
+        }
+        #info-panel {
+            padding: 24px 32px;
+            width: 100%;
+            max-width: 700px;
+            margin: 0 auto;
+            flex-shrink: 0;
+        }
+        #activity-panel { display: none; flex-grow: 1; min-width: 400px; padding: 24px; flex-direction: column; }
+        
+        .main-content.activity-visible { justify-content: flex-start; }
+        .main-content.activity-visible #info-panel { width: 340px; min-width: 340px; margin: 0; }
+        .main-content.activity-visible #activity-panel { display: flex; }
+
+        /* --- Info & Game Styles --- */
+        #info-panel h1 { color: var(--text-dark); } #info-panel h3 { margin-top: 1.5rem; }
+        #farm-visual-container { text-align: center; flex-grow: 1; display: flex; justify-content: center; align-items: center; }
+        #farm-visual { font-size: 8rem; transition: transform 0.5s ease; }
+        #game-controls { text-align: center; }
+        #game-prompt { font-size: 1.3em; font-weight: 600; min-height: 60px; color: var(--text-dark); }
+        #choices-container { display: flex; justify-content: center; gap: 20px; margin-top: 20px; min-height: 80px; flex-wrap: wrap;}
+        .choice-btn {
+            padding: 15px 25px; border-radius: 8px; border: 2px solid var(--border-color);
+            background-color: white; color: var(--text-dark); font-size: 1em; font-weight: 500;
+            cursor: pointer; transition: all 0.2s ease; min-width: 200px;
+        }
+        .choice-btn:hover { border-color: var(--accent-green); background-color: #f0fdf4; }
+        #feedback-display { min-height: 30px; margin-top: 15px; font-weight: 500; font-size: 1.1em; transition: opacity 0.5s; }
+        .feedback-good { color: var(--accent-green); }
+        .feedback-bad { color: var(--accent-red); }
+        .feedback-neutral { color: var(--text-light); }
+        #growth-meter-container { width: 100%; background-color: var(--border-color); border-radius: 10px; padding: 4px; box-shadow: inset 0 1px 3px rgba(0,0,0,0.1); margin-top: 20px; }
+        #growth-meter-bar { height: 20px; width: 20%; background-color: var(--growth-bar-color); border-radius: 6px; transition: width 0.5s ease-in-out; }
+        .bottom-control-bar { height: 60px; display: flex; justify-content: flex-end; align-items: center; padding: 0; background-color: transparent; }
+        .reset-button { background-color: var(--accent-red); }
+
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6);
+            display: none; justify-content: center; align-items: center; z-index: 2000;
+        }
+        .modal-content {
+            background-color: white; padding: 40px; border-radius: 12px; text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3); animation: fadeIn 0.5s;
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+    </style>
+</head>
+<body class="page-container">
+    <header class="header">
+        <div class="header-section">🌾 Agricultural Practices</div>
+        <div id="header-title" class="header-section center">Information</div>
+        <div class="header-section right">
+            <button id="back-btn" class="button" style="background-color: var(--secondary-gray);">Back</button>
+            <button id="toggle-view-btn" class="button" style="background-color: var(--primary-blue);">Activity</button>
+            <button id="difficulty-btn" class="button" style="background-color: var(--accent-green);">Mode: Easy</button>
+        </div>
+    </header>
+
+    <main class="main-content" id="main-content">
+        <section id="info-panel" class="panel">
+            <h1>🚜 Farm Manager Briefing</h1>
+            <p>Your goal is to make the best decisions across a full farming cycle to achieve a high crop yield. Each decision affects your final harvest.</p>
+            <h3>The Farming Cycle</h3>
+            <ol>
+                <li><b>Variety Selection:</b> Choose your seed.</li>
+                <li><b>Soil Preparation:</b> Prepare the field for sowing.</li>
+                <li><b>Nutrient Management:</b> Add fertilizer or manure.</li>
+                <li><b>Water Management:</b> Irrigate your crops.</li>
+                <li><b>Pest Control:</b> Defend against harmful insects.</li>
+                <li><b>Weed Management:</b> Protect your crop from competing weeds.</li>
+            </ol>
+            <p>Your choices will affect the **Growth Meter**. Good luck!</p>
+        </section>
+
+        <section id="activity-panel" class="panel">
+            <div id="farm-visual-container">
+                <div id="farm-visual">🌱</div>
+            </div>
+            <div id="game-controls">
+                <div id="game-prompt">Choose your crop variety to begin.</div>
+                <div id="choices-container"></div>
+                <div id="feedback-display"></div>
+                <div id="growth-meter-container">
+                    <div id="growth-meter-bar"></div>
+                </div>
+            </div>
+             <footer class="bottom-control-bar">
+                <button id="reset-btn" class="button reset-button">Restart</button>
+            </footer>
+        </section>
+    </main>
+
+    <div id="completion-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h2 id="modal-title"></h2>
+            <p id="final-score-text"></p>
+            <button id="play-again-btn" class="button" style="background-color: var(--accent-green);">Play Again</button>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const gameData = {
+            easy: { cropName: 'Wheat', cropEmojis: ['🌱', '🌱', '🌿', '🌿', '🌾', '🌾'], levels: [ { prompt: '1/6: Choose your Wheat variety.', choices: [ { text: 'High-Yielding Variety', effect: 15, feedback: { message: "Excellent! A great start.", type: 'good' } }, { text: 'Disease-Resistant Variety', effect: 10, feedback: { message: "A safe, reliable choice.", type: 'neutral' } } ] }, { prompt: '2/6: Prepare the soil.', choices: [ { text: 'Add Compost First', effect: 15, feedback: { message: "Compost improves soil structure!", type: 'good' } }, { text: 'Traditional Ploughing', effect: 10, feedback: { message: "The soil is tilled.", type: 'neutral' } } ] }, { prompt: '3/6: Add nutrients.', choices: [ { text: 'Compost & Manure', effect: 10, feedback: { message: "Organic methods enrich the soil!", type: 'good' } }, { text: 'Urea Fertilizer', effect: 5, feedback: { message: "A quick nitrogen boost.", type: 'neutral' } } ] }, { prompt: '4/6: It hasn\'t rained!', choices: [ { text: 'Use Canal Irrigation', effect: 15, feedback: { message: "Great planning! Ample water.", type: 'good' } }, { text: 'Wait for Rain', effect: -25, feedback: { message: "Too risky! The crop suffered.", type: 'bad' } } ] }, { prompt: '5/6: Rodents are eating the grain!', choices: [ { text: 'Set Traps', effect: 10, feedback: { message: "The rodent population is controlled.", type: 'good' } }, { text: 'Ignore them', effect: -15, feedback: { message: "The rodents ate a portion of the grains.", type: 'bad' } } ] }, { prompt: '6/6: Weeds are growing!', choices: [ { text: 'Manual Weeding', effect: 15, feedback: { message: "Hard work pays off!", type: 'good' }, next: 'endGame' }, { text: 'Use Herbicide', effect: 5, feedback: { message: "Weeds are gone, but be careful of runoff.", type: 'neutral' }, next: 'endGame' } ] }, ] },
+            medium: { cropName: 'Corn', cropEmojis: ['🌱', '🌱', '🌿', '🌽', '🌽', '🌽'], levels: [ { prompt: '1/6: Select a cropping pattern.', choices: [ { text: 'Inter-cropping with Legumes', effect: 15, feedback: { message: "Smart! Legumes fix nitrogen.", type: 'good' } }, { text: 'Monocropping (Corn only)', effect: 5, feedback: { message: "This might deplete nutrients.", type: 'neutral' } } ] }, { prompt: '2/6: Prepare the land.', choices: [ { text: 'No-Till Farming', effect: 10, feedback: { message: "Conserves soil moisture!", type: 'good' } }, { text: 'Deep Ploughing', effect: 5, feedback: { message: "Risks soil erosion.", type: 'neutral' } } ] }, { prompt: '3/6: Corn needs nutrients.', choices: [ { text: 'N-P-K Fertilizer', effect: 15, feedback: { message: "A powerful boost for a demanding crop.", type: 'good' } }, { text: 'Green Manure', effect: 10, feedback: { message: "Excellent for organic matter!", type: 'good' } } ] }, { prompt: '4/6: How to water the corn?', choices: [ { text: 'Sprinkler System', effect: 15, feedback: { message: "Efficient watering for the field.", type: 'good' } }, { text: 'Field Flooding', effect: -20, feedback: { message: "Wastes water and can cause rot!", type: 'bad' } } ] }, { prompt: '5/6: Pests are attacking!', choices: [ { text: 'Introduce Predator Wasp', effect: 15, feedback: { message: "Excellent biocontrol!", type: 'good' } }, { text: 'Use a Systemic Pesticide', effect: 5, feedback: { message: "Pests are gone, but mind the residues.", type: 'neutral' } } ] }, { prompt: '6/6: Weeds are appearing!', choices: [ { text: 'Inter-row Cultivation', effect: 10, feedback: { message: "Effective and avoids chemicals!", type: 'good' }, next: 'endGame' }, { text: 'Use a Selective Herbicide', effect: 5, feedback: { message: "The weeds are controlled.", type: 'neutral' }, next: 'endGame' } ] }, ] },
+            hard: { cropName: 'Tomatoes', cropEmojis: ['🌱', '🌱', '🌿', '🍅', '🍅', '🍅'], levels: [ { prompt: '1/6: Choose a greenhouse variety.', choices: [ { text: 'Genetically Modified (GM)', effect: 15, feedback: { message: "A high-tech solution!", type: 'good' } }, { text: 'Heirloom Variety', effect: 5, feedback: { message: "A risky choice needing careful protection.", type: 'neutral' } } ] }, { prompt: '2/6: Prep soil for sensitive plants.', choices: [ { text: 'Add Mycorrhizal Fungi', effect: 15, feedback: { message: "Boosts nutrient uptake!", type: 'good' } }, { text: 'Basic Tilling', effect: -15, feedback: { message: "Not enough for these plants!", type: 'bad' } } ] }, { prompt: '3/6: Manage nutrients.', choices: [ { text: 'Precision Fertigation', effect: 15, feedback: { message: "Highly efficient!", type: 'good' } }, { text: 'Broadcast Fertilizing', effect: -20, feedback: { message: "Inefficient and wasteful!", type: 'bad' } } ] }, { prompt: '4/6: How to irrigate?', choices: [ { text: 'Automated Drip System', effect: 15, feedback: { message: "Perfect! Water to the roots, no leaf disease.", type: 'good' } }, { text: 'Overhead Watering', effect: -25, feedback: { message: "Wet leaves can lead to fungal diseases!", type: 'bad' } } ] }, { prompt: '5/6: Fungal blight detected!', choices: [ { text: 'Apply Fungicide & Prune', effect: 10, feedback: { message: "Quick action saved the harvest!", type: 'good' } }, { text: 'Increase Airflow and Hope', effect: -40, feedback: { message: "The blight spread and ruined the crop!", type: 'bad' } } ] }, { prompt: '6/6: Weeds are competing.', choices: [ { text: 'Apply Mulch', effect: 10, feedback: { message: "Great! Mulch suppresses weeds.", type: 'good' }, next: 'endGame' }, { text: 'Use Strong Herbicide', effect: -15, feedback: { message: "Killed weeds, but stressed the plants.", type: 'bad' }, next: 'endGame' } ] }, ] }
+        };
+
+        const mainContent = document.querySelector('.main-content');
+        const headerTitle = document.getElementById('header-title');
+        const toggleViewBtn = document.getElementById('toggle-view-btn');
+        const difficultyBtn = document.getElementById('difficulty-btn');
+        const backBtn = document.getElementById('back-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const farmVisual = document.getElementById('farm-visual');
+        const gamePrompt = document.getElementById('game-prompt');
+        const choicesContainer = document.getElementById('choices-container');
+        const feedbackDisplay = document.getElementById('feedback-display');
+        const growthMeterBar = document.getElementById('growth-meter-bar');
+        const completionModal = document.getElementById('completion-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const finalScoreText = document.getElementById('final-score-text');
+        const playAgainBtn = document.getElementById('play-again-btn');
+
+        const difficulties = ['easy', 'medium', 'hard'];
+        let difficultyIndex = 0;
+        let gameState = {};
+        let showActivity = false;
+
+        function updateLayout() {
+            mainContent.classList.toggle('activity-visible', showActivity);
+            headerTitle.textContent = showActivity ? 'Activity' : 'Information';
+            toggleViewBtn.textContent = showActivity ? 'Information' : 'Activity';
+        }
+        
+        function startGame() {
+            const currentDifficultyKey = difficulties[difficultyIndex];
+            gameState = {
+                level: 0,
+                growthScore: 20,
+                campaign: gameData[currentDifficultyKey]
+            };
+            completionModal.style.display = 'none';
+            updateGrowthMeter();
+            renderLevel();
+        }
+
+        function updateGrowthMeter() {
+            gameState.growthScore = Math.max(0, Math.min(100, gameState.growthScore));
+            growthMeterBar.style.width = `${gameState.growthScore}%`;
+        }
+
+        function renderLevel() {
+            const levelData = gameState.campaign.levels[gameState.level];
+            if (!levelData) return;
+
+            farmVisual.textContent = gameState.campaign.cropEmojis[gameState.level];
+            gamePrompt.textContent = levelData.prompt;
+            choicesContainer.innerHTML = '';
+
+            levelData.choices.forEach(choice => {
+                const button = document.createElement('button');
+                button.className = 'choice-btn';
+                button.textContent = choice.text;
+                button.onclick = () => handleChoice(choice);
+                choicesContainer.appendChild(button);
+            });
+        }
+        
+        function handleChoice(choice) {
+            choicesContainer.querySelectorAll('.choice-btn').forEach(btn => btn.disabled = true);
+            gameState.growthScore += choice.effect;
+            feedbackDisplay.textContent = choice.feedback.message;
+            feedbackDisplay.className = `feedback-${choice.feedback.type}`;
+            updateGrowthMeter();
+            
+            setTimeout(() => {
+                feedbackDisplay.textContent = '';
+                if (choice.next === 'endGame') {
+                    endGame();
+                } else {
+                    gameState.level++;
+                    renderLevel();
+                }
+            }, 2000);
+        }
+
+        function endGame() {
+            updateGrowthMeter();
+            const score = gameState.growthScore;
+            const finalEmoji = gameState.campaign.cropEmojis[5];
+            
+            if (score >= 85) {
+                modalTitle.textContent = `${finalEmoji} Excellent Harvest! ${finalEmoji}`;
+                finalScoreText.textContent = `You're a master farmer! Your ${gameState.campaign.cropName} yield was massive. Score: ${score}`;
+            } else if (score >= 60) {
+                modalTitle.textContent = `👍 Good Harvest! 👍`;
+                finalScoreText.textContent = `You managed the ${gameState.campaign.cropName} farm well. Score: ${score}`;
+            } else {
+                modalTitle.textContent = `🥀 Poor Harvest 🥀`;
+                finalScoreText.textContent = `Farming is tough. The ${gameState.campaign.cropName} yield was low. Score: ${score}`;
+            }
+            completionModal.style.display = 'flex';
+        }
+
+        toggleViewBtn.addEventListener('click', () => {
+            showActivity = !showActivity;
+            updateLayout();
+            if (showActivity) startGame();
+        });
+        
+        difficultyBtn.addEventListener('click', () => {
+            difficultyIndex = (difficultyIndex + 1) % difficulties.length;
+            const newDifficulty = difficulties[difficultyIndex];
+            difficultyBtn.textContent = `Mode: ${newDifficulty.charAt(0).toUpperCase() + newDifficulty.slice(1)}`;
+            if (showActivity) startGame();
+        });
+        
+        resetBtn.addEventListener('click', startGame);
+        playAgainBtn.addEventListener('click', startGame);
+        backBtn.addEventListener('click', () => window.history.back());
+        
+        updateLayout();
+    });
+    </script>
+</body>
+</html>

@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arithmetic Progressions: Sequence Solver</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --header-bg: #ffffff;
+            --page-bg: #f0f2f5;
+            --panel-bg: #ffffff;
+            --border-color: #e5e7eb;
+            --text-dark: #111827;
+            --text-light: #475569;
+            --accent-violet: #8b5cf6;
+            --accent-violet-dark: #7c3aed;
+            --accent-green: #22c55e;
+            --accent-red: #ef4444;
+            --primary-blue: #007bff;
+            --secondary-gray: #6c757d;
+        }
+        body { font-family: 'Poppins', sans-serif; background-color: var(--page-bg); color: var(--text-dark); margin: 0; height: 100vh; overflow: hidden; }
+        .page-container { display: flex; flex-direction: column; height: 100vh; }
+        .header {
+            position: fixed; top: 0; left: 0; width: 100%; height: 60px;
+            background-color: var(--header-bg); display: flex; align-items: center; justify-content: space-between;
+            padding: 0 24px; border-bottom: 1px solid var(--border-color); box-shadow: 0 2px 4px rgba(0,0,0,0.05); z-index: 1000; box-sizing: border-box;
+        }
+        .header-section { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .header-section.center { text-align: center; font-size: 1.2em; font-weight: bold; }
+        .header-section.right { display: flex; justify-content: flex-end; }
+        .button {
+            padding: 8px 16px; margin-left: 10px; cursor: pointer;
+            border: none; border-radius: 6px; font-weight: 600; color: white;
+            transition: transform 0.1s, background-color 0.2s;
+        }
+        .button:active { transform: scale(0.95); }
+        .main-content {
+            margin-top: 60px; padding: 24px; display: flex;
+            flex-grow: 1; overflow: hidden; box-sizing: border-box;
+            gap: 24px; justify-content: center;
+        }
+        .panel {
+            background-color: var(--panel-bg); border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: 1px solid var(--border-color);
+            box-sizing: border-box; overflow-y: auto;
+            height: calc(100vh - 108px);
+            transition: width 400ms ease-in-out, min-width 400ms ease-in-out, margin 400ms ease-in-out;
+        }
+        #info-panel {
+            padding: 24px 32px;
+            width: 100%;
+            max-width: 700px;
+            margin: 0 auto;
+            flex-shrink: 0;
+        }
+        #activity-panel { display: none; flex-grow: 1; min-width: 400px; }
+        
+        /* Layout when activity is visible */
+        .main-content.activity-visible { justify-content: flex-start; }
+        .main-content.activity-visible #info-panel { width: 340px; min-width: 340px; margin: 0; }
+        .main-content.activity-visible #activity-panel { display: block; }
+
+        /* Game Specific Styles */
+        .game-panel { padding: 2rem; width: 100%; max-width: 800px; margin: auto; }
+        #question-text, #sequence-text { font-weight: 600; color: #111827; }
+        .info-panel-content { background-color: #ffffff; padding: 1.5rem; border-radius: 0.75rem; border: 1px solid #e5e7eb; box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1); }
+        .answer-input { -moz-appearance: textfield; }
+        .answer-input::-webkit-outer-spin-button, .answer-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+    <header class="header">
+        <div class="header-section">Class 10 - Arithmetic Progressions</div>
+        <div id="header-title" class="header-section center">Information</div>
+        <div class="header-section right">
+            <button id="back-btn" class="button" style="background-color: var(--secondary-gray);">Back</button>
+            <button id="toggle-view-btn" class="button" style="background-color: var(--primary-blue);">Activity</button>
+            <button id="difficulty-btn" class="button" style="background-color: var(--accent-violet);">Mode: Easy</button>
+        </div>
+    </header>
+
+    <main class="main-content" id="main-content">
+        <section id="info-panel" class="panel">
+            <h2 class="text-3xl font-bold mb-6 text-center text-gray-800">Understanding Arithmetic Progressions (AP)</h2>
+            <div class="space-y-4">
+                <div class="info-panel-content">
+                    <h3 class="text-xl font-semibold text-gray-900">What is an AP?</h3>
+                    <p class="mt-2 text-gray-600">An Arithmetic Progression is a sequence of numbers where the difference between consecutive terms is constant. This constant difference is called the <b>common difference (d)</b>.</p>
+                </div>
+                <div class="info-panel-content">
+                    <h3 class="text-xl font-semibold text-gray-900">Key Formulas</h3>
+                    <ul class="list-disc list-inside mt-3 space-y-2 text-gray-600">
+                        <li><b>nth Term (aₙ):</b> To find any term in the sequence: <b>aₙ = a + (n - 1)d</b>, where 'a' is the first term and 'n' is the term number.</li>
+                        <li><b>Sum of n Terms (Sₙ):</b> To find the sum of a certain number of terms: <b>Sₙ = n/2 [2a + (n - 1)d]</b>.</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="activity-panel" class="panel">
+             <div class="game-panel">
+                <div class="flex justify-between items-start">
+                    <div><h2 id="level-title" class="text-2xl font-bold text-gray-900 text-left">Easy Challenge</h2></div>
+                    <div class="text-center"><p class="text-xs text-gray-500">SCORE</p><p id="score" class="text-2xl font-bold text-gray-900">0</p></div>
+                </div>
+                <div id="game-body">
+                    <p id="question-text" class="text-xl my-4">Find the missing term in the sequence:</p>
+                    <p id="sequence-text" class="text-3xl font-bold my-4">2, 5, ?, 11, 14</p>
+                    <form id="answer-form" class="flex justify-center items-center gap-2 sm:gap-4 mt-6">
+                        <input type="text" id="answer-input" class="answer-input text-center text-xl font-bold w-40 p-3 rounded-lg border-2 border-gray-300 focus:border-violet-500 focus:ring-violet-500" placeholder="Answer" required>
+                        <button type="submit" class="button primary-btn text-lg px-6 py-3" style="background-color: var(--accent-violet);">Submit</button>
+                    </form>
+                    <p id="feedback-text" class="mt-4 font-semibold text-lg h-6"></p>
+                    <div id="level-complete-container" class="hidden text-center py-8">
+                        <h3 id="level-complete-title" class="text-3xl font-bold text-violet-600">Level Complete!</h3>
+                        <p id="level-complete-score" class="text-xl mt-2 text-gray-700"></p>
+                        <button id="next-level-btn" class="button primary-btn mt-6 text-lg py-3 px-8" style="background-color: var(--accent-violet);">Next Level</button>
+                         <button id="play-again-btn" class="button mt-6 text-lg py-3 px-8 hidden" style="background-color: var(--accent-green);">Play Again</button>
+                    </div>
+                </div>
+                <div class="mt-6 text-center"><button id="reset-game-btn" class="button" style="background-color: #e5e7eb; color: #374151;">Reset Game</button></div>
+            </div>
+        </section>
+    </main>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const mainContent = document.getElementById('main-content'),
+                  infoPanel = document.getElementById('info-panel'),
+                  activityPanel = document.getElementById('activity-panel'),
+                  headerTitle = document.getElementById('header-title'),
+                  toggleViewBtn = document.getElementById('toggle-view-btn'),
+                  difficultyBtn = document.getElementById('difficulty-btn'),
+                  backBtn = document.getElementById('back-btn'),
+                  levelTitle = document.getElementById('level-title'),
+                  scoreDisplay = document.getElementById('score'),
+                  questionText = document.getElementById('question-text'),
+                  sequenceText = document.getElementById('sequence-text'),
+                  answerForm = document.getElementById('answer-form'),
+                  answerInput = document.getElementById('answer-input'),
+                  feedbackText = document.getElementById('feedback-text'),
+                  levelCompleteContainer = document.getElementById('level-complete-container'),
+                  levelCompleteScore = document.getElementById('level-complete-score'),
+                  nextLevelBtn = document.getElementById('next-level-btn'),
+                  playAgainBtn = document.getElementById('play-again-btn'),
+                  resetGameBtn = document.getElementById('reset-game-btn');
+
+            const problems={easy:[{q:"Find the 10th term of the AP: 2, 7, 12...",s:"",a:47},{q:"Find the missing term: 3, 8, ?, 18, 23",s:"",a:13},{q:"What is the common difference of: 10, 7, 4, 1...",s:"",a:-3},{q:"Find the sum of the first 5 terms of AP: 1, 4, 7...",s:"",a:35},{q:"Which term of the AP: 5, 9, 13... is 45?",s:"",a:11}],medium:[{q:"The 4th term of an AP is 11 and the 9th term is 21. Find the first term.",s:"",a:5},{q:"Find the sum of all odd integers between 1 and 50.",s:"",a:625},{q:"How many multiples of 4 lie between 10 and 100?",s:"",a:22},{q:"If 7 times the 7th term of an AP is equal to 11 times its 11th term, find the 18th term.",s:"",a:0},{q:"Find the 20th term from the end of the AP: 3, 8, 13, ..., 253",s:"",a:158}],hard:[{q:"The sum of the first 7 terms of an AP is 49 and that of 17 terms is 289. Find the sum of first 'n' terms.",s:"(Enter answer with '^' for power, e.g., n^2)",a:"n^2"},{q:"Find the sum of the first 15 multiples of 8.",s:"",a:960},{q:"If the p-th term of an AP is 'q' and the q-th term is 'p', find the (p+q)th term.",s:"",a:0},{q:"The ratio of the sums of m and n terms of an AP is m²:n². Find the ratio of the m-th and n-th term.",s:"(Enter ratio with ':', e.g., 2m-1:2n-1)",a:"2m-1:2n-1"},{q:"Solve the equation: 1 + 4 + 7 + ... + x = 287. Find the value of x.",s:"",a:40}]};
+            
+            const levelOrder=['easy','medium','hard'];
+            let currentLevel,score,isAnswered,currentQuestion,shuffledProblems,showActivity = false;
+
+            function capitalize(s){return s.charAt(0).toUpperCase()+s.slice(1)}
+            
+            function initializeGame(){currentLevel='easy';resetGame()}
+            
+            function resetGame(){score=0;resetLevel()}
+            
+            function resetLevel(){
+                const originalProblems=problems[currentLevel];
+                shuffledProblems=[...originalProblems].sort(()=>Math.random()-.5);
+                updateScoreDisplay();
+                loadQuestion();
+            }
+            
+            function loadQuestion(){
+                if(shuffledProblems.length===0){
+                    showLevelComplete();
+                    return;
+                }
+                currentQuestion=shuffledProblems.pop();
+                isAnswered=false;
+                levelCompleteContainer.classList.add('hidden');
+                answerForm.classList.remove('hidden');
+                feedbackText.textContent="";
+                levelTitle.textContent=`${capitalize(currentLevel)} Challenge`;
+                questionText.textContent=currentQuestion.q;
+                sequenceText.textContent=currentQuestion.s;
+                answerInput.value="";
+                answerInput.disabled=false;
+                answerForm.querySelector('button').disabled=false;
+            }
+            
+            function handleAnswerSubmit(e){
+                e.preventDefault();
+                if(isAnswered) return;
+                isAnswered=true;
+                answerInput.disabled=true;
+                answerForm.querySelector('button').disabled=true;
+                const userAnswer=answerInput.value.trim();
+                const correctValue=String(currentQuestion.a);
+                if(userAnswer.toLowerCase() === correctValue.toLowerCase()){
+                    score+=10;
+                    scoreDisplay.textContent=score;
+                    feedbackText.textContent="Correct!";
+                    feedbackText.style.color='var(--accent-green)';
+                } else {
+                    feedbackText.textContent=`Not quite! The correct answer was ${correctValue}.`;
+                    feedbackText.style.color='var(--accent-red)';
+                }
+                setTimeout(()=>{loadQuestion()},2000);
+            }
+            
+            function showLevelComplete(){
+                answerForm.classList.add('hidden');
+                questionText.textContent="";
+                sequenceText.textContent="";
+                levelCompleteContainer.classList.remove('hidden');
+                levelCompleteScore.textContent=`Your score: ${score}.`;
+                const currentLevelIdx=levelOrder.indexOf(currentLevel);
+                if(currentLevelIdx < levelOrder.length-1){
+                    nextLevelBtn.classList.remove('hidden');
+                    playAgainBtn.classList.add('hidden');
+                } else {
+                    levelCompleteTitle.textContent = "Congratulations!";
+                    levelCompleteScore.textContent = `You've completed all challenges! Final score: ${score}`;
+                    nextLevelBtn.classList.add('hidden');
+                    playAgainBtn.classList.remove('hidden');
+                }
+            }
+            
+            function handleNextLevel(){
+                const currentLevelIdx=levelOrder.indexOf(currentLevel);
+                currentLevel=levelOrder[currentLevelIdx+1];
+                difficultyBtn.textContent=`Mode: ${capitalize(currentLevel)}`;
+                resetGame();
+            }
+            
+            function updateScoreDisplay(){scoreDisplay.textContent=score;}
+
+            function updateLayout() {
+                mainContent.classList.toggle('activity-visible', showActivity);
+                headerTitle.textContent = showActivity ? 'Activity' : 'Information';
+                toggleViewBtn.textContent = showActivity ? 'Information' : 'Activity';
+            }
+            
+            toggleViewBtn.addEventListener('click', () => {
+                showActivity = !showActivity;
+                updateLayout();
+            });
+            
+            difficultyBtn.addEventListener('click', () => {
+                const currentLevelIdx = levelOrder.indexOf(currentLevel);
+                currentLevel = levelOrder[(currentLevelIdx + 1) % levelOrder.length];
+                difficultyBtn.textContent = `Mode: ${capitalize(currentLevel)}`;
+                resetGame();
+            });
+
+            resetGameBtn.addEventListener('click', resetGame);
+            nextLevelBtn.addEventListener('click', handleNextLevel);
+            playAgainBtn.addEventListener('click', () => {
+                currentLevel = 'easy';
+                difficultyBtn.textContent = `Mode: Easy`;
+                resetGame();
+            });
+            answerForm.addEventListener('submit', handleAnswerSubmit);
+            backBtn.addEventListener('click', () => { window.history.back(); });
+            
+            initializeGame();
+            updateLayout();
+        });
+    </script>
+</body>
+</html>

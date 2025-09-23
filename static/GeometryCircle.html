@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Geometry: Angle Ace</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --header-bg: #ffffff;
+            --page-bg: #f0f2f5;
+            --panel-bg: #ffffff;
+            --border-color: #e5e7eb;
+            --text-dark: #111827;
+            --text-light: #475569;
+            --accent-orange: #f97316;
+            --accent-green: #16a34a;
+            --primary-blue: #007bff;
+            --secondary-gray: #6c757d;
+        }
+        body { font-family: 'Poppins', sans-serif; background-color: var(--page-bg); color: var(--text-dark); margin: 0; height: 100vh; overflow: hidden; }
+        .page-container { display: flex; flex-direction: column; height: 100vh; }
+        .header {
+            position: fixed; top: 0; left: 0; width: 100%; height: 60px;
+            background-color: var(--header-bg); display: flex; align-items: center; justify-content: space-between;
+            padding: 0 24px; border-bottom: 1px solid var(--border-color); box-shadow: 0 2px 4px rgba(0,0,0,0.05); z-index: 1000; box-sizing: border-box;
+        }
+        .header-section { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .header-section.center { text-align: center; font-size: 1.2em; font-weight: bold; }
+        .header-section.right { display: flex; justify-content: flex-end; }
+        .button {
+            padding: 8px 16px; margin-left: 10px; cursor: pointer;
+            border: none; border-radius: 6px; font-weight: 600; color: white;
+            transition: transform 0.1s, background-color 0.2s;
+        }
+        .button:active { transform: scale(0.95); }
+        .main-content {
+            margin-top: 60px; padding: 24px; display: flex;
+            flex-grow: 1; overflow: hidden; box-sizing: border-box;
+            gap: 24px; justify-content: center;
+        }
+        .panel {
+            background-color: var(--panel-bg); border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: 1px solid var(--border-color);
+            box-sizing: border-box; overflow-y: auto;
+            height: calc(100vh - 108px);
+            transition: width 400ms ease-in-out, min-width 400ms ease-in-out, margin 400ms ease-in-out;
+        }
+        #info-panel {
+            padding: 24px 32px;
+            width: 100%;
+            max-width: 700px;
+            margin: 0 auto;
+            flex-shrink: 0;
+        }
+        #activity-panel { display: none; flex-grow: 1; min-width: 400px; padding: 0; flex-direction: column; }
+        
+        .main-content.activity-visible { justify-content: flex-start; }
+        .main-content.activity-visible #info-panel { width: 340px; min-width: 340px; margin: 0; }
+        .main-content.activity-visible #activity-panel { display: flex; }
+
+        /* Game Specific Styles */
+        .activity-area { flex-grow: 1; padding: 20px; overflow-y: auto; }
+        .game-card { background-color: white; border-radius: 8px; padding: 20px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); }
+        .info-panel-content { background-color: #ffffff; padding: 1.5rem; border-radius: 0.75rem; border: 1px solid #e5e7eb; }
+        #question-text { font-size: 1.25rem; font-weight: 600; color: #111827; }
+        
+        /* --- MODIFIED: Box for the diagram --- */
+        .diagram-box {
+            width: 280px;
+            height: 280px;
+            margin: 1.5rem auto;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background-color: #f8fafc;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .diagram-box svg {
+            width: 100%;
+            height: 100%;
+        }
+        /* --- End of Modification --- */
+
+        #answer-input { -moz-appearance: textfield; }
+        #answer-input::-webkit-outer-spin-button,
+        #answer-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        .bottom-control-bar { height: 60px; display: flex; justify-content: flex-end; align-items: center; padding: 0 20px; background-color: #f8fafc; border-top: 1px solid var(--border-color); flex-shrink: 0; }
+        .reset-button { background-color: var(--accent-red); }
+        .feedback { font-size: 1.1rem; font-weight: 600; text-align: center; min-height: 28px; }
+        .feedback-correct { color: var(--accent-green); }
+        .feedback-incorrect { color: var(--accent-red); }
+    </style>
+</head>
+<body class="page-container">
+    <header class="header">
+        <div class="header-section">Class 9 - Geometry (Circles)</div>
+        <div id="header-title" class="header-section center">Information</div>
+        <div class="header-section right">
+            <button id="back-btn" class="button" style="background-color: var(--secondary-gray);">Back</button>
+            <button id="toggle-view-btn" class="button" style="background-color: var(--primary-blue);">Activity</button>
+            <button id="difficulty-btn" class="button" style="background-color: var(--accent-orange);">Mode: Easy</button>
+        </div>
+    </header>
+
+    <main class="main-content" id="main-content">
+        <section id="info-panel" class="panel">
+            <h2 class="text-3xl font-bold mb-6 text-center text-gray-800">Circle Theorems</h2>
+            <div class="space-y-4">
+                <div class="info-panel-content">
+                    <h3 class="text-xl font-semibold text-gray-900">Key Parts of a Circle</h3>
+                    <ul class="list-disc list-inside mt-3 space-y-2 text-gray-600">
+                        <li><b>Radius:</b> A line from the center to the circumference.</li>
+                        <li><b>Chord:</b> A line connecting two points on the circumference. A <b>diameter</b> is the longest chord.</li>
+                        <li><b>Tangent:</b> A line that touches the circumference at exactly one point.</li>
+                        <li><b>Arc:</b> A part of the circumference.</li>
+                    </ul>
+                </div>
+                <div class="info-panel-content">
+                    <h3 class="text-xl font-semibold text-gray-900">Important Theorems</h3>
+                    <ul class="list-disc list-inside mt-3 space-y-2 text-gray-600">
+                        <li><b>Angle at the Center:</b> Is double the angle at the circumference from the same arc.</li>
+                        <li><b>Angles in the Same Segment:</b> Are equal.</li>
+                        <li><b>Tangent-Radius Theorem:</b> The angle between a tangent and a radius is 90°.</li>
+                        <li><b>Cyclic Quadrilateral:</b> Opposite angles add up to 180°.</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="activity-panel" class="panel">
+             <div id="game-area" class="activity-area"></div>
+             <footer class="bottom-control-bar">
+                <button id="reset-btn" class="button reset-button">New Question</button>
+            </footer>
+        </section>
+    </main>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const mainContent = document.getElementById('main-content'),
+                  infoPanel = document.getElementById('info-panel'),
+                  activityPanel = document.getElementById('activity-panel'),
+                  headerTitle = document.getElementById('header-title'),
+                  toggleViewBtn = document.getElementById('toggle-view-btn'),
+                  difficultyBtn = document.getElementById('difficulty-btn'),
+                  backBtn = document.getElementById('back-btn'),
+                  resetBtn = document.getElementById('reset-btn'),
+                  gameArea = document.getElementById('game-area');
+            
+            const svgNS = "http://www.w3.org/2000/svg";
+
+            const problems = {
+                easy: [
+                    { q: "The angle at the center is 100°. Find x.", a: 50, draw: (svg) => { svg.innerHTML = `<circle cx="150" cy="150" r="100" stroke="#3b82f6" stroke-width="2" fill="none"/><path d="M 150 150 L 243 181" stroke="#4b5563" stroke-width="1.5"/><path d="M 150 150 L 89 225" stroke="#4b5563" stroke-width="1.5"/><path d="M 89 225 L 150 50" stroke="#4b5563" stroke-width="1.5"/><path d="M 243 181 L 150 50" stroke="#4b5563" stroke-width="1.5"/><text x="150" y="150" font-size="16">100°</text><text x="145" y="65" font-size="24" font-weight="bold" fill="#f97316">x</text>`;} },
+                    { q: "This is a semicircle. Find the angle at the circumference.", a: 90, draw: (svg) => { svg.innerHTML = `<circle cx="150" cy="150" r="100" stroke="#3b82f6" stroke-width="2" fill="none"/><path d="M 50 150 L 250 150" stroke="#4b5563" stroke-width="1.5"/><path d="M 50 150 L 150 50" stroke="#4b5563" stroke-width="1.5"/><path d="M 250 150 L 150 50" stroke="#4b5563" stroke-width="1.5"/><text x="140" y="65" font-size="24" font-weight="bold" fill="#f97316">x</text>`;} },
+                    { q: "Find the angle x in the cyclic quadrilateral.", a: 110, draw: (svg) => { svg.innerHTML = `<circle cx="150" cy="150" r="100" stroke="#3b82f6" stroke-width="2" fill="none"/><path d="M 150 50 L 50 150" stroke="#4b5563" stroke-width="1.5"/><path d="M 50 150 L 150 250" stroke="#4b5563" stroke-width="1.5"/><path d="M 150 250 L 250 150" stroke="#4b5563" stroke-width="1.5"/><path d="M 250 150 L 150 50" stroke="#4b5563" stroke-width="1.5"/><text x="140" y="65" font-size="16">70°</text><text x="140" y="235" font-size="24" font-weight="bold" fill="#f97316">x</text>`;} }
+                ],
+                medium: [
+                    { q: "Find the reflex angle x.", a: 220, draw: (svg) => { svg.innerHTML = `<circle cx="150" cy="150" r="100" stroke="#3b82f6" stroke-width="2" fill="none"/><path d="M 150 150 L 236 200" stroke="#4b5563" stroke-width="1.5"/><path d="M 150 150 L 64 200" stroke="#4b5563" stroke-width="1.5"/><path d="M 64 200 L 150 50" stroke="#4b5563" stroke-width="1.5"/><path d="M 236 200 L 150 50" stroke="#4b5563" stroke-width="1.5"/><text x="145" y="65" font-size="16">110°</text><text x="145" y="160" font-size="24" font-weight="bold" fill="#f97316">x</text>`;} },
+                    { q: "Find the exterior angle of the cyclic quadrilateral.", a: 95, draw: (svg) => { svg.innerHTML = `<circle cx="150" cy="150" r="100" stroke="#3b82f6" stroke-width="2" fill="none"/><path d="M 150 50 L 50 150" stroke="#4b5563" stroke-width="1.5"/><path d="M 50 150 L 150 250" stroke="#4b5563" stroke-width="1.5"/><path d="M 150 250 L 250 150" stroke="#4b5563" stroke-width="1.5"/><path d="M 250 150 L 150 50" stroke="#4b5563" stroke-width="1.5"/><path d="M 150 250 L 100 280" stroke="#4b5563" stroke-width="1.5"/><text x="140" y="65" font-size="16">95°</text><text x="105" y="270" font-size="24" font-weight="bold" fill="#f97316">x</text>`;} }
+                ],
+                hard: [
+                    { q: "Use the alternate segment theorem to find x.", a: 65, draw: (svg) => { svg.innerHTML = `<circle cx="150" cy="150" r="100" stroke="#3b82f6" stroke-width="2" fill="none"/><path d="M 50 150 L 250 150" stroke="#4b5563" stroke-width="1.5"/><path d="M 50 150 L 200 63" stroke="#4b5563" stroke-width="1.5"/><path d="M 200 63 L 250 150" stroke="#4b5563" stroke-width="1.5"/><path d="M 250 150 L 280 180" stroke="#4b5563" stroke-width="1.5"/><text x="195" y="80" font-size="16">65°</text><text x="255" y="160" font-size="24" font-weight="bold" fill="#f97316">x</text>`;} },
+                    { q: "Find angle x using intersecting chords theorem.", a: 95, draw: (svg) => { svg.innerHTML = `<circle cx="150" cy="150" r="100" stroke="#3b82f6" stroke-width="2" fill="none"/><path d="M 70 60 L 230 240" stroke="#4b5563" stroke-width="1.5"/><path d="M 230 60 L 70 240" stroke="#4b5563" stroke-width="1.5"/><text x="100" y="55" font-size="16">70°</text><text x="195" y="255" font-size="16">120°</text><text x="155" y="155" font-size="24" font-weight="bold" fill="#f97316">x</text>`;} }
+                ]
+            };
+            
+            let showActivity = false, difficultyIdx = 0, score = 0, isAnswered = false;
+            const difficulties = ['easy', 'medium', 'hard'];
+            
+            function updateLayout() {
+                mainContent.classList.toggle('activity-visible', showActivity);
+                headerTitle.textContent = showActivity ? 'Activity' : 'Information';
+                toggleViewBtn.textContent = showActivity ? 'Information' : 'Activity';
+            }
+
+            function startGame() {
+                isAnswered = false;
+                const difficulty = difficulties[difficultyIdx];
+                const problemSet = problems[difficulty];
+                const questionData = problemSet[Math.floor(Math.random() * problemSet.length)];
+
+                gameArea.innerHTML = `
+                     <div class="game-card">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h2 class="text-2xl font-bold text-gray-900 text-left">${capitalize(difficulty)} Challenge</h2>
+                                <p class="text-left text-gray-500">Use circle theorems to find the answer.</p>
+                            </div>
+                            <div class="text-center">
+                                <p class="text-xs text-gray-500">SCORE</p>
+                                <p id="score-display" class="text-2xl font-bold text-gray-900">${score}</p>
+                            </div>
+                        </div>
+                        <div>
+                            <p id="question-text" class="my-4 text-center">${questionData.q}</p>
+                            <div id="diagram-container-inner" class="diagram-box"></div>
+                            <form id="answer-form-inner" class="flex justify-center items-center gap-4 mt-6">
+                                <input type="number" id="answer-input-inner" class="text-center text-xl font-bold w-32 p-3 rounded-lg border-2 border-gray-300" placeholder="x°" required>
+                                <button type="submit" class="button text-lg px-6 py-3" style="background-color: var(--accent-orange);">Check</button>
+                            </form>
+                            <p id="feedback-text-inner" class="feedback mt-4"></p>
+                        </div>
+                    </div>`;
+
+                const diagramContainer = document.getElementById('diagram-container-inner');
+                const svg = document.createElementNS(svgNS, 'svg');
+                svg.setAttribute('viewBox', '0 0 300 300');
+                questionData.draw(svg);
+                diagramContainer.appendChild(svg);
+                
+                const answerForm = document.getElementById('answer-form-inner');
+                answerForm.addEventListener('submit', (e) => handleAnswerSubmit(e, questionData));
+            }
+            
+            function handleAnswerSubmit(e, questionData) {
+                e.preventDefault();
+                if (isAnswered) return;
+                isAnswered = true;
+
+                const answerInput = document.getElementById('answer-input-inner');
+                const feedbackText = document.getElementById('feedback-text-inner');
+                const scoreDisplay = document.getElementById('score-display');
+                
+                const userAnswer = parseFloat(answerInput.value);
+                
+                if (userAnswer === questionData.a) {
+                    score += 10;
+                    feedbackText.textContent = "Correct!";
+                    feedbackText.className = 'feedback feedback-correct';
+                } else {
+                    feedbackText.textContent = `Sorry! The correct answer was ${questionData.a}°.`;
+                    feedbackText.className = 'feedback feedback-incorrect';
+                }
+                scoreDisplay.textContent = score;
+                setTimeout(startGame, 2500);
+            }
+            
+            function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+            // --- Event Listeners ---
+            toggleViewBtn.addEventListener('click', () => {
+                showActivity = !showActivity;
+                updateLayout();
+                if (showActivity) {
+                    score = 0;
+                    startGame();
+                }
+            });
+            
+            difficultyBtn.addEventListener('click', () => {
+                difficultyIdx = (difficultyIdx + 1) % difficulties.length;
+                difficultyBtn.textContent = `Mode: ${capitalize(difficulties[difficultyIdx])}`;
+                if (showActivity) {
+                    score = 0;
+                    startGame();
+                }
+            });
+
+            resetBtn.addEventListener('click', () => {
+                if (showActivity) {
+                    score = 0;
+                    startGame();
+                }
+            });
+            
+            backBtn.addEventListener('click', () => {
+                window.history.back();
+            });
+            
+            updateLayout();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Probability: Combo King</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --header-bg: #ffffff;
+            --page-bg: #f3f4f6;
+            --panel-bg: #ffffff;
+            --border-color: #e5e7eb;
+            --text-dark: #1f2937;
+            --text-light: #4b5563;
+            --accent-amber: #f59e0b;
+            --accent-amber-dark: #d97706;
+            --secondary-gray: #6b7280;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--page-bg);
+            color: var(--text-dark);
+            margin: 0;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .page-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 60px;
+            background-color: var(--header-bg);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            border-bottom: 1px solid var(--border-color);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            z-index: 1000;
+            box-sizing: border-box;
+        }
+
+        .header-section {
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .header-section.center {
+            text-align: center;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        .header-section.right {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            margin-left: 10px;
+            cursor: pointer;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            color: white;
+            transition: transform 0.1s, background-color 0.2s;
+        }
+        .btn:active:not(:disabled) { transform: scale(0.95); }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+
+        .main-content {
+            margin-top: 60px;
+            padding: 24px;
+            display: flex;
+            gap: 24px;
+            flex-grow: 1;
+            overflow: hidden;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        .panel {
+            background-color: var(--panel-bg);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            overflow-y: auto;
+            height: calc(100vh - 108px);
+            transition: width 400ms ease-in-out, min-width 400ms ease-in-out;
+        }
+
+        #info-panel {
+            flex-shrink: 0;
+            width: 100%;
+            max-width: 700px;
+            padding: 32px 48px;
+        }
+
+        #activity-panel {
+            display: none;
+            flex-grow: 1;
+            padding: 0;
+            flex-direction: column;
+        }
+
+        .main-content.activity-visible {
+            justify-content: flex-start;
+        }
+
+        .main-content.activity-visible #info-panel {
+            width: 340px;
+            min-width: 340px;
+            padding: 24px 32px;
+        }
+         .main-content.activity-visible #activity-panel {
+            display: flex;
+        }
+
+        /* Activity-specific styles */
+        .activity-area {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            text-align: center;
+        }
+         .bottom-control-bar {
+            height: 60px;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            padding: 0 20px;
+            background-color: #f9fafb;
+            border-top: 1px solid var(--border-color);
+            flex-shrink: 0;
+        }
+    </style>
+</head>
+<body class="page-container">
+    <header class="header">
+        <div class="header-section font-bold" style="color: var(--accent-amber);">Class 11 - Probability</div>
+        <div id="header-title" class="header-section center">Information</div>
+        <div class="header-section right">
+            <button id="back-btn" class="btn" style="background-color: var(--secondary-gray);">Back</button>
+            <button id="activity-info-btn" class="btn" style="background-color: var(--accent-amber);">Start Activity</button>
+            <button id="difficulty-btn" class="btn" style="background-color: #1f2937;">Difficulty: Easy</button>
+        </div>
+    </header>
+
+    <main id="main-content" class="main-content">
+        <section id="info-panel" class="panel">
+            <h2 class="text-3xl font-bold mb-4" style="color:var(--accent-amber);">Advanced Probability Concepts</h2>
+            <p class="mb-6 text-gray-600">This activity will test your knowledge of key probability concepts, including permutations, combinations, and more.</p>
+            <div class="space-y-4">
+                <div class="bg-gray-50 p-4 rounded-lg border">
+                    <h3 class="text-xl font-semibold text-gray-800">Key Terms</h3>
+                    <ul class="list-disc list-inside mt-2 space-y-2 text-gray-600">
+                        <li><b>Permutations:</b> The number of ways to arrange items where the order of arrangement is important. Formula: $nPr = \frac{n!}{(n-r)!}$</li>
+                        <li><b>Combinations:</b> The number of ways to choose items from a group where order is not important. Formula: $nCr = \frac{n!}{r!(n-r)!}$</li>
+                        <li><b>Conditional Probability:</b> The likelihood of an event occurring, given that another event has already happened. Formula: $P(A|B) = \frac{P(A \cap B)}{P(B)}$</li>
+                        <li><b>Mutually Exclusive Events:</b> Two events that cannot occur at the same time. For these, $P(A \text{ and } B) = 0$.</li>
+                    </ul>
+                </div>
+                 <div class="bg-gray-50 p-4 rounded-lg border">
+                    <h3 class="text-xl font-semibold text-gray-800">How to Play</h3>
+                    <ul class="list-disc list-inside mt-2 space-y-2 text-gray-600">
+                         <li>Click <b>'Start Activity'</b> to begin the challenge.</li>
+                         <li>Read each question carefully and type your answer in the input box.</li>
+                         <li>Answers can be fractions (e.g., 1/2) or whole numbers.</li>
+                         <li>Each correct answer earns you 10 points.</li>
+                         <li>Use the <b>Difficulty</b> button to switch between Easy, Medium, and Hard challenges.</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="activity-panel" class="panel">
+            <div id="game-body" class="activity-area">
+                <div class="w-full max-w-lg">
+                     <h2 id="level-title" class="text-2xl font-bold text-gray-800 text-left mb-2"></h2>
+                     <p id="question-text" class="text-xl my-6 text-gray-700 min-h-[56px]"></p>
+                     
+                     <div id="game-active-container">
+                         <form id="answer-form" class="flex justify-center items-center gap-2 sm:gap-4 mt-6">
+                             <input type="text" id="answer-input" class="text-center text-xl font-bold w-48 p-3 rounded-lg border-2 border-gray-300 focus:border-amber-500 focus:ring-amber-500" placeholder="e.g., 1/2 or 120" required autocomplete="off">
+                             <button type="submit" class="btn text-lg px-6 py-3" style="background-color: var(--accent-amber);">Submit</button>
+                         </form>
+                         <p id="feedback-text" class="mt-4 font-semibold text-lg h-7"></p>
+                     </div>
+
+                     <div id="level-complete-container" class="hidden text-center py-8">
+                         <h3 class="text-3xl font-bold" style="color: var(--accent-amber);">Challenge Complete!</h3>
+                         <p id="level-complete-score" class="text-xl mt-2 text-gray-700"></p>
+                         <button id="next-level-btn" class="btn mt-6 text-lg py-3 px-8" style="background-color: var(--accent-amber);">Next Challenge</button>
+                     </div>
+                </div>
+            </div>
+            <footer class="bottom-control-bar">
+                 <div class="text-center mr-4"><p class="text-xs text-gray-500">SCORE</p><p id="score" class="text-2xl font-bold text-gray-900">0</p></div>
+                 <button id="reset-game-btn" class="btn" style="background-color: var(--secondary-gray);">Reset Game</button>
+            </footer>
+        </section>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- DOM Elements ---
+            const mainContent = document.getElementById('main-content');
+            const infoSection = document.getElementById('info-section');
+            const activitySection = document.getElementById('activity-panel');
+            const activityInfoBtn = document.getElementById('activity-info-btn');
+            const difficultyBtn = document.getElementById('difficulty-btn');
+            const backBtn = document.getElementById('back-btn');
+            const headerTitle = document.getElementById('header-title');
+            
+            // --- Game Elements ---
+            const levelTitle = document.getElementById('level-title');
+            const scoreDisplay = document.getElementById('score');
+            const questionText = document.getElementById('question-text');
+            const answerForm = document.getElementById('answer-form');
+            const answerInput = document.getElementById('answer-input');
+            const feedbackText = document.getElementById('feedback-text');
+            const levelCompleteContainer = document.getElementById('level-complete-container');
+            const levelCompleteScore = document.getElementById('level-complete-score');
+            const nextLevelBtn = document.getElementById('next-level-btn');
+            const resetGameBtn = document.getElementById('reset-game-btn');
+            const gameBody = document.getElementById('game-body');
+            const gameActiveContainer = document.getElementById('game-active-container');
+
+            // --- Game Data & State ---
+            const problems = {
+                easy: [
+                    { q: "In how many ways can the letters of the word 'LEADER' be arranged?", a: "360" },
+                    { q: "P(A) = 0.8, P(B) = 0.5, P(A∩B) = 0.3. Find P(A∪B).", a: "1" },
+                    { q: "A die is tossed once. What is the probability of getting a prime number?", a: "1/2" },
+                    { q: "Find the value of 8P3.", a: "336" },
+                    { q: "Find the value of 10C3.", a: "120" }
+                ],
+                medium: [
+                    { q: "How many 3-digit numbers can be formed from the digits 1, 2, 3, 4 and 5 assuming that repetition of the digits is not allowed?", a: "60" },
+                    { q: "A bag contains 5 black and 8 red balls. Determine the number of ways in which 2 black and 3 red balls can be selected.", a: "560" },
+                    { q: "If P(A) = 3/5 and P(B) = 1/5, find P(A or B), if A and B are mutually exclusive events.", a: "4/5" },
+                    { q: "Find n if nP2 = 20.", a: "5" },
+                    { q: "In how many ways can 5 children be arranged in a line such that two particular children are always together?", a: "48" }
+                ],
+                hard: [
+                    { q: "In how many ways can a team of 3 boys and 3 girls be selected from 5 boys and 4 girls?", a: "40" },
+                    { q: "Given P(A) = 1/2, P(B) = 1/3, and P(A∩B) = 1/4, find P(A|B).", a: "3/4" },
+                    { q: "A speaks truth in 75% of cases and B in 80% of cases. In what percentage of cases are they likely to contradict each other in stating the same fact?", a: "35%" },
+                    { q: "How many chords can be drawn through 21 points on a circle?", a: "210" },
+                    { q: "In a group of 6 boys and 4 girls, 4 children are to be selected. In how many different ways can they be selected such that at least one boy is there?", a: "209" }
+                ]
+            };
+            
+            const levelOrder = ['easy', 'medium', 'hard'];
+            let currentLevelIndex = 0;
+            let score = 0;
+            let isAnswered = false;
+            let currentQuestion = null;
+            let shuffledProblems = [];
+
+            // --- UI & Layout Functions ---
+            function updateLayout(isActivityVisible) {
+                mainContent.classList.toggle('activity-visible', isActivityVisible);
+                headerTitle.textContent = isActivityVisible ? 'Activity: Combo King' : 'Information';
+                activityInfoBtn.textContent = isActivityVisible ? 'Information' : 'Start Activity';
+            }
+
+            // --- Game Logic Functions ---
+            function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+            function initializeGame() {
+                resetGame();
+            }
+
+            function resetGame() {
+                score = 0;
+                scoreDisplay.textContent = score;
+                resetLevel();
+            }
+
+            function resetLevel() {
+                const currentLevel = levelOrder[currentLevelIndex];
+                const originalProblems = problems[currentLevel];
+                shuffledProblems = [...originalProblems].sort(() => Math.random() - 0.5);
+                loadQuestion();
+            }
+
+            function loadQuestion() {
+                if (shuffledProblems.length === 0) {
+                    showLevelComplete();
+                    return;
+                }
+                
+                currentQuestion = shuffledProblems.pop();
+                isAnswered = false;
+
+                levelCompleteContainer.classList.add('hidden');
+                gameActiveContainer.style.display = 'block';
+                feedbackText.textContent = "";
+                
+                const currentLevelName = capitalize(levelOrder[currentLevelIndex]);
+                levelTitle.textContent = `${currentLevelName} Challenge`;
+                questionText.textContent = currentQuestion.q;
+                answerInput.value = "";
+                answerInput.disabled = false;
+                answerForm.querySelector('button').disabled = false;
+                answerInput.focus();
+            }
+
+            function handleAnswerSubmit(e) {
+                e.preventDefault();
+                if (isAnswered) return;
+                
+                isAnswered = true;
+                answerInput.disabled = true;
+                answerForm.querySelector('button').disabled = true;
+                
+                const userAnswer = answerInput.value.trim().toLowerCase();
+                const correctValue = currentQuestion.a.toLowerCase();
+
+                if (userAnswer === correctValue) {
+                    score += 10;
+                    scoreDisplay.textContent = score;
+                    feedbackText.textContent = "Correct! ✨";
+                    feedbackText.style.color = '#22c55e'; // Green
+                } else {
+                    feedbackText.textContent = `Not quite! The correct answer was ${currentQuestion.a}.`;
+                    feedbackText.style.color = '#ef4444'; // Red
+                }
+
+                setTimeout(loadQuestion, 2000);
+            }
+
+            function showLevelComplete() {
+                gameActiveContainer.style.display = 'none';
+                questionText.textContent = "";
+                levelCompleteContainer.classList.remove('hidden');
+                levelCompleteScore.textContent = `Your final score for this challenge: ${score}.`;
+                
+                if (currentLevelIndex >= levelOrder.length - 1) {
+                    nextLevelBtn.textContent = "Play Again";
+                } else {
+                     nextLevelBtn.textContent = "Next Challenge";
+                }
+            }
+
+            function handleNextLevel() {
+                 if (currentLevelIndex >= levelOrder.length - 1) {
+                    currentLevelIndex = 0; // Loop back to easy
+                } else {
+                    currentLevelIndex++;
+                }
+                difficultyBtn.textContent = `Difficulty: ${capitalize(levelOrder[currentLevelIndex])}`;
+                resetGame();
+            }
+            
+            // --- Event Listeners ---
+            activityInfoBtn.addEventListener('click', () => {
+                const isInfoVisible = !infoSection.classList.contains('hidden');
+                updateLayout(isInfoVisible);
+                if(isInfoVisible) { // If we are switching to activity view
+                    initializeGame();
+                }
+            });
+
+            difficultyBtn.addEventListener('click', () => {
+                currentLevelIndex = (currentLevelIndex + 1) % levelOrder.length;
+                const newDifficulty = capitalize(levelOrder[currentLevelIndex]);
+                difficultyBtn.textContent = `Difficulty: ${newDifficulty}`;
+                if (mainContent.classList.contains('activity-visible')) {
+                    resetGame();
+                }
+            });
+
+            resetGameBtn.addEventListener('click', resetGame);
+            nextLevelBtn.addEventListener('click', handleNextLevel);
+            answerForm.addEventListener('submit', handleAnswerSubmit);
+            backBtn.addEventListener('click', () => {
+                 window.history.back();
+            });
+
+        });
+    </script>
+</body>
+</html>

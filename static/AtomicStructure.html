@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chemistry Hub - Atomic Structure</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* --- CORE TEMPLATE & GLOBAL STYLES (Light Theme) --- */
+        :root {
+            --header-bg: #ffffff;
+            --page-bg: #f4f7f9;
+            --panel-bg: #ffffff;
+            --border-color: #e0e0e0;
+            --text-dark: #1e293b;
+            --text-light: #475569;
+            --accent-purple: #a78bfa;
+            --accent-green: #22c55e;
+            --accent-red: #ef4444;
+            --primary-blue: #007bff;
+            --secondary-gray: #6c757d;
+            --proton-color: #f87171;
+            --neutron-color: #9ca3af;
+            --electron-color: #60a5fa;
+        }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--page-bg);
+            color: var(--text-dark);
+            margin: 0;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .page-container { display: flex; flex-direction: column; height: 100vh; }
+        .header {
+            position: fixed; top: 0; left: 0; width: 100%; height: 60px;
+            background-color: var(--header-bg);
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 24px;
+            border-bottom: 1px solid var(--border-color);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            z-index: 1000;
+            box-sizing: border-box;
+        }
+        .header-section { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .header-section.center { text-align: center; font-size: 1.2em; font-weight: bold; }
+        .header-section.right { display: flex; justify-content: flex-end; }
+        .button {
+            padding: 8px 16px; margin-left: 10px; cursor: pointer;
+            border: none; border-radius: 6px; font-weight: 600; color: white;
+            transition: transform 0.1s;
+        }
+        .button:active { transform: scale(0.95); }
+        .main-content {
+            margin-top: 60px; padding: 24px; display: flex;
+            flex-grow: 1; overflow: hidden; box-sizing: border-box;
+            gap: 24px; justify-content: center;
+        }
+        .panel {
+            background-color: var(--panel-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            border: 1px solid var(--border-color);
+            box-sizing: border-box;
+            overflow-y: auto; padding: 24px 32px;
+            height: calc(100vh - 108px);
+        }
+        #info-panel { flex-shrink: 0; transition: width 400ms ease-in-out, margin 400ms ease-in-out; }
+        #activity-panel { display: none; flex-grow: 1; padding: 0; flex-direction: column; }
+        .main-content.activity-visible { justify-content: flex-start; }
+        .main-content.activity-visible #info-panel { width: 340px; min-width: 340px; }
+        .main-content.activity-visible #activity-panel { display: flex; }
+
+        /* --- ACTIVITY-SPECIFIC STYLES --- */
+        .activity-area { flex-grow: 1; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; padding: 1.5rem; }
+        .bottom-control-bar { height: 60px; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; background-color: var(--page-bg); border-top: 1px solid var(--border-color); flex-shrink: 0; }
+        .status-bar { font-weight: bold; color: var(--text-dark); }
+        .reset-button { padding: 8px 16px; cursor: pointer; background-color: var(--accent-red); color: white; border: none; border-radius: 6px; font-weight: 600; }
+        .game-header { display: flex; justify-content: space-between; align-items: flex-start; width: 100%; max-width: 600px; margin: 0 auto 1rem; }
+        .feedback { min-height: 30px; margin-top: 1rem; font-weight: 600; font-size: 1.1rem; }
+        .correct { color: var(--accent-green); }
+        .incorrect { color: var(--accent-red); }
+        .shake { animation: shake 0.5s ease-in-out; }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 20%, 60% { transform: translateX(-8px); } 40%, 80% { transform: translateX(8px); } }
+
+        /* Game 1 & 3: Quiz Game */
+        .quiz-question { font-size: 1.5rem; font-weight: 600; margin-bottom: 25px; min-height: 70px; }
+        .quiz-options { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; width: 100%; max-width: 500px; }
+        .quiz-option { background-color: #e2e8f0; border: 2px solid #cbd5e1; padding: 20px; font-size: 1.2rem; font-weight: 700; border-radius: 12px; cursor: pointer; transition: transform 0.2s; }
+        .quiz-option:hover:not(:disabled) { transform: translateY(-5px); }
+        .quiz-option:disabled { cursor: not-allowed; }
+        .quiz-option.correct { background-color: var(--accent-green) !important; color: white; }
+        .quiz-option.incorrect { background-color: var(--accent-red) !important; color: white; }
+
+        /* Game 2: Particle Sort */
+        .sort-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; width: 100%; max-width: 600px; margin: 1rem 0; }
+        .sort-box { min-height: 150px; background-color: #f1f5f9; border: 2px dashed #94a3b8; border-radius: 12px; padding: 1rem; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; width: 100%; }
+        .sort-box.drag-over { border-color: var(--accent-yellow); border-style: solid; }
+        .particle-pool { display: flex; justify-content: center; flex-wrap: wrap; gap: 15px; background: #e2e8f0; padding: 15px; border-radius: 12px; }
+        .particle { width: 40px; height: 40px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 1.2rem; font-weight: 700; cursor: grab; user-select: none; }
+        .particle:active { cursor: grabbing; transform: scale(1.1); box-shadow: 0 0 15px white; }
+        .proton { background: var(--proton-color); color: white; }
+        .neutron { background: var(--neutron-color); color: var(--text-dark); }
+        .electron { background: var(--electron-color); color: white; }
+
+        /* Game 3: Diagram Quiz */
+        .atom-diagram { position: relative; width: 250px; height: 250px; margin: 1rem 0; }
+        .nucleus { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 80px; height: 80px; background: rgba(0, 0, 0, 0.05); border: 2px dashed var(--text-light); border-radius: 50%; display: flex; flex-direction:column; align-content: center; justify-content: center; padding: 5px; }
+        .electron-shell { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); border: 2px solid var(--electron-color); border-radius: 50%; }
+        .shell-1 { width: 150px; height: 150px; }
+        .shell-2 { width: 220px; height: 220px; }
+        .diagram-particle { position: absolute; width: 15px; height: 15px; border-radius: 50%; }
+
+        /* Modal & Confetti */
+        .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); justify-content: center; align-items: center; }
+        .modal.active { display: flex; }
+        .modal-content { background: var(--panel-bg); padding: 40px 50px; border-radius: 20px; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.2); position: relative; }
+        .confetti { position: absolute; width: 10px; height: 10px; opacity: 0.9; animation: fall 3s linear forwards; }
+        @keyframes fall { to { transform: translateY(100vh) rotate(360deg); opacity: 0; } }
+    </style>
+</head>
+<body class="page-container">
+    
+    <header class="header">
+        <div class="header-section">Class 7 - Atomic Structure</div>
+        <div id="header-title" class="header-section center">Information</div>
+        <div class="header-section right">
+            <button id="back-btn" class="button" style="background-color: var(--secondary-gray);">Back</button>
+            <button id="toggle-view-btn" class="button" style="background-color: var(--primary-blue);">Activity</button>
+            <button id="difficulty-btn" class="button" style="background-color: var(--accent-purple);">Difficulty: Easy</button>
+        </div>
+    </header>
+
+    <main class="main-content" id="main-content">
+        <section id="info-panel" class="panel">
+            <h1 class="text-3xl font-bold mb-4" style="color: var(--accent-purple);">Simple Atomic Structure</h1>
+            <div style="display:flex; flex-direction:column; gap:1.5rem;">
+                <div>
+                    <h2 class="text-xl font-semibold">What is an Atom? ⚛️</h2>
+                    <p class="mt-2 text-gray-600">An atom is the smallest unit of matter. They have a central core called the <b>nucleus</b> and tiny <b>electrons</b> that orbit it.</p>
+                </div>
+                <div>
+                    <h2 class="text-xl font-semibold">Inside the Atom</h2>
+                    <ul class="list-disc list-inside mt-2 space-y-2 text-gray-600">
+                        <li><b>Protons (p⁺):</b> Positive particles in the nucleus. The number of protons determines the element.</li>
+                        <li><b>Neutrons (n⁰):</b> Neutral particles in the nucleus.</li>
+                        <li><b>Electrons (e⁻):</b> Negative particles that orbit the nucleus in layers called <b>shells</b>.</li>
+                    </ul>
+                </div>
+                 <div>
+                    <h2 class="text-xl font-semibold">How to Play the Games</h2>
+                     <ul class="list-disc list-inside mt-2 text-gray-600">
+                        <li><b>Easy (Guess the Element):</b> Identify an element from its atomic number or electron arrangement.</li>
+                        <li><b>Medium (Particle Sort):</b> Drag protons, neutrons, and electrons to their correct location in an atom.</li>
+                        <li><b>Hard (Identify the Atom):</b> Identify an element by looking at its full atomic diagram.</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="activity-panel" class="panel">
+            <div class="activity-area" id="activity-area"></div>
+            <footer class="bottom-control-bar">
+                <div id="status-bar" class="status-bar">Good luck!</div>
+                <button id="reset-btn" class="reset-button">Reset</button>
+            </footer>
+        </section>
+    </main>
+
+    <div class="modal" id="end-game-modal">
+        <div class="modal-content"><h2 id="modal-title"></h2><p id="modal-score"></p><button class="button" id="modal-close-btn" style="background-color: var(--primary-blue);">Play Again</button></div>
+    </div>
+
+    <script src="./neutralino.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            try { Neutralino.init(); } catch (e) { console.error("Neutralino not found."); }
+            
+            const difficulties = ['Easy', 'Medium', 'Hard'];
+            let showActivity = false, difficultyIdx = 0;
+
+            const mainContent = document.getElementById('main-content');
+            const infoPanel = document.getElementById('info-panel');
+            const activityArea = document.getElementById('activity-area');
+            const headerTitle = document.getElementById('header-title');
+            const toggleViewBtn = document.getElementById('toggle-view-btn');
+            const difficultyBtn = document.getElementById('difficulty-btn');
+            const backBtn = document.getElementById('back-btn');
+            const resetBtn = document.getElementById('reset-btn');
+            const modal = document.getElementById('end-game-modal');
+            const modalCloseBtn = document.getElementById('modal-close-btn');
+            
+            const allElements = {
+                Hydrogen: { p: 1, n: 0, e: 1, shells: [1] }, Helium: { p: 2, n: 2, e: 2, shells: [2] },
+                Lithium: { p: 3, n: 4, e: 3, shells: [2, 1] }, Beryllium: { p: 4, n: 5, e: 4, shells: [2, 2] },
+                Boron: { p: 5, n: 6, e: 5, shells: [2, 3] }, Carbon: { p: 6, n: 6, e: 6, shells: [2, 4] },
+                Nitrogen: { p: 7, n: 7, e: 7, shells: [2, 5] }, Oxygen: { p: 8, n: 8, e: 8, shells: [2, 6] },
+                Fluorine: { p: 9, n: 10, e: 9, shells: [2, 7] }, Neon: { p: 10, n: 10, e: 10, shells: [2, 8] },
+                Sodium: { p: 11, n: 12, e: 11, shells: [2, 8, 1] }, Magnesium: { p: 12, n: 12, e: 12, shells: [2, 8, 2] }
+            };
+
+            function updateLayout() {
+                if (showActivity) mainContent.classList.add('activity-visible');
+                else mainContent.classList.remove('activity-visible');
+                infoPanel.style.width = showActivity ? '340px' : `${Math.min(700, window.innerWidth - 48)}px`;
+                // MODIFIED: This now correctly updates the title with the current difficulty
+                headerTitle.textContent = showActivity ? `Activity (${difficulties[difficultyIdx]})` : 'Information';
+                toggleViewBtn.textContent = showActivity ? 'Information' : 'Activity';
+            }
+
+            function startGame() {
+                const difficulty = difficulties[difficultyIdx];
+                if (difficulty === 'Easy') initQuizGame();
+                else if (difficulty === 'Medium') initParticleSortGame();
+                else if (difficulty === 'Hard') initDiagramQuizGame();
+            }
+            
+            function showEndModal(title, scoreText) {
+                document.getElementById('modal-title').textContent = title;
+                document.getElementById('modal-score').textContent = scoreText;
+                modal.classList.add('active');
+            }
+            
+            let initQuizGame = () => {}, initParticleSortGame = () => {}, initDiagramQuizGame = () => {};
+
+            // --- Game 1: Guess the Element (Easy) ---
+            (() => {
+                let quizProblems, quizLevel, quizScore;
+                initQuizGame = () => {
+                    quizProblems = Object.keys(allElements).map(name => ({
+                        q: Math.random() > 0.5 ? `Atomic Number = ${allElements[name].p}` : `Arrangement = ${allElements[name].shells.join(', ')}`,
+                        a: name
+                    })).sort(() => 0.5 - Math.random()).slice(0, 5);
+                    quizLevel = 0; quizScore = 0;
+                    loadQuizProblem();
+                };
+
+                function loadQuizProblem() {
+                    if (quizLevel >= quizProblems.length) {
+                        showEndModal("Atomic Genius ⚡", `Final Score: ${quizScore}`);
+                        return;
+                    }
+                    const problem = quizProblems[quizLevel];
+                    activityArea.innerHTML = `
+                        <div class="game-header w-full max-w-lg"><h2>Guess the Element</h2><div class="stat-display">Score: <span>${quizScore}</span></div></div>
+                        <div class="quiz-question">${problem.q}</div><div class="quiz-options" id="quiz-options"></div>`;
+                    
+                    const options = new Set([problem.a]);
+                    while(options.size < 4) options.add(Object.keys(allElements)[Math.floor(Math.random() * Object.keys(allElements).length)]);
+                    
+                    const optionsEl = document.getElementById('quiz-options');
+                    [...options].sort(() => 0.5 - Math.random()).forEach(opt => {
+                        const btn = document.createElement('button');
+                        btn.className = 'quiz-option'; btn.textContent = opt;
+                        btn.onclick = () => handleQuizAnswer(opt === problem.a, btn);
+                        optionsEl.appendChild(btn);
+                    });
+                }
+
+                function handleQuizAnswer(isCorrect, btn) {
+                    Array.from(activityArea.querySelectorAll('.quiz-option')).forEach(b => {
+                        b.disabled = true;
+                        if(b.textContent === quizProblems[quizLevel].a) b.classList.add('correct');
+                    });
+                    if (isCorrect) { quizScore += 10; btn.classList.add('correct'); } 
+                    else { btn.classList.add('incorrect'); }
+                    quizLevel++;
+                    setTimeout(loadQuizProblem, 1500);
+                }
+            })();
+
+            // --- Game 2: Subatomic Particle Sort (Medium) ---
+            (() => {
+                let sortScore, particlesToSort;
+                initParticleSortGame = () => {
+                    sortScore = 0;
+                    particlesToSort = 6;
+                    activityArea.innerHTML = `
+                        <div class="game-header w-full max-w-xl"><h2>Subatomic Particle Sort</h2><div class="stat-display">Score: <span id="sort-score">0</span></div></div>
+                        <p class="text-lg">Drag the particles into the correct containers!</p>
+                        <div class="particle-pool" id="particle-pool"></div>
+                        <div class="sort-container">
+                            <div class="sort-box" id="protons-box" data-type="p⁺"><h3>Protons (p⁺)</h3></div>
+                            <div class="sort-box" id="neutrons-box" data-type="n⁰"><h3>Neutrons (n⁰)</h3></div>
+                            <div class="sort-box" id="electrons-box" data-type="e⁻"><h3>Electrons (e⁻)</h3></div>
+                        </div>`;
+
+                    const pool = document.getElementById('particle-pool');
+                    const types = ['p⁺', 'n⁰', 'e⁻'];
+                    for(let i = 0; i < particlesToSort; i++) {
+                        const type = types[i % 3];
+                        const p = document.createElement('div');
+                        p.className = `particle ${type === 'p⁺' ? 'proton' : type === 'n⁰' ? 'neutron' : 'electron'}`;
+                        p.textContent = type; p.draggable = true;
+                        p.addEventListener('dragstart', e => e.dataTransfer.setData('text/particle', type));
+                        pool.appendChild(p);
+                    }
+
+                    document.querySelectorAll('.sort-box').forEach(box => {
+                        box.addEventListener('dragover', e => {e.preventDefault(); e.currentTarget.classList.add('drag-over');});
+                        box.addEventListener('dragleave', e => e.currentTarget.classList.remove('drag-over'));
+                        box.addEventListener('drop', handleParticleDrop);
+                    });
+                };
+                
+                function handleParticleDrop(e) {
+                    e.preventDefault();
+                    const box = e.currentTarget;
+                    box.classList.remove('drag-over');
+                    const particleType = e.dataTransfer.getData('text/particle');
+                    
+                    if (box.dataset.type === particleType) {
+                        const particleEl = document.querySelector(`.particle[draggable='true'][class*="${particleType === 'e⁻' ? 'electron' : particleType === 'p⁺' ? 'proton' : 'neutron'}"]`);
+                        if (particleEl) {
+                           particleEl.draggable = false;
+                           particleEl.style.cursor = 'default';
+                           box.appendChild(particleEl);
+                           sortScore += 10;
+                           document.getElementById('sort-score').textContent = sortScore;
+                           if (document.getElementById('particle-pool').children.length === 0) {
+                               showEndModal("Sorting Complete!", `Your score: ${sortScore}`);
+                           }
+                        }
+                    } else {
+                        box.classList.add('shake');
+                        setTimeout(() => box.classList.remove('shake'), 500);
+                    }
+                }
+            })();
+
+            // --- Game 3: Identify the Atom (Hard) ---
+            (() => {
+                let diagramProblems, diagramLevel, diagramScore;
+                initDiagramQuizGame = () => {
+                    diagramProblems = Object.keys(allElements).sort(() => 0.5 - Math.random()).slice(0, 5);
+                    diagramLevel = 0; diagramScore = 0;
+                    loadDiagramProblem();
+                };
+
+                function loadDiagramProblem() {
+                    if (diagramLevel >= diagramProblems.length) {
+                        showEndModal("Atomic Identifier! ⚛️", `Final Score: ${diagramScore}`);
+                        return;
+                    }
+                    const targetName = diagramProblems[diagramLevel];
+                    const element = allElements[targetName];
+                    activityArea.innerHTML = `
+                        <div class="game-header w-full max-w-lg"><h2>Identify the Atom</h2><div class="stat-display">Score: <span>${diagramScore}</span></div></div>
+                        <p class="quiz-question">Which element is this?</p>
+                        <div class="atom-diagram" id="diagram-display"></div>
+                        <div class="quiz-options" id="diagram-options"></div>`;
+                    
+                    const diagramDisplay = document.getElementById('diagram-display');
+                    const nucleus = document.createElement('div');
+                    nucleus.className = 'nucleus';
+                    nucleus.innerHTML = `<span>${element.p}p⁺</span><span>${element.n}n⁰</span>`;
+                    diagramDisplay.appendChild(nucleus);
+
+                    element.shells.forEach((eCount, i) => {
+                        const shell = document.createElement('div');
+                        shell.className = `electron-shell shell-${i+1}`;
+                        diagramDisplay.appendChild(shell); // Append first to get offsetWidth
+                        for (let j = 0; j < eCount; j++) {
+                            const electron = document.createElement('div');
+                            electron.className = 'diagram-particle electron';
+                            const angle = (j / eCount) * 2 * Math.PI;
+                            const radius = shell.offsetWidth / 2 - 10;
+                             electron.style.left = `calc(50% + ${radius * Math.cos(angle)}px - 7.5px)`;
+                             electron.style.top = `calc(50% + ${radius * Math.sin(angle)}px - 7.5px)`;
+                            shell.appendChild(electron);
+                        }
+                    });
+
+                    const options = new Set([targetName]);
+                    while(options.size < 4) options.add(Object.keys(allElements)[Math.floor(Math.random() * Object.keys(allElements).length)]);
+                    
+                    const optionsEl = document.getElementById('diagram-options');
+                    [...options].sort(() => 0.5 - Math.random()).forEach(opt => {
+                        const btn = document.createElement('button');
+                        btn.className = 'quiz-option'; btn.textContent = opt;
+                        btn.onclick = () => handleDiagramAnswer(opt === targetName, btn);
+                        optionsEl.appendChild(btn);
+                    });
+                }
+
+                 function handleDiagramAnswer(isCorrect, btn) {
+                    Array.from(activityArea.querySelectorAll('.quiz-option')).forEach(b => {
+                        b.disabled = true;
+                        if(b.textContent === diagramProblems[diagramLevel]) b.classList.add('correct');
+                    });
+                    if (isCorrect) { diagramScore += 10; btn.classList.add('correct'); } 
+                    else { btn.classList.add('incorrect'); }
+                    diagramLevel++;
+                    setTimeout(loadDiagramProblem, 2000);
+                }
+            })();
+            
+            // --- Main Event Listeners ---
+            backBtn.addEventListener('click', () => { window.history.back(); });
+            toggleViewBtn.addEventListener('click', () => {
+                showActivity = !showActivity;
+                if (showActivity) startGame();
+                updateLayout();
+            });
+            difficultyBtn.addEventListener('click', () => {
+                difficultyIdx = (difficultyIdx + 1) % difficulties.length;
+                const newDifficulty = difficulties[difficultyIdx];
+                difficultyBtn.textContent = `Difficulty: ${newDifficulty}`;
+                // MODIFIED: Call updateLayout here to refresh the title
+                if (showActivity) {
+                    startGame();
+                    updateLayout();
+                }
+            });
+            resetBtn.addEventListener('click', startGame);
+            modalCloseBtn.addEventListener('click', () => {
+                modal.classList.remove('active');
+                startGame();
+            });
+            
+            updateLayout();
+        });
+    </script>
+</body>
+</html>
+

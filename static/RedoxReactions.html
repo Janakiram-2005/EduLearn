@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grade 11: Redox Reactions - Game Hub</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
+    <style>
+        :root {
+            --header-bg: #ffffff;
+            --page-bg: #f3f4f6;
+            --panel-bg: #ffffff;
+            --border-color: #e5e7eb;
+            --text-dark: #1f2937;
+            --text-mid: #4b5563;
+            --accent-orange: #f97316;
+            --accent-blue: #38bdf8;
+            --accent-green: #34d399;
+            --accent-red: #fb7185;
+            --primary-blue: #007bff;
+            --secondary-gray: #6c757d;
+        }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--page-bg);
+            color: var(--text-dark);
+            margin: 0;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .page-container { display: flex; flex-direction: column; height: 100vh; }
+        .header {
+            position: fixed; top: 0; left: 0; width: 100%; height: 60px;
+            background-color: var(--header-bg);
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 24px;
+            border-bottom: 1px solid var(--border-color);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            z-index: 1000;
+            box-sizing: border-box;
+        }
+        .header-section { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .header-section.center { text-align: center; font-size: 1.2em; font-weight: bold; }
+        .header-section.right { display: flex; justify-content: flex-end; }
+        .button {
+            padding: 8px 16px; margin-left: 10px; cursor: pointer;
+            border: none; border-radius: 6px; font-weight: 600; color: white;
+            transition: transform 0.1s;
+        }
+        .button:active { transform: scale(0.95); }
+        .main-content {
+            margin-top: 60px; padding: 24px; display: flex;
+            flex-grow: 1; overflow: hidden; box-sizing: border-box;
+            gap: 24px; justify-content: center;
+        }
+        .panel {
+            background-color: var(--panel-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            border: 1px solid var(--border-color);
+            box-sizing: border-box;
+            overflow-y: auto; padding: 24px 32px;
+            height: calc(100vh - 108px);
+        }
+        #info-panel { flex-shrink: 0; transition: width 400ms ease-in-out, margin 400ms ease-in-out; }
+        #activity-panel { display: none; flex-grow: 1; padding: 0; flex-direction: column; }
+        .main-content.activity-visible { justify-content: flex-start; }
+        .main-content.activity-visible #info-panel { width: 340px; min-width: 340px; }
+        .main-content.activity-visible #activity-panel { display: flex; }
+
+        /* --- ACTIVITY-SPECIFIC STYLES --- */
+        .activity-area { flex-grow: 1; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; padding: 1rem; background-color: #e0e7ff; border-radius: 12px; }
+        .bottom-control-bar { height: 60px; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; background-color: var(--page-bg); border-top: 1px solid var(--border-color); flex-shrink: 0; }
+        .status-bar { font-weight: bold; color: var(--text-dark); }
+        .reset-button { padding: 8px 16px; cursor: pointer; background-color: var(--accent-red); color: white; border: none; border-radius: 6px; font-weight: 600; }
+        .game-header { display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 0 1rem; }
+        .stat-box { padding: 0.5rem 1.25rem; border-radius: 8px; text-align: center; }
+        .stat-box-label { font-size: 0.75rem; font-weight: 500; opacity: 0.8; }
+        .stat-box-value { font-size: 1.5rem; font-weight: 700; }
+        #score-box { background-color: #dbeafe; color: #1e40af; }
+        #timer-box { background-color: #fee2e2; color: #991b1b; }
+        
+        /* Game 1: Redox Color Flip */
+        .card-container { perspective: 1000px; width: 280px; height: 180px; }
+        .card { position: relative; width: 100%; height: 100%; transition: transform 0.6s; transform-style: preserve-3d; }
+        .card.is-flipped { transform: rotateY(180deg); }
+        .card-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; font-weight: 700; border: 2px solid var(--border-color); background-color: var(--panel-bg); }
+        .card-back { transform: rotateY(180deg); color: white; }
+        .card-back.correct { background-color: var(--accent-green); border-color: #6ee7b7; }
+        .card-back.incorrect { background-color: var(--accent-red); border-color: #fda4af; animation: shake 0.5s; }
+        .controls { display: flex; gap: 1rem; margin-top: 2rem; }
+        .control-btn { padding: 1rem 2rem; font-size: 1.2rem; font-weight: 600; border-radius: 10px; border: none; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; }
+        .oxidized-btn { background-color: var(--accent-orange); color: white; }
+        .reduced-btn { background-color: var(--accent-blue); color: white; }
+        
+        /* Game 2 & 3 Quiz */
+        .quiz-question { font-size: 1.25rem; font-weight: 500; color: var(--text-dark); margin: 1.5rem 0; text-align: center; }
+        .options-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; width:100%; max-width: 700px; }
+        .option-btn { background-color: #e2e8f0; color: var(--text-dark); padding: 1.25rem; font-size: 1rem; font-weight: 600; border-radius: 0.75rem; transition: all 0.2s ease; border: 1px solid var(--border-color); cursor: pointer; }
+        .option-btn:hover:not(:disabled) { transform: scale(1.05); }
+        .option-btn.correct { background-color: var(--accent-green); color: white; }
+        .option-btn.incorrect { animation: shake 0.5s; background-color: var(--accent-red); color: white; }
+        
+        .feedback-text { margin-top: 1rem; font-weight: 600; font-size: 1.1rem; min-height: 24px; text-align: center; }
+        .level-complete-container h3 { font-size: 1.875rem; font-weight: bold; color: var(--accent-green); }
+        .level-complete-container p { font-size: 1.25rem; margin-top: 0.5rem; }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+    </style>
+</head>
+<body class="page-container">
+    
+    <header class="header">
+        <div class="header-section">Grade 11 - Redox Reactions</div>
+        <div id="header-title" class="header-section center">Information</div>
+        <div class="header-section right">
+            <button id="back-btn" class="button" style="background-color: var(--secondary-gray);">Back</button>
+            <button id="toggle-view-btn" class="button" style="background-color: var(--primary-blue);">Activity</button>
+            <button id="difficulty-btn" class="button" style="background-color: var(--accent-orange);">Difficulty: Easy</button>
+        </div>
+    </header>
+
+    <main class="main-content" id="main-content">
+        <section id="info-panel" class="panel">
+            <h1 class="text-3xl font-bold mb-4" style="color: var(--accent-orange);">Redox Reactions</h1>
+            <div style="display:flex; flex-direction:column; gap:1.5rem;">
+                <div>
+                    <h2 class="text-xl font-semibold">LEO says GER!</h2>
+                    <p class="mt-2 text-gray-600">This is a handy mnemonic for redox reactions:</p>
+                    <ul class="list-disc list-inside mt-2 text-gray-600">
+                        <li><b>L</b>ose <b>E</b>lectrons is <b>O</b>xidation.</li>
+                        <li><b>G</b>ain <b>E</b>lectrons is <b>R</b>eduction.</li>
+                    </ul>
+                </div>
+                <div>
+                    <h2 class="text-xl font-semibold">Oxidation & Reduction</h2>
+                    <ul class="list-disc list-inside mt-2 text-gray-600">
+                        <li><b>Oxidation:</b> A species is oxidized when it loses electrons, resulting in an increase in its oxidation state (e.g., Fe → Fe²⁺).</li>
+                        <li><b>Reduction:</b> A species is reduced when it gains electrons, resulting in a decrease in its oxidation state (e.g., Cu²⁺ → Cu).</li>
+                    </ul>
+                </div>
+                 <div>
+                    <h2 class="text-xl font-semibold">Agents</h2>
+                     <p class="mt-2 text-gray-600">In a redox reaction, one substance gets oxidized and the other gets reduced.</p>
+                     <ul class="list-disc list-inside mt-3 space-y-2 text-gray-600">
+                         <li>The <b>Oxidizing Agent</b> is the substance that gets reduced.</li>
+                         <li>The <b>Reducing Agent</b> is the substance that gets oxidized.</li>
+                     </ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="activity-panel" class="panel">
+            <div class="activity-area" id="activity-area"></div>
+            <footer class="bottom-control-bar">
+                <div id="status-bar" class="status-bar">Let's begin!</div>
+                <button id="reset-btn" class="reset-button">Reset</button>
+            </footer>
+        </section>
+    </main>
+
+    <script src="./neutralino.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            try { Neutralino.init(); } catch (e) { console.error("Neutralino not found."); }
+            
+            const difficulties = ['Easy', 'Medium', 'Hard'];
+            let showActivity = false, difficultyIdx = 0, score = 0;
+
+            const mainContent = document.getElementById('main-content');
+            const infoPanel = document.getElementById('info-panel');
+            const activityArea = document.getElementById('activity-area');
+            const headerTitle = document.getElementById('header-title');
+            const toggleViewBtn = document.getElementById('toggle-view-btn');
+            const difficultyBtn = document.getElementById('difficulty-btn');
+            const backBtn = document.getElementById('back-btn');
+            const resetBtn = document.getElementById('reset-btn');
+            const statusBar = document.getElementById('status-bar');
+            
+            const problems = {
+                easy: [ { r: 'Fe → Fe²⁺', a: 'oxidized', h: 'Losing electrons is Oxidation.' }, { r: 'Cu²⁺ → Cu', a: 'reduced', h: 'Gaining electrons is Reduction.' }, { r: 'Zn → Zn²⁺', a: 'oxidized', h: 'Oxidation state increased.' }, { r: 'Cl₂ → 2Cl⁻', a: 'reduced', h: 'Gained electrons.' }, { r: 'Na → Na⁺', a: 'oxidized', h: 'Lost an electron.' }, { r: 'Ag⁺ → Ag', a: 'reduced', h: 'Gained an electron.' }, { r: '2H⁺ → H₂', a: 'reduced', h: 'Gained electrons.' }, { r: 'Mg → Mg²⁺', a: 'oxidized', h: 'Lost 2 electrons.' } ],
+                medium: [ { q: 'In Zn + Cu²⁺ → Zn²⁺ + Cu, how many electrons were transferred?', a: '2e⁻ lost by Zn, 2e⁻ gained by Cu²⁺' }, { q: 'In 2Na + Cl₂ → 2NaCl, what is the change in oxidation state for Chlorine?', a: '0 to -1' }, { q: 'How many electrons are lost or gained in Fe²⁺ → Fe³⁺?', a: '1e⁻ lost' }, { q: 'How many electrons are lost or gained in O₂ → 2O²⁻?', a: '4e⁻ gained' }, { q: 'In Al → Al³⁺, how many electrons are involved?', a: '3e⁻ lost'} ],
+                hard: [ { r: 'MnO₄⁻ + 8H⁺ + 5e⁻ → Mn²⁺ + 4H₂O', q: 'What is the oxidizing agent?', a: 'MnO₄⁻' }, { r: 'Zn + 2HCl → ZnCl₂ + H₂', q: 'What is the reducing agent?', a: 'Zn' }, { r: 'Cl₂ + 2KBr → 2KCl + Br₂', q: 'What is oxidized?', a: 'KBr' }, { r: 'CuO + H₂ → Cu + H₂O', q: 'What is reduced?', a: 'CuO' }, { r: 'Fe₂O₃ + 3CO → 2Fe + 3CO₂', q: 'What is the oxidizing agent?', a: 'Fe₂O₃' } ]
+            };
+
+            function updateLayout() {
+                if (showActivity) mainContent.classList.add('activity-visible');
+                else mainContent.classList.remove('activity-visible');
+                infoPanel.style.width = showActivity ? '340px' : `${Math.min(700, window.innerWidth - 48)}px`;
+                headerTitle.textContent = showActivity ? `Activity: ${difficulties[difficultyIdx]}` : 'Information';
+                toggleViewBtn.textContent = showActivity ? 'Information' : 'Activity';
+            }
+
+            function startGame() {
+                score = 0;
+                statusBar.textContent = `Score: ${score}`;
+                const gameType = difficulties[difficultyIdx];
+                if (gameType === 'Easy') initRedoxColorFlip();
+                if (gameType === 'Medium') initElectronPuzzle();
+                if (gameType === 'Hard') initAgentIdentifier();
+            }
+
+            // --- Game 1: Redox Color Flip (EASY) ---
+            function initRedoxColorFlip() {
+                let currentProblemSet = [...problems.easy].sort(() => 0.5 - Math.random()).slice(0, 5);
+                let qIndex = 0;
+                
+                function setupRound() {
+                    if (qIndex >= currentProblemSet.length) {
+                        activityArea.innerHTML = `<div class="level-complete-container"><h3>Level Complete!</h3><p>Your score: ${score}</p></div>`;
+                        return;
+                    }
+                    const problem = currentProblemSet[qIndex];
+                    activityArea.innerHTML = `
+                        <div style="width:100%; max-width:700px;" class="text-center">
+                             <div class="game-header">
+                                <div><h2 class="text-2xl font-bold">Redox Color Flip</h2></div>
+                                <div id="score-box" class="stat-box"><div class="stat-box-label">SCORE</div><div id="score" class="stat-box-value">${score}</div></div>
+                            </div>
+                            <div class="card-container mt-8"><div id="card" class="card">
+                                <div class="card-face card-front">${problem.r.replace('→', '&rightarrow;')}</div>
+                                <div class="card-face card-back"></div>
+                            </div></div>
+                            <div class="controls">
+                                <button class="control-btn oxidized-btn">Oxidized</button>
+                                <button class="control-btn reduced-btn">Reduced</button>
+                            </div>
+                            <p id="feedback-text" class="feedback-text"></p>
+                        </div>`;
+
+                    activityArea.querySelector('.oxidized-btn').onclick = () => handleAnswer('oxidized', problem);
+                    activityArea.querySelector('.reduced-btn').onclick = () => handleAnswer('reduced', problem);
+                }
+
+                function handleAnswer(choice, problem) {
+                    const card = document.getElementById('card');
+                    const cardBack = card.querySelector('.card-back');
+                    card.classList.add('is-flipped');
+                    
+                    if (choice === problem.a) {
+                        score += 10;
+                        cardBack.classList.add('correct');
+                        cardBack.textContent = "Correct!";
+                    } else {
+                        cardBack.classList.add('incorrect');
+                        cardBack.textContent = "Incorrect!";
+                        document.getElementById('feedback-text').textContent = `Hint: ${problem.h}`;
+                    }
+                    document.getElementById('score').textContent = score;
+                    statusBar.textContent = `Score: ${score}`;
+                    qIndex++;
+                    setTimeout(setupRound, 2500);
+                }
+                setupRound();
+            }
+
+            // --- Game 2 & 3: Quiz Games (MEDIUM & HARD) ---
+            function initQuizGame() {
+                const difficulty = difficulties[difficultyIdx].toLowerCase();
+                let currentProblemSet = [...problems[difficulty]].sort(() => 0.5 - Math.random()).slice(0, 5);
+                let qIndex = 0;
+
+                function loadQuestion() {
+                    if (qIndex >= currentProblemSet.length) {
+                        activityArea.innerHTML = `<div class="level-complete-container"><h3>Level Complete!</h3><p>Your score: ${score}</p></div>`;
+                        return;
+                    }
+                    const problem = currentProblemSet[qIndex];
+                    let options = [problem.a];
+                    
+                    if(difficulty === 'medium') {
+                         const baseOptions = ['1e⁻ lost', '1e⁻ gained', '2e⁻ lost', '2e⁻ gained', '0 to -1', '0 to +1', '4e⁻ gained'];
+                         while(options.length < 4) {
+                             const randomOpt = baseOptions[Math.floor(Math.random() * baseOptions.length)];
+                             if(!options.includes(randomOpt)) options.push(randomOpt);
+                         }
+                    } else { // hard
+                        const baseOptions = ['H₂O', 'H⁺', 'e⁻', 'Zn', 'MnO₄⁻', 'KBr', 'CuO'];
+                         while(options.length < 4) {
+                             const randomOpt = baseOptions[Math.floor(Math.random() * baseOptions.length)];
+                             if(!options.includes(randomOpt)) options.push(randomOpt);
+                         }
+                    }
+                    
+                    activityArea.innerHTML = `
+                        <div style="width:100%; max-width:700px;" class="text-center">
+                            <div class="game-header">
+                                <div><h2 class="text-2xl font-bold">${difficulties[difficultyIdx]} Challenge</h2></div>
+                                <div id="score-box" class="stat-box"><div class="stat-box-label">SCORE</div><div id="score" class="stat-box-value">${score}</div></div>
+                            </div>
+                            <p class="quiz-question">${problem.q} <br> <span class="text-mid text-lg">${problem.r || ''}</span></p>
+                            <div class="options-grid"></div>
+                            <p class="feedback-text"></p>
+                        </div>`;
+                    
+                    const optionsContainer = activityArea.querySelector('.options-grid');
+                    options.sort(() => 0.5 - Math.random()).forEach(opt => {
+                        const btn = document.createElement('button');
+                        btn.className = 'option-btn';
+                        btn.textContent = opt;
+                        btn.onclick = (e) => checkQuizAnswer(e, opt === problem.a, problem.a);
+                        optionsContainer.appendChild(btn);
+                    });
+                }
+
+                function checkQuizAnswer(e, isCorrect, correctAnswer) {
+                    activityArea.querySelectorAll('.option-btn').forEach(b => b.disabled = true);
+                    if(isCorrect) {
+                        score += 20;
+                        e.currentTarget.classList.add('correct');
+                        activityArea.querySelector('.feedback-text').textContent = "Correct!";
+                    } else {
+                        e.currentTarget.classList.add('incorrect');
+                        activityArea.querySelector('.feedback-text').textContent = `Correct answer: ${correctAnswer}`;
+                    }
+                    document.getElementById('score').textContent = score;
+                    statusBar.textContent = `Score: ${score}`;
+                    qIndex++;
+                    setTimeout(loadQuestion, 2000);
+                }
+                loadQuestion();
+            }
+            
+            //Alias functions for clarity
+            const initElectronPuzzle = initQuizGame;
+            const initAgentIdentifier = initQuizGame;
+            
+            backBtn.addEventListener('click', () => { window.history.back(); });
+            toggleViewBtn.addEventListener('click', () => {
+                showActivity = !showActivity;
+                if (showActivity) startGame();
+                updateLayout();
+            });
+            difficultyBtn.addEventListener('click', () => {
+                difficultyIdx = (difficultyIdx + 1) % difficulties.length;
+                difficultyBtn.textContent = `Difficulty: ${difficulties[difficultyIdx]}`;
+                if (showActivity) startGame();
+            });
+            resetBtn.addEventListener('click', startGame);
+            window.addEventListener('resize', updateLayout);
+            updateLayout();
+        });
+    </script>
+</body>
+</html>
+

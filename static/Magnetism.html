@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Magnetism Educational Module</title>
+    <style>
+        :root {
+            --header-bg: #ffffff;
+            --page-bg: #f5f7fa;
+            --panel-bg: #ffffff;
+            --border-color: #e0e0e0;
+            --text-dark: #2c3e50;
+            --text-light: #475569;
+            --accent-blue-strong: #1565C0;
+            --accent-purple: #4527A0;
+            --primary-blue: #007bff;
+            --secondary-gray: #6c757d;
+            --accent-red: #e74c3c;
+        }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body { background-color: var(--page-bg); color: var(--text-dark); margin: 0; height: 100vh; overflow: hidden; }
+        .page-container { display: flex; flex-direction: column; height: 100vh; }
+        .header {
+            position: fixed; top: 0; left: 0; width: 100%; height: 60px;
+            background-color: var(--header-bg); display: flex; align-items: center; justify-content: space-between;
+            padding: 0 24px; border-bottom: 1px solid var(--border-color); box-shadow: 0 2px 4px rgba(0,0,0,0.05); z-index: 1000; box-sizing: border-box;
+        }
+        .header-section { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .header-section.center { text-align: center; font-size: 1.2em; font-weight: bold; }
+        .header-section.right { display: flex; justify-content: flex-end; }
+        .button {
+            padding: 8px 16px; margin-left: 10px; cursor: pointer;
+            border: none; border-radius: 6px; font-weight: 600; color: white;
+            transition: transform 0.1s, background-color 0.2s;
+        }
+        .button:active { transform: scale(0.95); }
+        .main-content {
+            margin-top: 60px; padding: 24px; display: flex;
+            flex-grow: 1; overflow: hidden; box-sizing: border-box;
+            gap: 24px; justify-content: center;
+        }
+        .panel {
+            background-color: var(--panel-bg); border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: 1px solid var(--border-color);
+            box-sizing: border-box; overflow-y: auto;
+            height: calc(100vh - 108px);
+            transition: width 400ms ease-in-out, min-width 400ms ease-in-out, margin 400ms ease-in-out;
+        }
+        #info-panel {
+            padding: 24px 32px;
+            width: 100%;
+            max-width: 700px;
+            margin: 0 auto;
+            flex-shrink: 0;
+        }
+        #activity-panel { display: none; flex-grow: 1; min-width: 400px; padding: 0; flex-direction: column; background-color: #f0f4f8; }
+        
+        .main-content.activity-visible { justify-content: flex-start; }
+        .main-content.activity-visible #info-panel { width: 340px; min-width: 340px; margin: 0; }
+        .main-content.activity-visible #activity-panel { display: flex; }
+
+        /* General Info Styles */
+        #info-panel h1 { color: var(--accent-blue-strong); margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid var(--accent-purple); }
+        #info-panel h2 { color: var(--accent-purple); margin: 20px 0 10px; }
+        #info-panel table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        #info-panel th, #info-panel td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+        #info-panel th { background-color: #f2f6fa; color: var(--accent-blue-strong); }
+        #info-panel ul { list-style-position: inside; }
+
+        /* Game Styles */
+        .activity-area { flex-grow: 1; padding: 20px; overflow-y: auto; }
+        .game-container { max-width: 800px; margin: 0 auto; }
+        .game-card { background-color: white; border-radius: 8px; padding: 20px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); }
+        .word-display { display: flex; justify-content: center; gap: 8px; margin-bottom: 25px; flex-wrap: wrap; }
+        .letter-box { width: 40px; height: 50px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: bold; border-bottom: 3px solid var(--accent-blue-strong); }
+        .letter-box.filled { color: var(--accent-blue-strong); }
+        .hint-container { background-color: #e3f2fd; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center; }
+        .keyboard { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 20px; }
+        .key { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background-color: #e0e6ed; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; transition: all 0.2s; }
+        .key:hover:not(:disabled) { background-color: #d0d9e4; }
+        .key.correct, .key.used.correct { background-color: #4caf50; color: white; }
+        .key.incorrect, .key.used.incorrect { background-color: #f44336; color: white; }
+        .key:disabled { opacity: 0.5; cursor: not-allowed; }
+        .game-feedback { padding: 15px; border-radius: 6px; margin-top: 20px; text-align: center; font-weight: bold; }
+        .feedback-correct { background-color: #e8f5e9; color: #2e7d32; }
+        .feedback-incorrect { background-color: #ffebee; color: #c62828; }
+        .bottom-control-bar { height: 60px; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; background-color: white; border-top: 1px solid #ddd; }
+        .status-bar { font-weight: bold; }
+        .reset-button { background-color: var(--accent-red); }
+    </style>
+</head>
+<body class="page-container">
+    <header class="header">
+        <div class="header-section">Class 8 - Magnetism</div>
+        <div id="header-title" class="header-section center">Information</div>
+        <div class="header-section right">
+            <button id="back-btn" class="button" style="background-color: var(--secondary-gray);">Back</button>
+            <button id="toggle-view-btn" class="button" style="background-color: var(--primary-blue);">Activity</button>
+            <button id="difficulty-btn" class="button" style="background-color: var(--accent-purple);">Mode: Easy</button>
+        </div>
+    </header>
+
+    <main class="main-content" id="main-content">
+        <section id="info-panel" class="panel">
+            <h1>Magnetism: Properties and Applications</h1>
+            <p>Magnetism is a fundamental force of nature that causes materials to attract or repel each other. It arises from the motion of electric charges.</p>
+            
+            <h2>Basic Principles</h2>
+            <ul>
+                <li><strong>Magnetic Poles:</strong> All magnets have north and south poles. Like poles repel, opposite poles attract.</li>
+                <li><strong>Magnetic Field:</strong> The region around a magnet where its force acts.</li>
+                <li><strong>Magnetic Materials:</strong> Materials strongly attracted to magnets, like iron, nickel, and cobalt.</li>
+            </ul>
+
+            <h2>Types of Magnets</h2>
+            <table>
+                <tr><th>Type</th><th>Description</th></tr>
+                <tr><td>Permanent Magnets</td><td>Retain their magnetic properties.</td></tr>
+                <tr><td>Temporary Magnets</td><td>Act as magnets only when in a magnetic field.</td></tr>
+                <tr><td>Electromagnets</td><td>Created by an electric current.</td></tr>
+            </table>
+        </section>
+
+        <section id="activity-panel" class="panel">
+            <div class="activity-area">
+                <div class="game-container">
+                    <h2 class="text-2xl font-bold text-center">Magnetism Word Guess</h2>
+                    <p class="text-center text-gray-500 mb-4">Guess the magnetism-related word by selecting letters.</p>
+                    <div class="game-card">
+                        <div id="hint-container" class="hint-container">Hint will appear here</div>
+                        <div id="word-display" class="word-display"></div>
+                        <div id="keyboard" class="keyboard"></div>
+                        <p id="game-feedback" class="game-feedback"></p>
+                    </div>
+                </div>
+            </div>
+            <footer class="bottom-control-bar">
+                <div id="status-bar" class="status-bar">Score: 0 | Attempts Left: 6</div>
+                <button id="reset-btn" class="button reset-button">New Word</button>
+            </footer>
+        </section>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const mainContent = document.getElementById('main-content');
+            const infoPanel = document.getElementById('info-panel');
+            const activityPanel = document.getElementById('activity-panel');
+            const headerTitle = document.getElementById('header-title');
+            const toggleViewBtn = document.getElementById('toggle-view-btn');
+            const difficultyBtn = document.getElementById('difficulty-btn');
+            const backBtn = document.getElementById('back-btn');
+            const resetBtn = document.getElementById('reset-btn');
+            const gameArea = document.getElementById('game-area');
+            const wordDisplay = document.getElementById('word-display');
+            const keyboard = document.getElementById('keyboard');
+            const hintContainer = document.getElementById('hint-container');
+            const gameFeedback = document.getElementById('game-feedback');
+            const statusBar = document.getElementById('status-bar');
+
+            let showActivity = false;
+            let difficultyIdx = 0;
+            const difficulties = ['easy', 'medium', 'hard'];
+            
+            let state = {};
+
+            const gameData = {
+                easy: [
+                    { word: "MAGNET", hint: "An object that produces a magnetic field" },
+                    { word: "POLES", hint: "The ends of a magnet (North & South)" },
+                    { word: "FIELD", hint: "A region of magnetic force" },
+                    { word: "IRON", hint: "A common magnetic metal" }
+                ],
+                medium: [
+                    { word: "ATTRACT", hint: "To pull something closer" },
+                    { word: "REPEL", hint: "To push something away" },
+                    { word: "COMPASS", hint: "A navigation tool using Earth's magnetic field" },
+                    { word: "CURRENT", hint: "Flow of charge that creates a magnetic field" }
+                ],
+                hard: [
+                    { word: "ELECTROMAGNET", hint: "A magnet made by an electric current" },
+                    { word: "FERROMAGNETIC", hint: "Term for materials strongly attracted to magnets" },
+                    { word: "LODESTONE", hint: "A naturally occurring magnetic mineral" },
+                    { word: "NEODYMIUM", hint: "A rare-earth metal used in very strong magnets" }
+                ]
+            };
+            
+            function updateLayout() {
+                mainContent.classList.toggle('activity-visible', showActivity);
+                headerTitle.textContent = showActivity ? 'Activity' : 'Information';
+                toggleViewBtn.textContent = showActivity ? 'Information' : 'Activity';
+            }
+
+            function startGame() {
+                const difficulty = difficulties[difficultyIdx];
+                const wordList = gameData[difficulty];
+                
+                state = {
+                    wordData: wordList[Math.floor(Math.random() * wordList.length)],
+                    guessedLetters: [],
+                    attemptsLeft: 6,
+                    score: state.score || 0,
+                    gameOver: false
+                };
+                
+                renderGame();
+            }
+            
+            function renderGame() {
+                const { word, hint } = state.wordData;
+                hintContainer.textContent = `Hint: ${hint}`;
+                
+                wordDisplay.innerHTML = word.split('').map(letter => `
+                    <div class="letter-box ${state.guessedLetters.includes(letter) ? 'filled' : ''}">
+                        ${state.guessedLetters.includes(letter) ? letter : ''}
+                    </div>
+                `).join('');
+
+                const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+                keyboard.innerHTML = alphabet.split('').map(letter => {
+                    let classes = 'key';
+                    if (state.guessedLetters.includes(letter)) {
+                        classes += ' used';
+                        classes += word.includes(letter) ? ' correct' : ' incorrect';
+                    }
+                    return `<button class="${classes}" data-letter="${letter}">${letter}</button>`;
+                }).join('');
+
+                keyboard.querySelectorAll('.key').forEach(key => key.addEventListener('click', handleGuess));
+                updateStatus();
+                checkWinOrLose();
+            }
+
+            function handleGuess(e) {
+                if (state.gameOver) return;
+                const letter = e.target.dataset.letter;
+                if (state.guessedLetters.includes(letter)) return;
+
+                state.guessedLetters.push(letter);
+                
+                if (!state.wordData.word.includes(letter)) {
+                    state.attemptsLeft--;
+                }
+                
+                renderGame();
+            }
+            
+            function checkWinOrLose() {
+                const word = state.wordData.word;
+                const won = word.split('').every(letter => state.guessedLetters.includes(letter));
+
+                if (won) {
+                    state.score += (difficultyIdx + 1) * 10;
+                    state.gameOver = true;
+                    gameFeedback.textContent = "You got it! Well done!";
+                    gameFeedback.className = "game-feedback feedback-correct";
+                    gameFeedback.style.display = 'block';
+                    setTimeout(startGame, 2000);
+                } else if (state.attemptsLeft <= 0) {
+                    state.gameOver = true;
+                    gameFeedback.textContent = `Game Over! The word was: ${word}`;
+                    gameFeedback.className = "game-feedback feedback-incorrect";
+                    gameFeedback.style.display = 'block';
+                    setTimeout(startGame, 3000);
+                } else {
+                     gameFeedback.style.display = 'none';
+                }
+            }
+
+            function updateStatus() {
+                statusBar.textContent = `Score: ${state.score} | Attempts Left: ${state.attemptsLeft}`;
+            }
+
+            // --- Event Listeners ---
+            toggleViewBtn.addEventListener('click', () => {
+                showActivity = !showActivity;
+                updateLayout();
+                if (showActivity) {
+                    state.score = 0; // Reset score when entering activity view
+                    startGame();
+                }
+            });
+
+            difficultyBtn.addEventListener('click', () => {
+                difficultyIdx = (difficultyIdx + 1) % difficulties.length;
+                const newDifficulty = difficulties[difficultyIdx];
+                difficultyBtn.textContent = `Mode: ${newDifficulty.charAt(0).toUpperCase() + newDifficulty.slice(1)}`;
+                if (showActivity) {
+                    state.score = 0; // Reset score on difficulty change
+                    startGame();
+                }
+            });
+            
+            resetBtn.addEventListener('click', () => {
+                if (showActivity) {
+                    startGame();
+                }
+            });
+            
+            backBtn.addEventListener('click', () => {
+                window.history.back();
+            });
+            
+            updateLayout();
+        });
+    </script>
+</body>
+</html>

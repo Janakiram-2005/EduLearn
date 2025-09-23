@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Food and Nutrition - Biology</title>
+    <style>
+        :root {
+            --primary-color: #27ae60;
+            --secondary-color: #2ecc71;
+            --bg-light: #f4f7f9;
+            --text-dark: #2c3e50;
+            --panel-bg: #ffffff;
+            --border-color: #e0e0e0;
+            --primary-blue: #007bff;
+            --secondary-gray: #6c757d;
+            --accent-red: #e74c3c;
+        }
+        
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-light);
+            color: var(--text-dark);
+        }
+
+        .page-container {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 60px;
+            background-color: var(--panel-bg);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            border-bottom: 1px solid var(--border-color);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            z-index: 1000;
+            box-sizing: border-box;
+        }
+
+        .header-section {
+            flex: 1 1 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .header-section.center {
+            text-align: center;
+            font-size: 1.25em;
+            font-weight: 700;
+        }
+        .header-section.right {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .header-button {
+            padding: 8px 16px;
+            margin-left: 12px;
+            cursor: pointer;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            color: white;
+            transition: transform 0.1s ease;
+        }
+        .header-button:active {
+            transform: scale(0.95);
+        }
+
+        .main-content {
+            padding: 24px;
+            margin-top: 60px; /* Pushed down by the fixed header */
+            flex-grow: 1;
+            overflow: hidden;
+            box-sizing: border-box;
+            display: flex;
+            gap: 24px;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        #info-panel {
+            flex-shrink: 0;
+            background-color: var(--panel-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            box-sizing: border-box;
+            overflow-y: auto;
+            height: calc(100vh - 108px);
+            transition: width 0.4s ease-in-out, margin 0.4s ease-in-out;
+            padding: 24px 32px;
+            border: 1px solid var(--border-color);
+        }
+        
+        #activity-panel {
+            flex-grow: 1;
+            padding: 0;
+            display: none;
+            flex-direction: column;
+            background-color: var(--panel-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            height: calc(100vh - 108px);
+            border: 1px solid var(--border-color);
+        }
+        
+        .main-content.activity-visible #activity-panel {
+            display: flex;
+        }
+        
+        .main-activity-area {
+            flex-grow: 1;
+            position: relative;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .controls-status-area {
+            flex-shrink: 0;
+            height: 60px;
+            background-color: var(--bg-light);
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            font-weight: 600;
+        }
+        
+        .reset-button {
+            padding: 8px 20px;
+            cursor: pointer;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            color: white;
+            background-color: var(--accent-red);
+        }
+        
+        /* Layout change for activity view */
+        .main-content.activity-visible {
+            justify-content: flex-start;
+        }
+        
+        /* Activity Specific Styles */
+        .easy-mode-container { display: flex; justify-content: space-between; gap: 20px; height: 100%; }
+        .food-items, .nutrient-targets { width: 48%; padding: 10px; border-radius: 8px; background: #ecf0f1; }
+        .food-item { background: white; padding: 10px 15px; margin-bottom: 10px; border-radius: 5px; cursor: grab; border: 1px solid #bdc3c7; text-align: center; font-weight: 500; }
+        .nutrient-target { background: white; padding: 20px; margin-bottom: 10px; border-radius: 5px; border: 2px dashed #95a5a6; text-align: center; min-height: 50px; }
+        .nutrient-target.over { background-color: #d4e6f1; border-color: #3498db; }
+
+        .quiz-container { text-align: center; }
+        .quiz-question { font-size: 1.5em; margin: 20px 0; min-height: 100px; }
+        .quiz-options { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
+        .quiz-option-btn { padding: 15px; font-size: 1em; cursor: pointer; border: 1px solid var(--border-color); background: white; border-radius: 8px; transition: all 0.2s ease; }
+        .quiz-option-btn:hover:not(:disabled) { background-color: var(--bg-light); transform: translateY(-2px); }
+        .quiz-option-btn.correct { background-color: var(--primary-color); color: white; border-color: var(--primary-color); }
+        .quiz-option-btn.incorrect { background-color: var(--accent-red); color: white; border-color: var(--accent-red); }
+        .feedback-text { margin-top: 20px; font-size: 1.2em; font-weight: bold; min-height: 30px; }
+    </style>
+</head>
+<body>
+
+    <div class="page-container">
+        <header class="header">
+            <div class="header-section">Grade 6 - Biology - Food & Nutrition</div>
+            <div class="header-section center" id="header-title">Information: Food & Nutrition</div>
+            <div class="header-section right">
+                <button class="header-button" style="background-color: var(--secondary-gray);" id="back-btn">Back</button>
+                <button class="header-button" style="background-color: var(--primary-blue);" id="toggle-view-btn">Activity</button>
+                <button class="header-button" style="background-color: var(--primary-color); min-width: 130px;" id="difficulty-btn">Difficulty: Easy</button>
+            </div>
+        </header>
+
+        <main class="main-content" id="main-content">
+            <aside id="info-panel">
+                <h1>Food and Nutrition 🍎</h1>
+                <p>Food is essential for all living organisms. It provides energy for carrying out daily activities, helps in growth, repairs damaged body parts, and protects us from diseases. The substances in food that our body needs to grow and stay healthy are called **nutrients**.</p>
+                <h2>Major Nutrients</h2>
+                <ul>
+                    <li><strong>Carbohydrates:</strong> They are the main source of energy. Sources include rice, wheat, and potatoes.</li>
+                    <li><strong>Fats:</strong> They provide energy and help keep the body warm. Sources include oil, butter, and nuts.</li>
+                    <li><strong>Proteins:</strong> Known as "body-building" foods, they are for growth and repair. Sources include milk, eggs, and pulses.</li>
+                    <li><strong>Vitamins:</strong> Required in small amounts to protect our body against diseases.</li>
+                    <li><strong>Minerals:</strong> Needed for proper functioning and health. Examples include calcium and iron.</li>
+                </ul>
+                <h2>Balanced Diet</h2>
+                <p>A diet that contains all the essential nutrients in the right proportions, along with roughage and water, is a **balanced diet**.</p>
+                <h2>Vitamins and Deficiency Diseases</h2>
+                <table style="width:100%; border-collapse: collapse; margin-top: 15px;">
+                    <tr style="background-color: #ecf0f1;"><th style="border: 1px solid #ccc; padding: 8px;">Vitamin</th><th style="border: 1px solid #ccc; padding: 8px;">Deficiency Disease</th><th style="border: 1px solid #ccc; padding: 8px;">Sources</th></tr>
+                    <tr><td style="border: 1px solid #ccc; padding: 8px;">Vitamin A</td><td style="border: 1px solid #ccc; padding: 8px;">Night Blindness</td><td style="border: 1px solid #ccc; padding: 8px;">Carrots, Papaya</td></tr>
+                    <tr><td style="border: 1px solid #ccc; padding: 8px;">Vitamin C</td><td style="border: 1px solid #ccc; padding: 8px;">Scurvy</td><td style="border: 1px solid #ccc; padding: 8px;">Citrus fruits</td></tr>
+                    <tr><td style="border: 1px solid #ccc; padding: 8px;">Vitamin D</td><td style="border: 1px solid #ccc; padding: 8px;">Rickets</td><td style="border: 1px solid #ccc; padding: 8px;">Sunlight, Milk</td></tr>
+                </table>
+            </aside>
+            <section id="activity-panel">
+                <div class="main-activity-area" id="main-activity-area"></div>
+                <div class="controls-status-area">
+                    <div id="status-display">Score: 0</div>
+                    <button class="reset-button" id="reset-btn">Reset</button>
+                </div>
+            </section>
+        </main>
+    </div>
+
+<script src="neutralino.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Gracefully handle Neutralino initialization
+            try {
+                Neutralino.init();
+            } catch (err) {
+                console.log("Could not initialize Neutralino. Running in browser mode. Some features like native dialogs will fall back to browser defaults.");
+            }
+
+            // --- DATA & CONFIGURATION ---
+            const DIFFICULTY_LEVELS = ['Easy', 'Medium', 'Hard'];
+            const easyData = { items: [{ n: 'Rice 🍚', t: 'Carbohydrates' },{ n: 'Butter 🧈', t: 'Fats' },{ n: 'Eggs 🥚', t: 'Proteins' },{ n: 'Orange 🍊', t: 'Vitamins' },{ n: 'Spinach 🥬', t: 'Minerals' }], targets: ['Carbohydrates', 'Proteins', 'Fats', 'Vitamins', 'Minerals'] };
+            const mediumData = [ { q: 'What disease is caused by a deficiency of Vitamin C?', o: ['Scurvy', 'Rickets', 'Beri-Beri', 'Goitre'], a: 'Scurvy' }, { q: 'Lack of Vitamin D leads to which condition?', o: ['Anemia', 'Scurvy', 'Rickets', 'Night Blindness'], a: 'Rickets' }, { q: 'A deficiency of Iron causes...', o: ['Goitre', 'Anemia', 'Beri-Beri', 'Scurvy'], a: 'Anemia' }, { q: 'Night blindness is caused by a lack of which vitamin?', o: ['Vitamin C', 'Vitamin K', 'Vitamin A', 'Vitamin B'], a: 'Vitamin A' }];
+            const hardData = [ { q: 'What is the main nutrient in *Solanum tuberosum* (Potato)?', o: ['Protein', 'Carbohydrates', 'Fats', 'Vitamin C'], a: 'Carbohydrates' }, { q: 'What vitamin is abundant in *Citrus × sinensis* (Orange)?', o: ['Vitamin A', 'Vitamin D', 'Vitamin C', 'Vitamin B'], a: 'Vitamin C' }, { q: 'The fruit of *Musa acuminata* (Banana) is a rich source of...', o: ['Calcium', 'Iron', 'Iodine', 'Potassium'], a: 'Potassium' }, { q: '*Spinacia oleracea* (Spinach) is well-known for being rich in...', o: ['Iron', 'Potassium', 'Sodium', 'Zinc'], a: 'Iron' }];
+            let showActivity = false, difficultyIdx = 0, score = 0, questionIdx = 0, gameData = [];
+
+            // --- DOM REFERENCES ---
+            const mainContent = document.getElementById('main-content');
+            const infoPanel = document.getElementById('info-panel');
+            const toggleViewBtn = document.getElementById('toggle-view-btn');
+            const backBtn = document.getElementById('back-btn');
+            const headerTitle = document.getElementById('header-title');
+            const difficultyBtn = document.getElementById('difficulty-btn');
+            const activityArea = document.getElementById('main-activity-area');
+            const statusDisplay = document.getElementById('status-display');
+            const resetBtn = document.getElementById('reset-btn');
+
+            // --- LAYOUT & RENDER LOGIC ---
+            function updateLayout() {
+                if (showActivity) mainContent.classList.add('activity-visible');
+                else mainContent.classList.remove('activity-visible');
+                infoPanel.style.width = showActivity ? `320px` : `${Math.min(700, window.innerWidth - 48)}px`;
+                infoPanel.style.margin = showActivity ? '0' : '0 auto';
+                headerTitle.textContent = showActivity ? 'Activity: Food & Nutrition' : 'Information: Food & Nutrition';
+                toggleViewBtn.textContent = showActivity ? 'Information' : 'Activity';
+            }
+            
+            function startGame() {
+                score = 0;
+                questionIdx = 0;
+                const difficulty = DIFFICULTY_LEVELS[difficultyIdx];
+                if (difficulty === 'Easy') gameData = JSON.parse(JSON.stringify(easyData.items)).sort(() => 0.5 - Math.random());
+                if (difficulty === 'Medium') gameData = [...mediumData].sort(() => 0.5 - Math.random());
+                if (difficulty === 'Hard') gameData = [...hardData].sort(() => 0.5 - Math.random());
+                renderActivity();
+            }
+
+            function renderActivity() {
+                activityArea.innerHTML = '';
+                statusDisplay.textContent = `Score: ${score}`;
+                const difficulty = DIFFICULTY_LEVELS[difficultyIdx];
+                if (difficulty === 'Easy') renderEasyMode();
+                else renderQuizMode();
+            }
+
+            function renderEasyMode() {
+                const remainingItems = gameData.filter(item => !item.placed);
+                if (remainingItems.length === 0) {
+                    activityArea.innerHTML = `<h2>Well Done! You've matched all items!</h2>`;
+                    return;
+                }
+                activityArea.innerHTML = `<div class="easy-mode-container"><div class="food-items"><h3>Drag Food Items</h3></div><div class="nutrient-targets"><h3>To Nutrient Groups</h3></div></div>`;
+                const itemsDiv = activityArea.querySelector('.food-items');
+                remainingItems.forEach(item => {
+                    const itemEl = document.createElement('div');
+                    itemEl.className = 'food-item';
+                    itemEl.textContent = item.n;
+                    itemEl.draggable = true;
+                    itemEl.addEventListener('dragstart', e => e.dataTransfer.setData('text/plain', item.t));
+                    itemsDiv.appendChild(itemEl);
+                });
+                const targetsDiv = activityArea.querySelector('.nutrient-targets');
+                easyData.targets.forEach(target => {
+                    const targetEl = document.createElement('div');
+                    targetEl.className = 'nutrient-target';
+                    targetEl.textContent = target;
+                    targetEl.addEventListener('dragover', e => { e.preventDefault(); targetEl.classList.add('over'); });
+                    targetEl.addEventListener('dragleave', () => targetEl.classList.remove('over'));
+                    targetEl.addEventListener('drop', e => {
+                        e.preventDefault();
+                        targetEl.classList.remove('over');
+                        if (e.dataTransfer.getData('text/plain') === target) {
+                            score++;
+                            const matchedItem = gameData.find(item => item.t === target);
+                            if (matchedItem) matchedItem.placed = true;
+                            renderActivity();
+                        } else {
+                            if (window.Neutralino) Neutralino.os.showMessageBox('Incorrect', 'That food does not belong here. Try again!');
+                            else alert('Incorrect! That food does not belong here. Try again!');
+                        }
+                    });
+                    targetsDiv.appendChild(targetEl);
+                });
+            }
+            
+            function renderQuizMode() {
+                if (questionIdx >= gameData.length) {
+                    activityArea.innerHTML = `<h2>Activity Complete! Your score: ${score}/${gameData.length}</h2>`;
+                    return;
+                }
+                const q = gameData[questionIdx];
+                activityArea.innerHTML = `<div class="quiz-container"><div class="quiz-question">${q.q}</div><div class="quiz-options"></div><div class="feedback-text"></div></div>`;
+                const optionsDiv = activityArea.querySelector('.quiz-options');
+                q.o.forEach(opt => {
+                    const btn = document.createElement('button');
+                    btn.className = 'quiz-option-btn';
+                    btn.textContent = opt;
+                    btn.onclick = () => handleAnswer(opt, q.a, optionsDiv);
+                    optionsDiv.appendChild(btn);
+                });
+            }
+
+            function handleAnswer(selected, correct, optionsDiv) {
+                Array.from(optionsDiv.children).forEach(b => b.disabled = true);
+                const feedbackEl = activityArea.querySelector('.feedback-text');
+                if (selected === correct) {
+                    score++;
+                    feedbackEl.textContent = "Correct! 🎉";
+                    feedbackEl.style.color = 'var(--primary-color)';
+                    optionsDiv.querySelector(`button:nth-child(${gameData[questionIdx].o.indexOf(selected) + 1})`).classList.add('correct');
+                } else {
+                    feedbackEl.textContent = `Correct Answer: ${correct}`;
+                    feedbackEl.style.color = 'var(--accent-red)';
+                    optionsDiv.querySelector(`button:nth-child(${gameData[questionIdx].o.indexOf(selected) + 1})`).classList.add('incorrect');
+                    optionsDiv.querySelector(`button:nth-child(${gameData[questionIdx].o.indexOf(correct) + 1})`).classList.add('correct');
+                }
+                statusDisplay.textContent = `Score: ${score}`;
+                setTimeout(() => { questionIdx++; renderActivity(); }, 2000);
+            }
+
+            // --- EVENT LISTENERS ---
+            backBtn.addEventListener('click', () => { window.history.back(); });
+            toggleViewBtn.addEventListener('click', () => {
+                showActivity = !showActivity;
+                if (showActivity) startGame();
+                updateLayout();
+            });
+            difficultyBtn.addEventListener('click', () => {
+                difficultyIdx = (difficultyIdx + 1) % DIFFICULTY_LEVELS.length;
+                difficultyBtn.textContent = `Difficulty: ${DIFFICULTY_LEVELS[difficultyIdx]}`;
+                if (showActivity) startGame();
+            });
+            resetBtn.addEventListener('click', startGame);
+            window.addEventListener('resize', updateLayout);
+
+            updateLayout();
+        });
+    </script>
+</body>
+</html>

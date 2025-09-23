@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Microbe Defender 2.0</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* --- CORE TEMPLATE & GLOBAL STYLES (Light Theme) --- */
+        :root {
+            --header-bg: #ffffff;
+            --page-bg: #f4f7f9;
+            --panel-bg: #ffffff;
+            --border-color: #e0e0e0;
+            --text-dark: #1e293b;
+            --text-light: #475569;
+            --accent-blue-strong: #3b82f6;
+            --accent-green: #22c55e;
+            --accent-red: #ef4444;
+            --accent-yellow: #f59e0b;
+            --primary-blue: #007bff;
+            --secondary-gray: #6c757d;
+        }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--page-bg);
+            color: var(--text-dark);
+            margin: 0;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .page-container { display: flex; flex-direction: column; height: 100vh; }
+        .header {
+            position: fixed; top: 0; left: 0; width: 100%; height: 60px;
+            background-color: var(--header-bg);
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 24px;
+            border-bottom: 1px solid var(--border-color);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            z-index: 1000;
+            box-sizing: border-box;
+        }
+        .header-section { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .header-section.center { text-align: center; font-size: 1.2em; font-weight: bold; }
+        .header-section.right { display: flex; justify-content: flex-end; }
+        .button {
+            padding: 8px 16px; margin-left: 10px; cursor: pointer;
+            border: none; border-radius: 6px; font-weight: 600; color: white;
+            transition: transform 0.1s;
+        }
+        .button:active { transform: scale(0.95); }
+        .main-content {
+            margin-top: 60px; padding: 24px; display: flex;
+            flex-grow: 1; overflow: hidden; box-sizing: border-box;
+            gap: 24px; justify-content: center;
+        }
+        .panel {
+            background-color: var(--panel-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            border: 1px solid var(--border-color);
+            box-sizing: border-box;
+            overflow-y: auto; padding: 24px 32px;
+            height: calc(100vh - 108px);
+            transition: width 400ms ease-in-out, min-width 400ms ease-in-out, margin 400ms ease-in-out;
+        }
+        #info-panel {
+            flex-shrink: 0;
+            width: 100%;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+        #activity-panel { display: none; flex-grow: 1; padding: 0; flex-direction: column; }
+        
+        /* Layout when activity is visible */
+        .main-content.activity-visible { justify-content: flex-start; }
+        .main-content.activity-visible #info-panel { width: 340px; min-width: 340px; margin: 0; }
+        .main-content.activity-visible #activity-panel { display: flex; }
+
+        /* --- ACTIVITY-SPECIFIC STYLES --- */
+        #gameArea {
+            flex-grow: 1;
+            position: relative;
+            background: #e6f7ff;
+            overflow: hidden;
+            border-radius: 12px 12px 0 0;
+            border: 1px solid #a8dadc;
+        }
+        .bottom-control-bar {
+            height: 60px; display: flex; justify-content: space-between; align-items: center;
+            padding: 0 20px; background-color: var(--panel-bg);
+            border-top: 1px solid var(--border-color); flex-shrink: 0;
+            border-radius: 0 0 12px 12px;
+        }
+        .status-bar { font-weight: bold; font-size: 1.1em; color: var(--text-dark); }
+        .reset-button { background-color: var(--accent-red); }
+
+        #basket {
+            position: absolute; bottom: 10px; left: 50%;
+            transform: translateX(-50%); width: 80px; height: 50px;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 80"><path d="M10 20 H90 V70 H10 Z" fill="%23FFFFFF" stroke="%23004d40" stroke-width="4"/><path d="M0 0 H100 V20 H0 Z" fill="%23004d40"/><rect x="10" y="25" width="80" height="10" fill="%23a7ffeb"/></svg>') no-repeat center center;
+            background-size: contain; z-index: 10;
+        }
+        .microbe {
+            position: absolute; width: 40px; height: 40px;
+            border-radius: 50%; text-align: center; line-height: 40px;
+            font-size: 18px; color: white; font-weight: bold;
+            border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3); z-index: 5;
+        }
+        .good { background: var(--accent-green); }
+        .bad { background: var(--accent-red); }
+        .powerup { background: var(--accent-yellow); font-size: 24px; }
+        
+        #scoreboard {
+            position: absolute; top: 10px; left: 10px;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 8px 12px; border-radius: 8px; font-size: 1.1em;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2); z-index: 10; font-weight: 600;
+        }
+
+        /* --- Feedback Animations --- */
+        .screen-flash-animation { animation: screenFlash 0.3s ease-out; }
+        @keyframes screenFlash {
+            0% { box-shadow: inset 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            100% { box-shadow: inset 0 0 0 2000px rgba(239, 68, 68, 0); }
+        }
+
+        .catch-effect {
+            position: absolute; width: 50px; height: 50px;
+            border-radius: 50%; background-color: rgba(255, 255, 255, 0.7);
+            animation: catchPop 0.3s ease-out forwards;
+            z-index: 20;
+        }
+        @keyframes catchPop {
+            from { transform: scale(0); opacity: 1; }
+            to { transform: scale(1.5); opacity: 0; }
+        }
+
+        /* --- End-of-Game Screens --- */
+        #endGameScreen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.7); color: white;
+            display: none; flex-direction: column; justify-content: center;
+            align-items: center; font-size: 2em; font-weight: bold; z-index: 100;
+        }
+        #endGameScreen h2 { margin-bottom: 10px; }
+        #endGameScreen p { font-size: 0.7em; margin: 0; }
+        #endGameScreen button {
+            margin-top: 20px; padding: 10px 25px; font-size: 0.7em;
+            background-color: var(--accent-blue-strong); color: white;
+            border: none; border-radius: 8px; cursor: pointer; transition: background-color 0.2s;
+        }
+    </style>
+</head>
+<body class="page-container">
+    
+    <header class="header">
+        <div class="header-section">Grade 8 - Microorganisms</div>
+        <div id="header-title" class="header-section center">Information</div>
+        <div class="header-section right">
+            <button id="back-btn" class="button" style="background-color: var(--secondary-gray);">Back</button>
+            <button id="toggle-view-btn" class="button" style="background-color: var(--primary-blue);">Activity</button>
+            <button id="difficulty-btn" class="button" style="background-color: var(--accent-blue-strong);">Mode: Easy</button>
+        </div>
+    </header>
+
+    <main class="main-content" id="main-content">
+        <section id="info-panel" class="panel">
+            <h1>Microbe Defender Guide 🧫</h1>
+            <p>Your mission is to survive the round by catching useful microbes and avoiding harmful ones. Good luck!</p>
+            
+            <h2>✅ Useful Microbes</h2>
+            <ul>
+                <li><b>Bacteria (B):</b> Helps make foods like yogurt and cheese.</li>
+                <li><b>Fungi (F):</b> Yeast helps make bread and Penicillium gives us antibiotics.</li>
+                <li><b>Algae (A):</b> Produces oxygen and is a key food source in water.</li>
+            </ul>
+            <h2>❌ Harmful Microbes</h2>
+            <ul>
+                <li><b>Bacteria (TB):</b> Can cause diseases like Tuberculosis.</li>
+                <li><b>Protozoa (P):</b> Can cause diseases like malaria.</li>
+                <li><b>Virus (V):</b> Always harmful, causing illnesses like the flu.</li>
+            </ul>
+            <h2>⭐ Special Items</h2>
+            <ul>
+                <li><b>Soap (🧼):</b> A powerful power-up! Catch it to clear all harmful microbes from the screen.</li>
+            </ul>
+        </section>
+
+        <section id="activity-panel" class="panel">
+            <div id="gameArea">
+                <div id="basket"></div>
+                <div id="scoreboard">Score: 0 | Health: ❤️❤️❤️</div>
+                <div id="endGameScreen">
+                    <h2 id="endGameTitle">Game Over!</h2>
+                    <p id="finalScoreText"></p>
+                    <button id="playAgainButton">Play Again</button>
+                </div>
+            </div>
+            <footer class="bottom-control-bar">
+                <div id="timer-display" class="status-bar">Time Left: 60s</div>
+                <button id="reset-btn" class="button reset-button">Reset Game</button>
+            </footer>
+        </section>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const mainContent = document.getElementById('main-content');
+            const gameArea = document.getElementById('gameArea');
+            const basket = document.getElementById('basket');
+            const scoreboard = document.getElementById('scoreboard');
+            const headerTitle = document.getElementById('header-title');
+            const toggleViewBtn = document.getElementById('toggle-view-btn');
+            const difficultyBtn = document.getElementById('difficulty-btn');
+            const backBtn = document.getElementById('back-btn');
+            const resetBtn = document.getElementById('reset-btn');
+            const endGameScreen = document.getElementById('endGameScreen');
+            const endGameTitle = document.getElementById('endGameTitle');
+            const finalScoreText = document.getElementById('finalScoreText');
+            const playAgainButton = document.getElementById('playAgainButton');
+            const timerDisplay = document.getElementById('timer-display');
+            
+            let showActivity = false;
+            let score, health, timeLeft;
+            let gameInterval, timerInterval;
+            let isGameOver = true;
+            let difficultyIndex = 0;
+            const difficulties = ['easy', 'medium', 'hard'];
+
+            const difficultySettings = {
+                easy: { speed: 3, interval: 1500, label: "Easy", duration: 60 },
+                medium: { speed: 4, interval: 1000, label: "Medium", duration: 45 },
+                hard: { speed: 6, interval: 700, label: "Hard", duration: 30 }
+            };
+
+            const microbes = [
+                { symbol: "B", type: "good" }, { symbol: "F", type: "good" },
+                { symbol: "A", type: "good" }, { symbol: "P", type: "bad" },
+                { symbol: "V", type: "bad" }, { symbol: "TB", type: "bad" },
+                { symbol: "🧼", type: "powerup" }
+            ];
+
+            function updateLayout() {
+                if (showActivity) {
+                    mainContent.classList.add('activity-visible');
+                    headerTitle.textContent = 'Activity';
+                    toggleViewBtn.textContent = 'Information';
+                    startGame();
+                } else {
+                    mainContent.classList.remove('activity-visible');
+                    headerTitle.textContent = 'Information';
+                    toggleViewBtn.textContent = 'Activity';
+                    endGame(false, false); // End game without showing the final screen
+                }
+            }
+
+            function startGame() {
+                if (!isGameOver && showActivity) return; // Don't restart if already running
+                isGameOver = false;
+                score = 0;
+                health = 3;
+                
+                const settings = difficultySettings[difficulties[difficultyIndex]];
+                timeLeft = settings.duration;
+                
+                endGameScreen.style.display = 'none';
+                updateScoreboard();
+                updateTimerDisplay();
+                
+                document.querySelectorAll('.microbe').forEach(m => m.remove());
+                
+                clearInterval(gameInterval);
+                gameInterval = setInterval(spawnMicrobe, settings.interval);
+                
+                clearInterval(timerInterval);
+                timerInterval = setInterval(updateTimer, 1000);
+
+                document.addEventListener("keydown", moveBasket);
+            }
+
+            function endGame(isLoss, showScreen = true) {
+                if (isGameOver) return;
+                isGameOver = true;
+                clearInterval(gameInterval);
+                clearInterval(timerInterval);
+                document.removeEventListener("keydown", moveBasket);
+
+                if (showScreen) {
+                    endGameTitle.textContent = isLoss ? "Game Over!" : "You Win!";
+                    endGameTitle.style.color = isLoss ? "var(--accent-red)" : "var(--accent-green)";
+                    finalScoreText.textContent = `Your final score: ${score}`;
+                    endGameScreen.style.display = 'flex';
+                }
+            }
+            
+            function updateTimer() {
+                timeLeft--;
+                updateTimerDisplay();
+
+                const settings = difficultySettings[difficulties[difficultyIndex]];
+                if (timeLeft === Math.floor(settings.duration / 2)) {
+                    clearInterval(gameInterval);
+                    gameInterval = setInterval(spawnMicrobe, settings.interval * 0.7);
+                }
+
+                if (timeLeft <= 0) {
+                    endGame(false, true);
+                }
+            }
+
+            function updateScoreboard() {
+                let healthHearts = Array(health).fill('❤️').join('') + Array(3 - health).fill('🤍').join('');
+                scoreboard.textContent = `Score: ${score} | Health: ${healthHearts}`;
+            }
+
+            function updateTimerDisplay() {
+                 timerDisplay.textContent = `Time Left: ${timeLeft}s`;
+            }
+
+            function moveBasket(e) {
+                if (isGameOver) return;
+                let basketX = basket.offsetLeft;
+                if (e.key === "ArrowLeft") basketX -= 30;
+                if (e.key === "ArrowRight") basketX += 30;
+                basket.style.left = `${Math.max(0, Math.min(gameArea.offsetWidth - basket.offsetWidth, basketX))}px`;
+            }
+
+            function spawnMicrobe() {
+                if (isGameOver) return;
+
+                let microbeData;
+                if (Math.random() < 0.1 && !document.querySelector('.powerup')) {
+                    microbeData = microbes.find(m => m.type === 'powerup');
+                } else {
+                    const regularMicrobes = microbes.filter(m => m.type !== 'powerup');
+                    microbeData = regularMicrobes[Math.floor(Math.random() * regularMicrobes.length)];
+                }
+
+                const microbeEl = document.createElement("div");
+                microbeEl.classList.add("microbe", microbeData.type);
+                microbeEl.textContent = microbeData.symbol;
+                microbeEl.style.left = `${Math.random() * (gameArea.offsetWidth - 40)}px`;
+                microbeEl.style.top = "-40px";
+                gameArea.appendChild(microbeEl);
+
+                let fallInterval = setInterval(() => {
+                    if (isGameOver) {
+                        clearInterval(fallInterval);
+                        if(microbeEl) microbeEl.remove();
+                        return;
+                    }
+                    
+                    let speed = difficultySettings[difficulties[difficultyIndex]].speed;
+                    if (timeLeft <= 10) speed *= 1.5;
+
+                    microbeEl.style.top = `${microbeEl.offsetTop + speed}px`;
+
+                    const basketRect = basket.getBoundingClientRect();
+                    const elRect = microbeEl.getBoundingClientRect();
+                    if (elRect.bottom > basketRect.top && elRect.top < basketRect.bottom && elRect.right > basketRect.left && elRect.left < basketRect.right) {
+                        handleCatch(microbeData, elRect);
+                        clearInterval(fallInterval);
+                        microbeEl.remove();
+                    } else if (microbeEl.offsetTop > gameArea.offsetHeight) {
+                        clearInterval(fallInterval);
+                        microbeEl.remove();
+                    }
+                }, 50);
+            }
+
+            function handleCatch(microbeData, rect) {
+                const pop = document.createElement('div');
+                pop.className = 'catch-effect';
+                pop.style.left = `${rect.left - gameArea.getBoundingClientRect().left}px`;
+                pop.style.top = `${rect.top - gameArea.getBoundingClientRect().top}px`;
+                gameArea.appendChild(pop);
+                setTimeout(() => pop.remove(), 300);
+
+                if (microbeData.type === 'good') {
+                    score++;
+                } else if (microbeData.type === 'bad') {
+                    health--;
+                    gameArea.classList.add('screen-flash-animation');
+                    setTimeout(() => gameArea.classList.remove('screen-flash-animation'), 300);
+                } else if (microbeData.type === 'powerup') {
+                    score += 5;
+                    document.querySelectorAll('.microbe.bad').forEach(bad => bad.remove());
+                }
+                
+                updateScoreboard();
+                if (health <= 0) {
+                    endGame(true, true);
+                }
+            }
+
+            // --- Event Listeners ---
+            toggleViewBtn.addEventListener('click', () => { showActivity = !showActivity; updateLayout(); });
+            
+            difficultyBtn.addEventListener('click', () => {
+                difficultyIndex = (difficultyIndex + 1) % difficulties.length;
+                difficultyBtn.textContent = `Mode: ${difficultySettings[difficulties[difficultyIndex]].label}`;
+                if (showActivity) { endGame(false, false); startGame(); }
+            });
+            
+            resetBtn.addEventListener('click', () => { if (showActivity) { endGame(false, false); startGame(); }});
+            playAgainButton.addEventListener('click', startGame);
+            backBtn.addEventListener('click', () => { window.history.back(); });
+
+            updateLayout();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Handling: Find the Odd One Out</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* --- CORE TEMPLATE & GLOBAL STYLES (Light Theme) --- */
+        :root {
+            --header-bg: #ffffff;
+            --page-bg: #f4f7f9;
+            --panel-bg: #ffffff;
+            --border-color: #e0e0e0;
+            --text-dark: #1e293b;
+            --text-light: #475569;
+            --accent-teal: #14b8a6;
+            --accent-green: #22c55e;
+            --accent-red: #ef4444;
+            --primary-blue: #007bff;
+            --secondary-gray: #6c757d;
+        }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--page-bg);
+            color: var(--text-dark);
+            margin: 0;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .page-container { display: flex; flex-direction: column; height: 100vh; }
+        .header {
+            position: fixed; top: 0; left: 0; width: 100%; height: 60px;
+            background-color: var(--header-bg);
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 24px;
+            border-bottom: 1px solid var(--border-color);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            z-index: 1000;
+            box-sizing: border-box;
+        }
+        .header-section { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .header-section.center { text-align: center; font-size: 1.2em; font-weight: bold; }
+        .header-section.right { display: flex; justify-content: flex-end; }
+        .button {
+            padding: 8px 16px; margin-left: 10px; cursor: pointer;
+            border: none; border-radius: 6px; font-weight: 600; color: white;
+            transition: transform 0.1s;
+        }
+        .button:active { transform: scale(0.95); }
+        .main-content {
+            margin-top: 60px; padding: 24px; display: flex;
+            flex-grow: 1; overflow: hidden; box-sizing: border-box;
+            gap: 24px; justify-content: center;
+        }
+        .panel {
+            background-color: var(--panel-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            border: 1px solid var(--border-color);
+            box-sizing: border-box;
+            overflow-y: auto; padding: 24px 32px;
+            height: calc(100vh - 108px);
+        }
+        #info-panel { flex-shrink: 0; transition: width 400ms ease-in-out, margin 400ms ease-in-out; }
+        #activity-panel { display: none; flex-grow: 1; padding: 0; flex-direction: column; }
+        .main-content.activity-visible { justify-content: flex-start; }
+        .main-content.activity-visible #info-panel { width: 340px; min-width: 340px; }
+        .main-content.activity-visible #activity-panel { display: flex; }
+
+        /* --- ACTIVITY-SPECIFIC STYLES --- */
+        .activity-area { flex-grow: 1; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; padding: 24px; }
+        .bottom-control-bar { height: 60px; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; background-color: var(--page-bg); border-top: 1px solid var(--border-color); flex-shrink: 0; }
+        .status-bar { font-weight: bold; color: var(--text-dark); }
+        .reset-button { padding: 8px 16px; cursor: pointer; background-color: var(--accent-red); color: white; border: none; border-radius: 6px; font-weight: 600; }
+        .game-header { display: flex; justify-content: space-between; align-items: flex-start; width: 100%; }
+        #question-text { font-size: 1.25rem; font-weight: 600; color: var(--text-light); }
+        #question-set { font-size: 2.5rem; font-weight: 700; color: var(--text-dark); letter-spacing: 4px; background-color: #eef2ff; padding: 1rem 2rem; border-radius: 0.5rem; margin: 1.5rem 0; }
+        #options-container { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; width: 100%; max-width: 700px; }
+        .option-btn { background-color: #e2e8f0; color: var(--text-dark); padding: 1.5rem; font-size: 1.5rem; font-weight: 600; border-radius: 0.75rem; transition: all 0.2s ease; border: 2px solid #cbd5e1; cursor: pointer; }
+        .option-btn:hover:not(:disabled) { transform: scale(1.05); box-shadow: 0 0 15px rgba(20, 184, 166, 0.2); }
+        .option-btn:disabled { cursor: not-allowed; }
+        .option-btn.correct { background-color: var(--accent-green); color: white; border-color: var(--accent-green); }
+        .option-btn.incorrect { background-color: var(--accent-red); color: white; border-color: var(--accent-red); }
+        .feedback-text { margin-top: 1rem; font-weight: 600; font-size: 1.1rem; min-height: 24px; }
+        .level-complete-container { text-align: center; }
+        .level-complete-container h3 { font-size: 1.875rem; font-weight: bold; color: var(--accent-green); }
+        .level-complete-container p { font-size: 1.25rem; margin-top: 0.5rem; }
+    </style>
+</head>
+<body class="page-container">
+    
+    <header class="header">
+        <div class="header-section">Class 7 - Data Handling</div>
+        <div id="header-title" class="header-section center">Information</div>
+        <div class="header-section right">
+            <button id="back-btn" class="button" style="background-color: var(--secondary-gray);">Back</button>
+            <button id="toggle-view-btn" class="button" style="background-color: var(--primary-blue);">Activity</button>
+            <button id="difficulty-btn" class="button" style="background-color: var(--accent-teal);">Difficulty: Easy</button>
+        </div>
+    </header>
+
+    <main class="main-content" id="main-content">
+        <section id="info-panel" class="panel">
+            <h1 class="text-3xl font-bold mb-4" style="color: var(--accent-teal);">Introduction to Data Handling</h1>
+            <div style="display:flex; flex-direction:column; gap:1.5rem;">
+                <div>
+                    <h2 class="text-xl font-semibold">What is Data?</h2>
+                    <p class="mt-2 text-gray-600">"Data" is a collection of information, facts, or figures. Think about the scores in a video game, the heights of students in a class, or the number of people who like different ice cream flavors. All of that is data!</p>
+                </div>
+                <div>
+                    <h2 class="text-xl font-semibold">The Process of Data Handling</h2>
+                    <p class="mt-2 text-gray-600">Data handling is the process of working with data to make it useful. It involves a few key steps:</p>
+                    <ul class="list-disc list-inside mt-3 space-y-2 text-gray-600">
+                        <li><b>Collecting Data:</b> Gathering information.</li>
+                        <li><b>Organizing Data:</b> Arranging information in tables.</li>
+                        <li><b>Representing Data:</b> Showing data visually with graphs.</li>
+                        <li><b>Interpreting Data:</b> Analyzing graphs and tables to draw conclusions.</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="activity-panel" class="panel">
+            <div class="activity-area" id="activity-area">
+                </div>
+            <footer class="bottom-control-bar">
+                <div id="status-bar" class="status-bar">Find the odd one out!</div>
+                <button id="reset-btn" class="reset-button">Reset</button>
+            </footer>
+        </section>
+    </main>
+
+    <script src="./neutralino.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            try { Neutralino.init(); } catch (e) { console.error("Neutralino not found."); }
+            
+            const problems = {
+                easy: [
+                    { set: [2, 4, 5, 6], a: 5, rule: "All others are even" }, { set: [10, 20, 25, 30], a: 25, rule: "All others are multiples of 10" },
+                    { set: [3, 7, 9, 11], a: 9, rule: "All others are prime numbers" }, { set: [5, 10, 15, 18], a: 18, rule: "All others are multiples of 5" },
+                    { set: [1, 3, 5, 8], a: 8, rule: "All others are odd" }, { set: [7, 14, 21, 25], a: 25, rule: "All others are multiples of 7" },
+                    { set: [1, 2, 3, 5], a: 1, rule: "All others are prime" }, { set: [100, 200, 350, 400], a: 350, rule: "All others are multiples of 100" }
+                ],
+                medium: [
+                    { set: [6, 12, 15, 24], a: 15, rule: "All others are multiples of 6" }, { set: [1, 8, 27, 60], a: 60, rule: "All others are perfect cubes" },
+                    { set: [13, 17, 19, 21], a: 21, rule: "All others are prime numbers" }, { set: [4, 9, 16, 24], a: 24, rule: "All others are perfect squares" },
+                    { set: [11, 22, 33, 45], a: 45, rule: "All others are multiples of 11" }, { set: [30, 40, 50, 65], a: 65, rule: "All others end in 0" },
+                    { set: [4, 8, 16, 30], a: 30, rule: "All others are powers of 2" }, { set: [25, 36, 49, 60], a: 60, rule: "All others are perfect squares" }
+                ],
+                hard: [
+                    { set: [2, 3, 5, 8], a: 8, rule: "The first 3 are Fibonacci numbers" }, { set: [121, 144, 169, 190], a: 190, rule: "All others are perfect squares" },
+                    { set: [3, 5, 7, 9], a: 9, rule: "All others are prime numbers" }, { set: [6, 28, 496, 512], a: 512, rule: "All others are perfect numbers" },
+                    { set: [15, 25, 35, 42], a: 42, rule: "All others end in 5" }, { set: [360, 180, 90, 40], a: 40, rule: "Each number is half the previous, except for the last" },
+                    { set: [5, 13, 17, 21], a: 21, rule: "All others are prime numbers" }, { set: [24, 39, 51, 64], a: 64, rule: "All others are multiples of 3" }
+                ]
+            };
+            const difficulties = ['easy', 'medium', 'hard'];
+            let showActivity = false, score = 0, currentProblemSet = [], difficultyIdx = 0, isAnswered;
+
+            const mainContent = document.getElementById('main-content');
+            const infoPanel = document.getElementById('info-panel');
+            const activityArea = document.getElementById('activity-area');
+            const headerTitle = document.getElementById('header-title');
+            const toggleViewBtn = document.getElementById('toggle-view-btn');
+            const difficultyBtn = document.getElementById('difficulty-btn');
+            const backBtn = document.getElementById('back-btn');
+            const resetBtn = document.getElementById('reset-btn');
+
+            function updateLayout() {
+                if (showActivity) mainContent.classList.add('activity-visible');
+                else mainContent.classList.remove('activity-visible');
+                infoPanel.style.width = showActivity ? '340px' : `${Math.min(700, window.innerWidth - 48)}px`;
+                headerTitle.textContent = showActivity ? 'Activity' : 'Information';
+                toggleViewBtn.textContent = showActivity ? 'Information' : 'Activity';
+            }
+
+            function startGame() {
+                score = 0;
+                const difficulty = difficulties[difficultyIdx];
+                const originalProblems = problems[difficulty];
+                // Select 5 random questions for the level
+                currentProblemSet = [...originalProblems].sort(() => 0.5 - Math.random()).slice(0, 5);
+                loadProblem(0);
+            }
+
+            function loadProblem(problemIndex) {
+                if (problemIndex >= currentProblemSet.length) {
+                    showLevelComplete();
+                    return;
+                }
+                isAnswered = false;
+                const problem = currentProblemSet[problemIndex];
+                
+                activityArea.innerHTML = `
+                    <div style="width:100%; max-width:700px;" class="text-center">
+                        <div class="game-header">
+                            <div>
+                                <h2 class="text-2xl font-bold text-left">${difficulties[difficultyIdx].charAt(0).toUpperCase() + difficulties[difficultyIdx].slice(1)} Challenge</h2>
+                                <p id="question-text" class="question-text">Find the number that doesn't belong.</p>
+                            </div>
+                            <div class="stat-box-container">
+                                <div id="score-box" class="stat-box">
+                                    <div class="stat-box-label">SCORE</div>
+                                    <div id="score" class="stat-box-value">${score}</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="question-set">${ `[ ${problem.set.join(', ')} ]` }</div>
+                        <div id="options-container"></div>
+                        <p id="feedback-text" class="feedback-text"></p>
+                    </div>`;
+
+                const optionsContainer = document.getElementById('options-container');
+                problem.set.forEach(opt => {
+                    const btn = document.createElement('button');
+                    btn.className = 'option-btn';
+                    btn.dataset.value = opt;
+                    btn.textContent = opt;
+                    btn.onclick = (e) => handleAnswerClick(e, problem, problemIndex);
+                    optionsContainer.appendChild(btn);
+                });
+            }
+            
+            function handleAnswerClick(e, problem, problemIndex) {
+                if (isAnswered) return;
+                isAnswered = true;
+
+                const clickedValue = parseFloat(e.currentTarget.dataset.value);
+                const correctValue = problem.a;
+
+                if (clickedValue === correctValue) {
+                    score += 10;
+                    e.currentTarget.classList.add('correct');
+                    document.getElementById('feedback-text').textContent = `Correct! ${problem.rule}.`;
+                    document.getElementById('feedback-text').style.color = 'var(--accent-green)';
+                } else {
+                    e.currentTarget.classList.add('incorrect');
+                    document.getElementById('feedback-text').textContent = `Sorry! The answer was ${correctValue}. (${problem.rule})`;
+                    document.getElementById('feedback-text').style.color = 'var(--accent-red)';
+                    const correctBtn = document.querySelector(`[data-value="${correctValue}"]`);
+                    if(correctBtn) correctBtn.classList.add('correct');
+                }
+                document.getElementById('score').textContent = score;
+                setTimeout(() => { loadProblem(problemIndex + 1); }, 3000);
+            }
+
+            function showLevelComplete() {
+                activityArea.innerHTML = `
+                    <div class="level-complete-container">
+                        <h3>Congratulations!</h3>
+                        <p>You've completed the challenge! Final score: ${score}</p>
+                    </div>`;
+            }
+            
+            backBtn.addEventListener('click', () => { window.history.back(); });
+            toggleViewBtn.addEventListener('click', () => {
+                showActivity = !showActivity;
+                if (showActivity) startGame();
+                updateLayout();
+            });
+            difficultyBtn.addEventListener('click', () => {
+                difficultyIdx = (difficultyIdx + 1) % difficulties.length;
+                const newDifficulty = difficulties[difficultyIdx];
+                difficultyBtn.textContent = `Difficulty: ${newDifficulty.charAt(0).toUpperCase() + newDifficulty.slice(1)}`;
+                if (showActivity) startGame();
+            });
+            resetBtn.addEventListener('click', startGame);
+            window.addEventListener('resize', updateLayout);
+
+            updateLayout();
+        });
+    </script>
+</body>
+</html>

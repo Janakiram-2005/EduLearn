@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Wizards Academy</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --header-bg: #ffffff; --page-bg: #f4f7f9; --panel-bg: #ffffff;
+            --border-color: #e0e0e0; --text-dark: #1e293b; --text-light: #475569;
+            --accent-blue: #2563eb; --accent-green: #16a34a; --accent-red: #ef4444;
+            --primary-blue: #007bff; --secondary-gray: #6c757d;
+        }
+        body { font-family: 'Inter', sans-serif; background-color: var(--page-bg); color: var(--text-dark); margin: 0; height: 100vh; overflow: hidden; }
+        .page-container { display: flex; flex-direction: column; height: 100vh; }
+        .header {
+            position: fixed; top: 0; left: 0; width: 100%; height: 60px;
+            background-color: var(--header-bg); display: flex; align-items: center; justify-content: space-between;
+            padding: 0 24px; border-bottom: 1px solid var(--border-color); box-shadow: 0 2px 4px rgba(0,0,0,0.05); z-index: 1000; box-sizing: border-box;
+        }
+        .header-section { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .header-section.center { text-align: center; font-size: 1.2em; font-weight: bold; }
+        .header-section.right { display: flex; justify-content: flex-end; }
+        .button {
+            padding: 8px 16px; margin-left: 10px; cursor: pointer;
+            border: none; border-radius: 6px; font-weight: 600; color: white;
+            transition: transform 0.1s;
+        }
+        .button:disabled { opacity: 0.6; cursor: not-allowed; }
+        .button:active:not(:disabled) { transform: scale(0.95); }
+        .main-content { margin-top: 60px; padding: 24px; display: flex; flex-grow: 1; overflow: hidden; box-sizing: border-box; gap: 24px; justify-content: center; }
+        .panel { background-color: var(--panel-bg); border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: 1px solid var(--border-color); box-sizing: border-box; overflow-y: auto; padding: 24px 32px; height: calc(100vh - 108px); }
+        #info-panel { flex-shrink: 0; transition: width 400ms ease-in-out, margin 400ms ease-in-out; }
+        #activity-panel { display: none; flex-grow: 1; padding: 0; flex-direction: column; }
+        .main-content.activity-visible { justify-content: flex-start; }
+        .main-content.activity-visible #info-panel { width: 340px; min-width: 340px; }
+        .main-content.activity-visible #activity-panel { display: flex; }
+        
+        /* Activity Styles */
+        .activity-area { flex-grow: 1; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; padding: 24px; }
+        .bottom-control-bar { height: 60px; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; background-color: var(--page-bg); border-top: 1px solid var(--border-color); flex-shrink: 0; }
+        .reset-button { padding: 8px 16px; cursor: pointer; background-color: var(--accent-red); color: white; border: none; border-radius: 6px; font-weight: 600; }
+        .game-header { display: flex; justify-content: space-between; align-items: flex-start; width: 100%; }
+        
+        .stat-box { padding: 0.5rem 1.25rem; border-radius: 8px; text-align: center; }
+        .stat-box-label { font-size: 0.75rem; font-weight: 500; opacity: 0.8; }
+        .stat-box-value { font-size: 1.5rem; font-weight: 700; }
+        #score-box { background-color: #dbeafe; color: #1e40af; }
+        #timer-box { background-color: #fee2e2; color: #991b1b; }
+        #lives-box { background-color: #e0f2fe; color: #075985; }
+
+        #question-text { font-size: 1.5rem; font-weight: 600; color: var(--text-dark); margin: 1.5rem 0; }
+        .scratch-block { background: linear-gradient(135deg, #4f46e5, #7c3aed); color: white; padding: 1.25rem; border-radius: 8px; font-weight: 600; text-align: center; font-size: 1.3rem; margin-bottom: 1rem; border-bottom: 4px solid #4338ca; }
+        #python-options { display: flex; flex-direction: column; gap: 0.75rem; width: 100%; max-width: 600px; }
+        
+        .python-snippet { background-color: #f1f5f9; color: var(--text-dark); padding: 1rem; border-radius: 0.75rem; transition: all 0.2s ease; border: 2px solid #cbd5e1; cursor: pointer; text-align: left; font-family: 'Courier New', Courier, monospace; font-size: 1.1rem; font-weight: 600; }
+        .python-snippet:hover:not(:disabled) { transform: scale(1.02); }
+        .python-snippet:disabled { cursor: not-allowed; opacity: 0.8; }
+        .python-snippet.correct { background-color: #dcfce7; color: #14532d; border-color: var(--accent-green); }
+        .python-snippet.incorrect { background-color: #fee2e2; color: #991b1b; border-color: var(--accent-red); }
+        .feedback-text { margin-top: 1rem; font-weight: 600; font-size: 1.1rem; min-height: 24px; }
+        
+        .level-complete-container { text-align: center; }
+        .level-complete-container h3 { font-size: 1.875rem; font-weight: bold; color: var(--accent-green); }
+        .level-complete-container p { font-size: 1.25rem; margin-top: 0.5rem; }
+        .level-complete-container .stars { font-size: 2.5rem; margin-top: 1rem; }
+        
+        .progress-track { width: 100%; background-color: #e0e0e0; border-radius: 15px; height: 25px; position: relative; overflow: hidden; border: 2px solid #ccc; margin-bottom: 1rem; }
+        .progress-bar { width: 0%; height: 100%; background: linear-gradient(90deg, #a855f7, #d946ef); transition: width 0.5s ease-in-out; }
+        .wizard-icon { position: absolute; top: 50%; transform: translateY(-50%); font-size: 1.8rem; transition: left 0.5s ease-in-out; left: 0%; }
+        
+        /* Styles for info panel notes */
+        #info-panel h1, #info-panel h2, #info-panel h3 { color: var(--accent-blue); }
+        #info-panel p { line-height: 1.6; color: var(--text-light); }
+        #info-panel strong { color: var(--text-dark); }
+        .concept-box {
+            background-color: #f8fafc;
+            border-left: 4px solid var(--accent-blue);
+            padding: 0.1rem 1rem;
+            margin-top: 1rem;
+            border-radius: 0 4px 4px 0;
+        }
+    </style>
+</head>
+<body class="page-container">
+    
+    <header class="header">
+        <div class="header-section">Grade 6 - Computer Science</div>
+        <div id="header-title" class="header-section center">Information</div>
+        <div class="header-section right">
+            <button id="back-btn" class="button" style="background-color: var(--secondary-gray);">Back</button>
+            <button id="toggle-view-btn" class="button" style="background-color: var(--primary-blue);">Activity</button>
+            <button id="difficulty-btn" class="button" style="background-color: var(--accent-blue);">Difficulty: Easy</button>
+        </div>
+    </header>
+
+    <main class="main-content" id="main-content">
+        <section id="info-panel" class="panel">
+            <h1>Introduction to Scratch/Python</h1>
+            <p>Welcome, apprentice! Programming is like learning magic. You write special instructions (<strong>code</strong>) to command your computer. This set of instructions is called a <strong>program</strong> or a script.</p>
+            
+            <h2>The Two Schools of Magic</h2>
+            <p>Just like wizards have different styles, there are different ways to code.</p>
+            <div>
+                <h3>Scratch: The Magic of Blocks</h3>
+                <p>Scratch is a <strong>visual</strong> language where you snap colorful blocks together. It's perfect for beginners because you don't have to worry about typing errors and you can see your results instantly on the 'Stage'.</p>
+            </div>
+            <div>
+                <h3>Python: The Magic of Words</h3>
+                <p>Python is a powerful, <strong>text-based</strong> language. You type commands using words and symbols. It's famous for being easy to read and is used by professionals to build websites, games, and much more!</p>
+            </div>
+
+            <h2>Essential Magic Concepts</h2>
+            <p>All programming, whether in Scratch or Python, uses the same core ideas.</p>
+
+            <div class="concept-box">
+                <h3>📜 Sequence</h3>
+                <p>A sequence is the order in which commands are followed. The computer reads your code from top to bottom, one line at a time, just like reading a book.</p>
+            </div>
+
+            <div class="concept-box">
+                <h3>🔄 Loops (Repetition Spells)</h3>
+                <p>A loop is used to repeat a set of commands over and over. Instead of writing `move 10 steps` four times, you can use a loop to say `repeat 4 times: move 10 steps`. This saves time and keeps your code tidy.</p>
+            </div>
+
+            <div class="concept-box">
+                <h3>📦 Variables (Magic Containers)</h3>
+                <p>A variable is like a box or a container where you can store information. You can put a number, like a score, or text, like a player's name, inside a variable to use it later in your program.</p>
+            </div>
+
+            <div class="concept-box">
+                <h3>🤔 Conditionals (Choice Spells)</h3>
+                <p>Conditionals allow your program to make decisions. They use keywords like <strong>IF</strong>, <strong>ELSE</strong>, and <strong>THEN</strong>. For example: <strong>IF</strong> the score is greater than 10, <strong>THEN</strong> display "You win!".</p>
+            </div>
+            
+            <h2 style="margin-top: 1.5rem;">Academy Challenge Rules</h2>
+             <ul>
+                <li>📜 Translate Scratch blocks into the correct Python spells.</li>
+                <li>⏱️ Casting spells faster earns you bonus points!</li>
+                <li>❤️ You have 3 lives. A wrong answer or running out of time costs a life.</li>
+                <li>⭐ Master the challenge to earn a star rating!</li>
+             </ul>
+        </section>
+
+        <section id="activity-panel" class="panel">
+            <div class="activity-area" id="activity-area"></div>
+            <footer class="bottom-control-bar">
+                <button id="reset-btn" class="reset-button">Reset Challenge</button>
+            </footer>
+        </section>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const problems = {
+                easy: [
+                    { s: 'Say "Hello"', o: ['print("Hello")', 'speak("Hello")', 'say("Hello")'], a: 'print("Hello")' },
+                    { s: 'Move 10 steps', o: ['turtle.forward(10)', 'move(10)', 'go(10)'], a: 'turtle.forward(10)' },
+                    { s: 'Turn ➡️ 15 degrees', o: ['turn.right(15)', 'turtle.right(15)', 'right(15)'], a: 'turtle.right(15)' },
+                    { s: 'Turn ⬅️ 90 degrees', o: ['turtle.left(90)', 'turn.left(90)', 'left(90)'], a: 'turtle.left(90)' },
+                    { s: 'Set color to "blue"', o: ['color("blue")', 'turtle.color("blue")', 'set_color("blue")'], a: 'turtle.color("blue")' },
+                    { s: 'Pen down', o: ['turtle.pendown()', 'pen("down")', 'use_pen()'], a: 'turtle.pendown()' },
+                    { s: 'Pen up', o: ['turtle.penup()', 'pen("up")', 'lift_pen()'], a: 'turtle.penup()' },
+                    { s: 'Hide turtle', o: ['turtle.hide()', 'hide_turtle()', 'turtle.hideturtle()'], a: 'turtle.hideturtle()' },
+                    { s: 'Show turtle', o: ['turtle.show()', 'show_turtle()', 'turtle.showturtle()'], a: 'turtle.showturtle()' },
+                    { s: 'Clear screen', o: ['turtle.clear()', 'screen.clear()', 'clear_all()'], a: 'turtle.clear()' }
+                ],
+                medium: [
+                    { s: 'Wait 1 second', o: ['time.sleep(1)', 'wait(1)', 'pause(1)'], a: 'time.sleep(1)' },
+                    { s: 'Repeat 4 times', o: ['repeat(4):', 'for i in range(4):', 'loop(4):'], a: 'for i in range(4):' },
+                    { s: 'Set "score" to 0', o: ['score = 0', 'set score to 0', 'variable(score, 0)'], a: 'score = 0' },
+                    { s: 'Change "score" by 1', o: ['score += 1', 'change.score(1)', 'score.add(1)'], a: 'score += 1' },
+                    { s: 'Go to x:50 y:100', o: ['turtle.move(50, 100)', 'turtle.goto(50, 100)', 'position(50, 100)'], a: 'turtle.goto(50, 100)' },
+                    { s: 'Set "speed" to 5', o: ['set.speed(5)', 'turtle.speed(5)', 'speed = 5'], a: 'turtle.speed(5)' },
+                    { s: 'Define function "draw_square"', o: ['function draw_square:', 'def draw_square():', 'define draw_square():'], a: 'def draw_square():' },
+                    { s: 'If "lives" = 0 then...', o: ['if lives == 0:', 'check lives = 0:', 'when lives is 0:'], a: 'if lives == 0:' },
+                    { s: '... else ...', o: ['otherwise:', 'else:', 'next:'], a: 'else:' },
+                    { s: 'Set pen size to 3', o: ['turtle.pensize(3)', 'pen.size(3)', 'set_pen(3)'], a: 'turtle.pensize(3)' }
+                ],
+                hard: [
+                    { s: 'If "score" > 10 then...', o: ['if score > 10:', 'check score > 10:', 'when score > 10:'], a: 'if score > 10:' },
+                    { s: 'Forever', o: ['forever:', 'loop.infinite:', 'while True:'], a: 'while True:' },
+                    { s: 'Pick random 1 to 10', o: ['random(1, 10)', 'random.randint(1, 10)', 'pick.random(1, 10)'], a: 'random.randint(1, 10)' },
+                    { s: 'Ask "Name?" and wait', o: ['input("Name?")', 'ask("Name?")', 'get_input("Name?")'], a: 'input("Name?")' },
+                    { s: 'Join "Hello" and "name"', o: ['join("Hello", name)', '"Hello" + name', '"Hello" & name'], a: '"Hello" + name' },
+                    { s: 'While "lives" > 0', o: ['loop while lives > 0:', 'while lives > 0:', 'repeat if lives > 0:'], a: 'while lives > 0:' },
+                    { s: 'Break from loop', o: ['break', 'exit loop', 'stop loop'], a: 'break' },
+                    { s: 'Get integer input', o: ['int(input("Age?"))', 'input.integer("Age?")', 'get_number("Age?")'], a: 'int(input("Age?"))' },
+                    { s: 'For each "item" in "my_list"', o: ['for item in my_list:', 'loop item in my_list:', 'each item in my_list:'], a: 'for item in my_list:' },
+                    { s: 'Print "Score is", score', o: ['print(f"Score is {score}")', 'print("Score is" + score)', 'print("Score is", score)'], a: 'print("Score is", score)' }
+                ]
+            };
+            const difficulties = ['easy', 'medium', 'hard'];
+            let showActivity = false, score = 0, lives = 3, currentProblemSet = [], difficultyIdx = 0, isAnswered, timer, timerInterval;
+
+            const mainContent = document.getElementById('main-content');
+            const infoPanel = document.getElementById('info-panel');
+            const activityArea = document.getElementById('activity-area');
+            const headerTitle = document.getElementById('header-title');
+            const toggleViewBtn = document.getElementById('toggle-view-btn');
+            const difficultyBtn = document.getElementById('difficulty-btn');
+            const backBtn = document.getElementById('back-btn');
+            const resetBtn = document.getElementById('reset-btn');
+
+            function updateLayout() {
+                if (showActivity) {
+                    mainContent.classList.add('activity-visible');
+                    infoPanel.style.width = '340px';
+                } else {
+                    mainContent.classList.remove('activity-visible');
+                    // Make the info panel wider by default
+                    infoPanel.style.width = `${Math.min(800, window.innerWidth - 48)}px`;
+                }
+                headerTitle.textContent = showActivity ? 'Code Wizards Academy' : 'Information';
+                toggleViewBtn.textContent = showActivity ? 'Information' : 'Activity';
+            }
+
+            function startGame() {
+                score = 0;
+                lives = 3;
+                const difficulty = difficulties[difficultyIdx];
+                const QUESTIONS_PER_ROUND = 5;
+                
+                const allProblems = problems[difficulty];
+                const shuffled = [...allProblems].sort(() => 0.5 - Math.random());
+                currentProblemSet = shuffled.slice(0, QUESTIONS_PER_ROUND);
+
+                loadProblem(0);
+            }
+
+            function loadProblem(problemIndex) {
+                if (problemIndex >= currentProblemSet.length) {
+                    showLevelComplete();
+                    return;
+                }
+                isAnswered = false;
+                const problem = currentProblemSet[problemIndex];
+                
+                activityArea.innerHTML = `
+                    <div style="width:100%; max-width:700px;" class="text-center">
+                        <div class="progress-track">
+                            <div class="wizard-icon">🧙</div>
+                            <div class="progress-bar"></div>
+                        </div>
+                        <div class="game-header">
+                            <h2 class="text-2xl font-bold text-left">${difficulties[difficultyIdx].charAt(0).toUpperCase() + difficulties[difficultyIdx].slice(1)} Spells</h2>
+                            <div class="stat-box-container" style="display:flex; gap:0.75rem; justify-content: flex-end;">
+                                <div id="lives-box" class="stat-box"><div class="stat-box-label">LIVES</div><div id="lives" class="stat-box-value">3</div></div>
+                                <div id="timer-box" class="stat-box"><div class="stat-box-label">TIME</div><div id="timer" class="stat-box-value">20</div></div>
+                                <div id="score-box" class="stat-box"><div class="stat-box-label">SCORE</div><div id="score" class="stat-box-value">${score}</div></div>
+                            </div>
+                        </div>
+                        <div class="scratch-block">${problem.s}</div>
+                        <div id="python-options"></div>
+                        <p id="feedback-text" class="feedback-text"></p>
+                    </div>`;
+                
+                updateProgress(problemIndex);
+                document.getElementById('lives').textContent = '❤️'.repeat(lives);
+                document.getElementById('score').textContent = score;
+
+                const optionsContainer = document.getElementById('python-options');
+                problem.o.sort(() => 0.5 - Math.random()).forEach(opt => {
+                    const btn = document.createElement('button');
+                    btn.className = 'python-snippet';
+                    btn.textContent = opt;
+                    btn.onclick = (e) => handleAnswerClick(e, problem, problemIndex);
+                    optionsContainer.appendChild(btn);
+                });
+                startTimer(problem, problemIndex);
+            }
+            
+            function updateProgress(problemIndex) {
+                const progressPercentage = (problemIndex / currentProblemSet.length) * 100;
+                document.querySelector('.progress-bar').style.width = `${progressPercentage}%`;
+                document.querySelector('.wizard-icon').style.left = `calc(${progressPercentage}% - 12px)`;
+            }
+
+            function handleAnswerClick(e, problem, problemIndex) {
+                if (isAnswered) return;
+                isAnswered = true;
+                clearInterval(timerInterval);
+
+                const clickedBtn = e.currentTarget;
+                const allButtons = document.querySelectorAll('.python-snippet');
+                allButtons.forEach(btn => btn.disabled = true);
+
+                if (clickedBtn.textContent === problem.a) {
+                    const bonus = timer > 0 ? timer : 0;
+                    score += 10 + bonus;
+                    clickedBtn.classList.add('correct');
+                    document.getElementById('feedback-text').textContent = `Correct! +${10 + bonus} points! ✨`;
+                    document.getElementById('feedback-text').style.color = 'var(--accent-green)';
+                } else {
+                    lives--;
+                    clickedBtn.classList.add('incorrect');
+                    document.getElementById('feedback-text').textContent = `Not quite! The correct spell was ${problem.a}.`;
+                    document.getElementById('feedback-text').style.color = 'var(--accent-red)';
+                    const correctBtn = Array.from(allButtons).find(b => b.textContent === problem.a);
+                    if (correctBtn) correctBtn.classList.add('correct');
+                    
+                    if (lives <= 0) {
+                        setTimeout(() => showGameOver(), 2000);
+                        return;
+                    }
+                }
+                document.getElementById('score').textContent = score;
+                document.getElementById('lives').textContent = '❤️'.repeat(lives);
+                
+                if (problemIndex + 1 === currentProblemSet.length && clickedBtn.textContent === problem.a) {
+                     setTimeout(() => updateProgress(problemIndex + 1), 500);
+                }
+                
+                setTimeout(() => { loadProblem(problemIndex + 1); }, 2000);
+            }
+            
+            function startTimer(problem, problemIndex) {
+                clearInterval(timerInterval);
+                timer = 20; // Reduced time for more challenge
+                const timerDisplay = document.getElementById('timer');
+                if(!timerDisplay) return;
+                timerDisplay.textContent = timer;
+                timerInterval = setInterval(() => {
+                    timer--;
+                    timerDisplay.textContent = timer;
+                    if (timer < 0) {
+                        clearInterval(timerInterval);
+                        if (!isAnswered) handleTimeUp(problem, problemIndex);
+                    }
+                }, 1000);
+            }
+
+            function handleTimeUp(problem, problemIndex) {
+                isAnswered = true;
+                lives--;
+                if (lives <= 0) {
+                    setTimeout(() => showGameOver(), 1000);
+                    return;
+                }
+                document.getElementById('lives').textContent = '❤️'.repeat(lives);
+                document.getElementById('feedback-text').textContent = "Time's up! You lost a life.";
+                document.getElementById('feedback-text').style.color = 'var(--accent-red)';
+                const allButtons = document.querySelectorAll('.python-snippet');
+                const correctBtn = Array.from(allButtons).find(b => b.textContent === problem.a);
+                if (correctBtn) correctBtn.classList.add('correct');
+                allButtons.forEach(btn => btn.disabled = true);
+                
+                setTimeout(() => { loadProblem(problemIndex + 1); }, 2000);
+            }
+
+            function showGameOver() {
+                clearInterval(timerInterval);
+                activityArea.innerHTML = `<div class="level-complete-container">
+                                            <h3 style="color:var(--accent-red)">Challenge Failed!</h3>
+                                            <p>You ran out of lives. Your final score is ${score}.</p>
+                                            <p>Practice more and try again!</p>
+                                          </div>`;
+            }
+
+            function showLevelComplete() {
+                clearInterval(timerInterval);
+                const maxScorePossible = currentProblemSet.length * (10 + 19); 
+                let stars = '⭐';
+                if (score > maxScorePossible * 0.8) stars = '⭐⭐⭐';
+                else if (score > maxScorePossible * 0.5) stars = '⭐⭐';
+
+                activityArea.innerHTML = `<div class="level-complete-container">
+                                            <h3>Challenge Complete!</h3>
+                                            <div class="stars">${stars}</div>
+                                            <p>Your final score is ${score}.</p>
+                                          </div>`;
+            }
+
+            backBtn.addEventListener('click', () => { 
+                if(showActivity) {
+                    showActivity = false;
+                    clearInterval(timerInterval);
+                    updateLayout();
+                } else {
+                     window.history.back();
+                }
+            });
+
+            toggleViewBtn.addEventListener('click', () => {
+                showActivity = !showActivity;
+                if (showActivity) startGame();
+                else clearInterval(timerInterval);
+                updateLayout();
+            });
+            
+            difficultyBtn.addEventListener('click', () => {
+                difficultyIdx = (difficultyIdx + 1) % difficulties.length;
+                difficultyBtn.textContent = `Difficulty: ${difficulties[difficultyIdx].charAt(0).toUpperCase() + difficulties[difficultyIdx].slice(1)}`;
+                if (showActivity) startGame();
+            });
+            
+            resetBtn.addEventListener('click', startGame);
+            window.addEventListener('resize', updateLayout);
+
+            updateLayout();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chemistry Hub - Organic Structure Basics</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* --- CORE TEMPLATE & GLOBAL STYLES (Light Theme) --- */
+        :root {
+            --header-bg: #ffffff;
+            --page-bg: #f4f7f9;
+            --panel-bg: #ffffff;
+            --border-color: #e0e0e0;
+            --text-dark: #1e293b;
+            --text-light: #475569;
+            --accent-lime: #a3e635;
+            --accent-green: #22c55e;
+            --accent-red: #ef4444;
+            --accent-yellow: #facc15;
+            --primary-blue: #007bff;
+            --secondary-gray: #6c757d;
+        }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--page-bg);
+            color: var(--text-dark);
+            margin: 0;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .page-container { display: flex; flex-direction: column; height: 100vh; }
+        .header {
+            position: fixed; top: 0; left: 0; width: 100%; height: 60px;
+            background-color: var(--header-bg);
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 24px;
+            border-bottom: 1px solid var(--border-color);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            z-index: 1000;
+            box-sizing: border-box;
+        }
+        .header-section { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .header-section.center { text-align: center; font-size: 1.2em; font-weight: bold; }
+        .header-section.right { display: flex; justify-content: flex-end; }
+        .button {
+            padding: 8px 16px; margin-left: 10px; cursor: pointer;
+            border: none; border-radius: 6px; font-weight: 600; color: white;
+            transition: transform 0.1s;
+        }
+        .button:active { transform: scale(0.95); }
+        .main-content {
+            margin-top: 60px; padding: 24px; display: flex;
+            flex-grow: 1; overflow: hidden; box-sizing: border-box;
+            gap: 24px; justify-content: center;
+        }
+        .panel {
+            background-color: var(--panel-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            border: 1px solid var(--border-color);
+            box-sizing: border-box;
+            overflow-y: auto; padding: 24px 32px;
+            height: calc(100vh - 108px);
+        }
+        #info-panel { flex-shrink: 0; transition: width 400ms ease-in-out, margin 400ms ease-in-out; }
+        #activity-panel { display: none; flex-grow: 1; padding: 0; flex-direction: column; }
+        .main-content.activity-visible { justify-content: flex-start; }
+        .main-content.activity-visible #info-panel { width: 340px; min-width: 340px; }
+        .main-content.activity-visible #activity-panel { display: flex; }
+
+        /* --- ACTIVITY-SPECIFIC STYLES --- */
+        .activity-area { flex-grow: 1; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; padding: 1.5rem; }
+        .bottom-control-bar { height: 60px; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; background-color: var(--page-bg); border-top: 1px solid var(--border-color); flex-shrink: 0; }
+        .status-bar { font-weight: bold; color: var(--text-dark); }
+        .reset-button { padding: 8px 16px; cursor: pointer; background-color: var(--accent-red); color: white; border: none; border-radius: 6px; font-weight: 600; }
+        .game-header { display: flex; justify-content: space-between; align-items: center; width: 100%; max-width: 700px; margin: 0 auto 1rem; }
+        .feedback { min-height: 30px; margin-top: 1rem; font-weight: 600; font-size: 1.1rem; }
+        .correct { color: var(--accent-green); }
+        .incorrect { color: var(--accent-red); }
+        .shake { animation: shake 0.5s ease-in-out; }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 20%, 60% { transform: translateX(-8px); } 40%, 80% { transform: translateX(8px); } }
+
+        /* Game 1: Detective */
+        .detective-area { width: 100%; height: 400px; background: #e2e8f0; border-radius: 12px; overflow: hidden; position: relative; border: 1px solid var(--border-color); }
+        .molecule-card { position: absolute; background: var(--panel-bg); padding: 10px; border-radius: 8px; cursor: pointer; white-space: nowrap; font-family: monospace; font-size: 1.2rem; border: 1px solid var(--border-color); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .magnifying-glass { position: absolute; width: 50px; height: 50px; border: 4px solid var(--accent-green); border-radius: 50%; opacity: 0; animation: magnify 0.5s; pointer-events: none; }
+        @keyframes magnify { from { transform: scale(0); opacity: 1; } to { transform: scale(1.5); opacity: 0; } }
+        @keyframes scroll-left { from { left: 100%; } to { left: -150px; } }
+
+        /* Game 2: Conveyor */
+        .conveyor-belt { width: 100%; height: 100px; background: #e2e8f0; border-radius: 10px; overflow: hidden; position: relative; border: 1px solid var(--border-color); }
+        .conveyor-molecule { position: absolute; height: 80px; padding: 10px; background: white; color: var(--text-dark); border-radius: 8px; top: 10px; animation: move-conveyor 10s linear; display: flex; align-items: center; justify-content: center; font-weight: 600; cursor: grab; border: 1px solid var(--border-color); }
+        @keyframes move-conveyor { from { left: -150px; } to { left: 100%; } }
+        .bins-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 15px; width: 100%; }
+        .bin { min-height: 100px; background-color: #f1f5f9; border: 3px dashed #cbd5e1; border-radius: 15px; padding: 1rem; transition: all 0.3s; }
+        .bin.drag-over { border-color: var(--accent-yellow); border-style: solid; }
+        .bin.glow { border-color: var(--accent-green); box-shadow: 0 0 15px var(--accent-green); }
+
+        /* Game 3: Reaction Chain */
+        .reaction-chain-game { width: 100%; max-width: 700px; }
+        .chain-display { display: flex; align-items: center; justify-content: center; gap: 1rem; margin: 1.5rem 0; flex-wrap: wrap; }
+        .molecule-box { background: #e2e8f0; padding: 1.5rem; border-radius: 12px; font-size: 1.1rem; font-weight: 600; min-width: 150px; border: 1px solid var(--border-color); }
+        .arrow { font-size: 2rem; color: var(--accent-yellow); }
+        .reaction-options { display: flex; gap: 1rem; justify-content: center; margin-top: 1.5rem; flex-wrap: wrap; }
+        .reaction-btn { font-size: 1.1rem; font-weight: 600; padding: 0.75rem 1.5rem; border-radius: 8px; border: none; cursor: pointer; background: var(--bg-light); color: var(--text-light); }
+
+        /* Modal */
+        .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); justify-content: center; align-items: center; }
+        .modal.active { display: flex; }
+        .modal-content { background: var(--panel-bg); padding: 40px 50px; border-radius: 20px; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.2); position: relative; }
+    </style>
+</head>
+<body class="page-container">
+    
+    <header class="header">
+        <div class="header-section">Grade 11 - Chemistry</div>
+        <div id="header-title" class="header-section center">Information</div>
+        <div class="header-section right">
+            <button id="back-btn" class="button" style="background-color: var(--secondary-gray);">Back</button>
+            <button id="toggle-view-btn" class="button" style="background-color: var(--primary-blue);">Activity</button>
+            <button id="difficulty-btn" class="button" style="background-color: var(--accent-lime); color: var(--text-dark);">Difficulty: Easy</button>
+        </div>
+    </header>
+
+    <main class="main-content" id="main-content">
+        <section id="info-panel" class="panel">
+            <h1 class="text-3xl font-bold mb-4" style="color: var(--accent-lime); text-shadow: 1px 1px var(--text-dark);">Organic Chemistry Basics</h1>
+            <div style="display:flex; flex-direction:column; gap:1.5rem;">
+                <div>
+                    <h2 class="text-xl font-semibold">Functional Groups 🌿</h2>
+                    <p class="mt-2 text-gray-600">A functional group is a specific group of atoms in a molecule that is responsible for its characteristic chemical reactions. They are the most important part of organic chemistry!</p>
+                    <ul class="list-disc list-inside mt-2 text-gray-600">
+                        <li><b>Alcohol (-OH):</b> Contains a hydroxyl group.</li>
+                        <li><b>Aldehyde (-CHO):</b> Contains a carbonyl group at the end of a chain.</li>
+                        <li><b>Ketone (C=O):</b> Contains a carbonyl group in the middle of a chain.</li>
+                        <li><b>Carboxylic Acid (-COOH):</b> Contains a carboxyl group.</li>
+                    </ul>
+                </div>
+                 <div>
+                    <h2 class="text-xl font-semibold">How to Play the Games</h2>
+                     <ul class="list-disc list-inside mt-2 text-gray-600">
+                        <li><b>Easy (Detective):</b> Click on the molecules with the target functional group as they fly by.</li>
+                        <li><b>Medium (Conveyor):</b> Sort molecules by their functional group into the correct bins.</li>
+                        <li><b>Hard (Reaction Chain):</b> Apply the correct chemical reactions to transform one molecule into another.</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="activity-panel" class="panel">
+            <div class="activity-area" id="activity-area"></div>
+            <footer class="bottom-control-bar">
+                <div id="status-bar" class="status-bar">Good luck!</div>
+                <button id="reset-btn" class="reset-button">Reset</button>
+            </footer>
+        </section>
+    </main>
+
+    <div class="modal" id="end-game-modal">
+        <div class="modal-content"><h2 id="modal-title"></h2><p id="modal-score"></p><button class="button" id="modal-close-btn" style="background-color: var(--primary-blue);">Play Again</button></div>
+    </div>
+
+    <script src="./neutralino.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            try { Neutralino.init(); } catch (e) { console.error("Neutralino not found."); }
+            
+            const difficulties = ['Easy', 'Medium', 'Hard'];
+            let showActivity = false, difficultyIdx = 0;
+            let activeIntervals = [];
+
+            const mainContent = document.getElementById('main-content');
+            const infoPanel = document.getElementById('info-panel');
+            const activityArea = document.getElementById('activity-area');
+            const headerTitle = document.getElementById('header-title');
+            const toggleViewBtn = document.getElementById('toggle-view-btn');
+            const difficultyBtn = document.getElementById('difficulty-btn');
+            const backBtn = document.getElementById('back-btn');
+            const resetBtn = document.getElementById('reset-btn');
+            const modal = document.getElementById('end-game-modal');
+            const modalCloseBtn = document.getElementById('modal-close-btn');
+            
+            function updateLayout() {
+                if (showActivity) mainContent.classList.add('activity-visible');
+                else mainContent.classList.remove('activity-visible');
+                infoPanel.style.width = showActivity ? '340px' : `${Math.min(700, window.innerWidth - 48)}px`;
+                headerTitle.textContent = showActivity ? `Activity (${difficulties[difficultyIdx]})` : 'Information';
+                toggleViewBtn.textContent = showActivity ? 'Information' : 'Activity';
+            }
+
+            function startGame() {
+                activeIntervals.forEach(clearInterval);
+                const difficulty = difficulties[difficultyIdx];
+                if (difficulty === 'Easy') initDetectiveGame();
+                else if (difficulty === 'Medium') initConveyorGame();
+                else if (difficulty === 'Hard') initChainGame();
+            }
+            
+            function showEndModal(title, scoreText) {
+                activeIntervals.forEach(clearInterval);
+                document.getElementById('modal-title').textContent = title;
+                document.getElementById('modal-score').textContent = scoreText;
+                modal.classList.add('active');
+            }
+            
+            let initDetectiveGame = () => {}, initConveyorGame = () => {}, initChainGame = () => {};
+
+            // --- Game 1: Functional Group Detective (Easy) ---
+            (() => {
+                const allMolecules = [ {name: "CH₃-OH", group: "Alcohol"}, {name: "C₂H₅-COOH", group: "Carboxylic Acid"}, {name: "CH₃-CHO", group: "Aldehyde"}, {name: "CH₃-CO-CH₃", group: "Ketone"}, {name: "C₃H₇-OH", group: "Alcohol"}, {name: "H-COOH", group: "Carboxylic Acid"}, {name: "C₂H₅-CHO", group: "Aldehyde"} ];
+                const groups = [{name: "Alcohol", formula: "-OH"}, {name: "Aldehyde", formula: "-CHO"}, {name: "Ketone", formula: "C=O"}, {name: "Carboxylic Acid", formula: "-COOH"}];
+                let score, target;
+
+                initDetectiveGame = () => {
+                    score = 0;
+                    target = groups[Math.floor(Math.random() * groups.length)];
+                    activityArea.innerHTML = `
+                        <div class="game-header w-full max-w-lg"><h2>Functional Group Detective</h2><div class="stat-display">Score: <span id="detective-score">0</span></div></div>
+                        <h3 class="text-2xl font-bold">Find the ${target.name}s (${target.formula})!</h3>
+                        <div class="detective-area" id="detective-area"></div>`;
+                    
+                    const spawnInterval = setInterval(() => {
+                        const areaEl = document.getElementById('detective-area');
+                        if(!areaEl) return;
+                        const moleculeData = allMolecules[Math.floor(Math.random() * allMolecules.length)];
+                        const moleculeDiv = document.createElement('div');
+                        moleculeDiv.className = 'molecule-card';
+                        moleculeDiv.textContent = moleculeData.name;
+                        moleculeDiv.dataset.group = moleculeData.group;
+                        moleculeDiv.style.top = `${Math.random() * 85}%`;
+                        moleculeDiv.style.animation = `scroll-left ${5 + Math.random() * 5}s linear`;
+                        moleculeDiv.onclick = (e) => handleMoleculeClick(e, target);
+                        areaEl.appendChild(moleculeDiv);
+                        setTimeout(() => moleculeDiv.remove(), 10000);
+                    }, 1500);
+                    activeIntervals.push(spawnInterval);
+
+                    setTimeout(() => {
+                        clearInterval(spawnInterval);
+                        showEndModal("Molecule Detective 🔍", `Time's up! Your score: ${score}`);
+                    }, 20000);
+                };
+            
+                function handleMoleculeClick(e, target) {
+                    const card = e.target;
+                    if(card.classList.contains('clicked')) return;
+                    card.classList.add('clicked');
+                    if (card.dataset.group === target.name) {
+                        score += 10;
+                        card.style.background = 'var(--accent-green)';
+                    } else {
+                        score -= 5;
+                        card.classList.add('shake');
+                    }
+                    document.getElementById('detective-score').textContent = score;
+                    setTimeout(() => card.remove(), 500);
+                }
+            })();
+
+            // --- Game 2: Organic Conveyor Factory (Medium) ---
+            (() => {
+                const allConveyorMolecules = [{name:"CH₃OH", type:"Alcohol"}, {name:"CH₃CHO", type:"Aldehyde"}, {name:"CH₃COOH", type:"Carboxylic Acid"}, {name:"CH₃COCH₃", type:"Ketone"}, {name:"C₂H₅OH", type:"Alcohol"}, {name:"C₂H₅CHO", type:"Aldehyde"}];
+                let conveyorScore;
+
+                initConveyorGame = () => {
+                    conveyorScore = 0;
+                    activityArea.innerHTML = `
+                        <div class="game-header w-full max-w-lg"><h2>Organic Conveyor Factory</h2><div class="stat-display">Score: <span id="conveyor-score">0</span></div></div>
+                        <h3>Sort the molecules into the correct bins!</h3>
+                        <div class="conveyor-belt" id="conveyor-belt"></div>
+                        <div class="bins-container" id="bins-container"></div>`;
+                    
+                    const binsContainer = document.getElementById('bins-container');
+                    ["Alcohol", "Aldehyde", "Ketone", "Carboxylic Acid"].forEach(type => {
+                        const bin = document.createElement('div');
+                        bin.className = 'bin';
+                        bin.innerHTML = `<h3>${type}</h3>`;
+                        bin.dataset.type = type;
+                        bin.addEventListener('dragover', e => {e.preventDefault(); bin.classList.add('drag-over');});
+                        bin.addEventListener('dragleave', e => e.target.classList.remove('drag-over'));
+                        bin.addEventListener('drop', handleConveyorDrop);
+                        binsContainer.appendChild(bin);
+                    });
+                    
+                    const conveyorInterval = setInterval(() => {
+                        const belt = document.getElementById('conveyor-belt');
+                        if (!belt) return;
+                        const moleculeData = allConveyorMolecules[Math.floor(Math.random() * allConveyorMolecules.length)];
+                        const moleculeDiv = document.createElement('div');
+                        moleculeDiv.className = 'conveyor-molecule';
+                        moleculeDiv.textContent = moleculeData.name;
+                        moleculeDiv.dataset.type = moleculeData.type;
+                        moleculeDiv.draggable = true;
+                        moleculeDiv.addEventListener('dragstart', e => e.dataTransfer.setData('text/type', moleculeData.type));
+                        belt.appendChild(moleculeDiv);
+                        setTimeout(() => { if(document.contains(moleculeDiv)) moleculeDiv.remove(); }, 9900);
+                    }, 3000);
+                    activeIntervals.push(conveyorInterval);
+                };
+
+                function handleConveyorDrop(e) {
+                    const bin = e.currentTarget;
+                    bin.classList.remove('drag-over');
+                    const droppedType = e.dataTransfer.getData('text/type');
+                    if (bin.dataset.type === droppedType) {
+                        conveyorScore += 10;
+                        bin.classList.add('glow');
+                        setTimeout(() => bin.classList.remove('glow'), 500);
+                        if (conveyorScore >= 50) {
+                            activeIntervals.forEach(clearInterval);
+                            showEndModal("Organic Sorter 🏭", `You reached a score of ${conveyorScore}!`);
+                        }
+                    } else {
+                        bin.classList.add('shake');
+                        setTimeout(() => bin.classList.remove('shake'), 500);
+                    }
+                    document.getElementById('conveyor-score').textContent = conveyorScore;
+                }
+            })();
+
+            // --- Game 3: Reaction Chain Challenge (Hard) ---
+            (() => {
+                const allChains = [{start:"Ethanol", steps:[{reaction:"Oxidation", product:"Acetaldehyde"}, {reaction:"Oxidation", product:"Acetic Acid"}]}, {start:"Methane", steps:[{reaction:"Substitution", product:"Chloromethane"}]}];
+                let chainLevel, chainScore, currentChain;
+                
+                initChainGame = () => {
+                    chainLevel = 0; chainScore = 0;
+                    currentChain = allChains[Math.floor(Math.random() * allChains.length)];
+                    loadChainProblem();
+                };
+
+                function loadChainProblem() {
+                    if (chainLevel >= currentChain.steps.length) {
+                        showEndModal("Reaction Strategist ⚡", `You completed the chain with a score of ${chainScore}!`);
+                        return;
+                    }
+                    const currentStep = currentChain.steps[chainLevel];
+                    const gameArea = activityArea;
+                    gameArea.innerHTML = `
+                        <div class="game-header w-full max-w-lg"><h2>Reaction Chain Challenge</h2><div class="stat-display">Score: <span id="chain-score">${chainScore}</span></div></div>
+                        <div class="reaction-chain-game">
+                            <h3>Goal: Convert ${currentChain.start} to ${currentChain.steps[currentChain.steps.length - 1].product}</h3>
+                            <div class="chain-display">
+                                <div class="molecule-box">${chainLevel > 0 ? currentChain.steps[chainLevel - 1].product : currentChain.start}</div>
+                                <div class="arrow">➡️</div>
+                                <div id="current-molecule" class="molecule-box">?</div>
+                            </div>
+                            <p>Select the correct reaction:</p>
+                            <div class="reaction-options" id="reaction-options"></div>
+                        </div>`;
+                    
+                    const optionsEl = document.getElementById('reaction-options');
+                    const options = new Set([currentStep.reaction, "Combustion", "Substitution", "Addition", "Oxidation"]);
+                    options.delete(currentStep.reaction); // Ensure no duplicates
+                    
+                    const finalOptions = [currentStep.reaction, ...[...options].sort(()=>0.5-Math.random()).slice(0,2)];
+                    finalOptions.sort(() => 0.5 - Math.random());
+
+                    finalOptions.forEach(opt => {
+                        const btn = document.createElement('button');
+                        btn.className = 'reaction-btn button'; btn.textContent = opt;
+                        btn.onclick = () => handleReactionChoice(opt === currentStep.reaction);
+                        optionsEl.appendChild(btn);
+                    });
+                }
+
+                function handleReactionChoice(isCorrect) {
+                    if (isCorrect) {
+                        chainScore += 20;
+                        const product = currentChain.steps[chainLevel].product;
+                        document.getElementById('current-molecule').textContent = product;
+                        chainLevel++;
+                        setTimeout(loadChainProblem, 1500);
+                    } else {
+                        document.getElementById('current-molecule').classList.add('shake');
+                        setTimeout(() => document.getElementById('current-molecule').classList.remove('shake'), 500);
+                    }
+                }
+            })();
+            
+            // --- Main Event Listeners ---
+            backBtn.addEventListener('click', () => {  window.history.back();  });
+            toggleViewBtn.addEventListener('click', () => {
+                showActivity = !showActivity;
+                if (showActivity) startGame();
+                updateLayout();
+            });
+            difficultyBtn.addEventListener('click', () => {
+                difficultyIdx = (difficultyIdx + 1) % difficulties.length;
+                const newDifficulty = difficulties[difficultyIdx];
+                difficultyBtn.textContent = `Difficulty: ${newDifficulty}`;
+                if (showActivity) {
+                    startGame();
+                    updateLayout();
+                }
+            });
+            resetBtn.addEventListener('click', startGame);
+            modalCloseBtn.addEventListener('click', () => {
+                modal.classList.remove('active');
+                startGame();
+            });
+            
+            updateLayout();
+        });
+    </script>
+</body>
+</html>
+

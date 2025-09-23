@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Digestive Detective</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --header-bg: #ffffff; --page-bg: #fffbeb; --panel-bg: #ffffff; --border: #fef3c7;
+            --text: #78350f; --muted: #475569; --accent: #f59e0b; --accent-dark: #d97706;
+            --primary-blue: #007bff; --secondary-gray: #6c757d; --accent-red: #ef4444;
+            --font-family: 'Inter', sans-serif;
+        }
+        * { box-sizing: border-box; }
+        body {
+            font-family: var(--font-family); background: var(--page-bg); margin: 0;
+            height: 100vh; overflow: hidden; color: var(--text); -webkit-font-smoothing: antialiased;
+        }
+        .page-container { display: flex; flex-direction: column; height: 100vh; }
+        .header {
+            position: fixed; top: 0; left: 0; width: 100%; height: 60px;
+            background-color: var(--header-bg); display: flex; align-items: center; justify-content: space-between;
+            padding: 0 24px; border-bottom: 1px solid var(--border); box-shadow: 0 2px 4px rgba(120, 53, 15, 0.05); z-index: 1000;
+        }
+        .header-section { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .header-section.center { text-align: center; font-size: 1.2em; font-weight: bold; }
+        .header-section.right { display: flex; justify-content: flex-end; }
+        .button {
+            padding: 8px 16px; margin-left: 10px; cursor: pointer;
+            border: none; border-radius: 6px; font-weight: 600; color: white;
+            transition: transform 0.1s;
+        }
+        .button:active { transform: scale(0.95); }
+        .main-content { margin-top: 60px; padding: 24px; display: flex; gap: 24px; flex-grow: 1; overflow: hidden; justify-content: center; }
+        .panel {
+            background: var(--panel-bg); border-radius: 12px;
+            box-shadow: 0 6px 20px rgba(120, 53, 15, 0.08);
+            overflow: auto; height: calc(100vh - 108px); flex-shrink: 0;
+            transition: width 400ms ease-in-out, margin 400ms ease-in-out;
+        }
+        #info-panel { padding: 32px 48px; }
+        #activity-panel { display: none; flex-direction: column; flex-grow: 1; padding: 0; }
+        .main-content.activity-visible { justify-content: flex-start; }
+        .main-content.activity-visible #info-panel { width: 340px; min-width: 340px; padding: 24px 32px; }
+        .main-content.activity-visible #activity-panel { display: flex; }
+
+        .activity-area {
+            display: flex; flex-direction: column; align-items: center; justify-content: space-between;
+            gap: 16px; padding: 22px; flex-grow: 1; overflow: hidden;
+        }
+        .bottom-control-bar { height: 60px; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; background-color: var(--page-bg); border-top: 1px solid var(--border); flex-shrink: 0; }
+        .status-bar { font-weight: bold; color: var(--text); }
+        .reset-button { padding: 8px 16px; cursor: pointer; background-color: var(--accent-red); color: white; border: none; border-radius: 6px; font-weight: 600; }
+        
+        .organ-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; width: 100%; max-width: 600px; }
+        .organ {
+            background: #fef3c7; border: 3px dashed #fde68a;
+            border-radius: 12px; padding: 15px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            text-align: center; font-weight: 700;
+            transition: all 0.2s ease-in-out;
+        }
+        .organ__icon { font-size: 2.5rem; }
+        .organ--next {
+            border-style: solid; border-color: var(--accent);
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(245, 158, 11, 0.5);
+            animation: pulse 1.5s infinite;
+        }
+        .organ--visited { background-color: #fef9c3; filter: grayscale(50%); opacity: 0.8; }
+        
+        .draggable-item-area { height: 60px; position: relative; }
+        #draggable-food {
+            font-size: 3.5rem; cursor: grab;
+            transition: transform 0.3s ease-in-out, opacity 0.3s;
+            position: absolute; top: 0; left: 50%;
+            transform: translate(-50%, 0);
+        }
+        #draggable-food.dragging { opacity: 0.5; transform: translate(-50%, 0) scale(1.2); }
+        
+        .guide-area { display: flex; align-items: flex-start; justify-content: center; gap: 15px; width: 100%; max-width: 600px; }
+        .guide__character { font-size: 4rem; }
+        .guide__speech-bubble {
+            flex-grow: 1; background: #fff; border: 2px solid #e2e8f0;
+            border-radius: 12px; padding: 12px; text-align: left; position: relative;
+            font-size: 1rem; box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+        .guide__speech-bubble::before { content: ""; position: absolute; left: -12px; top: 20px; border: 6px solid transparent; border-right-color: #e2e8f0; }
+        .guide__speech-bubble::after { content: ""; position: absolute; left: -10px; top: 20px; border: 6px solid transparent; border-right-color: #fff; }
+        
+        @keyframes pulse { 0%, 100% { transform: scale(1.05); } 50% { transform: scale(1.1); } }
+    </style>
+</head>
+<body class="page-container">
+    <header class="header">
+        <div class="header-section">🍎 Digestive Detective</div>
+        <div id="header-title" class="header-section center">Information</div>
+        <div class="header-section right">
+            <button id="back-btn" class="button" style="background-color: var(--secondary-gray);">Back</button>
+            <button id="toggle-view-btn" class="button" style="background-color: var(--primary-blue);">Activity</button>
+            <button id="difficulty-btn" class="button" style="background-color: var(--accent);">Difficulty: Easy</button>
+        </div>
+    </header>
+
+    <main class="main-content" id="main-content">
+        <section id="info-panel" class="panel">
+            <h1 style="margin:0 0 8px 0; color:var(--accent-dark);">The Journey of Food</h1>
+            <p style="color:var(--muted)">Your digestive system breaks down different foods in different ways. This game will guide you through the journey of several types of food, from carbohydrates and proteins to liquids.</p>
+            <h3 style="color: #78350f;">The Main Path:</h3>
+            <ol style="margin-top:12px;line-height:1.6;color:var(--muted)">
+                <li><strong>Mouth 👄:</strong> Chewing and saliva begin breaking down food.</li>
+                <li><strong>Esophagus:</strong> A tube that carries food to the stomach.</li>
+                <li><strong>Stomach 🥣:</strong> Churns food with powerful acids.</li>
+                <li><strong>Small Intestine ➿:</strong> Where most nutrients are absorbed into the blood.</li>
+                <li><strong>Large Intestine:</strong> Absorbs water from the remaining waste.</li>
+                <li><strong>Rectum 🚽:</strong> Stores waste before it leaves the body.</li>
+            </ol>
+        </section>
+
+        <section id="activity-panel" class="panel">
+            <div class="activity-area" id="game-area"></div>
+            <footer class="bottom-control-bar">
+                <div id="status-bar" class="status-bar">Score: 0</div>
+                <div>
+                    <button id="next-task-btn" class="button" style="background-color:#22c55e; display:none;">Next Task</button>
+                    <button id="reset-btn" class="reset-button">Reset</button>
+                </div>
+            </footer>
+        </section>
+    </main>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const gameData = {
+        easy: [
+            { title: 'Task 1: An Apple', foodIcon: '🍎', foodStages: ['🍎', '🍏'], sequence: ['mouth', 'stomach', 'smallIntestine'], organs: [{ id: 'mouth', name: 'Mouth', icon: '👄' }, { id: 'stomach', name: 'Stomach', icon: '🥣' }, { id: 'smallIntestine', name: 'Small Intestine', icon: '➿' }], messages: { mouth: "Great start! Chewing begins digestion.", stomach: "Perfect! The stomach breaks it down.", smallIntestine: "Excellent! Nutrients are absorbed here." } },
+            { title: 'Task 2: Bread', foodIcon: '🍞', foodStages: ['🍞', '🥖'], sequence: ['mouth', 'stomach', 'smallIntestine'], organs: [{ id: 'mouth', name: 'Mouth', icon: '👄' }, { id: 'stomach', name: 'Stomach', icon: '🥣' }, { id: 'smallIntestine', name: 'Small Intestine', icon: '➿' }], messages: { mouth: "Carbs like bread start breaking down with saliva.", stomach: "Correct! It becomes a soupy mix.", smallIntestine: "Yes! Simple sugars enter the blood." } }
+        ],
+        medium: [
+            { title: 'Task 1: A Chicken Leg', foodIcon: '🍗', foodStages: ['🍗', '🍖'], sequence: ['mouth', 'esophagus', 'stomach', 'smallIntestine'], organs: [{ id: 'mouth', name: 'Mouth', icon: '👄' }, { id: 'esophagus', name: 'Esophagus', icon: '튜브' }, { id: 'stomach', name: 'Stomach', icon: '🥣' }, { id: 'smallIntestine', name: 'Small Intestine', icon: '➿' }, { id: 'lungs', name: 'Lungs', icon: '🫁' }], messages: { mouth: "Chewing is the first step for protein.", esophagus: "Down the esophagus it goes!", stomach: "Yes! Stomach acid is key for digesting protein.", smallIntestine: "Correct! Amino acids are absorbed." } }
+        ],
+        hard: [
+            { title: 'Task 1: An Avocado', foodIcon: '🥑', foodStages: ['🥑', '🥣'], sequence: ['mouth', 'stomach', 'smallIntestine', 'largeIntestine'], organs: [{ id: 'mouth', name: 'Mouth', icon: '👄' }, { id: 'stomach', name: 'Stomach', icon: '🥣' }, { id: 'liver', name: 'Liver', icon: '⚖️' }, { id: 'smallIntestine', name: 'Small Intestine', icon: '➿' }, { id: 'pancreas', name: 'Pancreas', icon: '🔬' }, { id: 'largeIntestine', name: 'Large Intestine', icon: '💧' }], messages: { mouth: "Mechanical digestion starts.", stomach: "Fats are churned in the stomach.", smallIntestine: "Correct! Bile from the liver helps break down fats here.", largeIntestine: "Water absorption is the next step." } }
+        ]
+    };
+
+    const difficulties = ['easy', 'medium', 'hard'];
+    let showActivity = false, difficultyIdx = 0, score = 0, currentFoodIndex = 0, currentOrganStep = 0;
+    
+    const mainContent = document.getElementById('main-content'),
+          infoPanel = document.getElementById('info-panel'),
+          gameArea = document.getElementById('game-area'),
+          headerTitle = document.getElementById('header-title'),
+          toggleViewBtn = document.getElementById('toggle-view-btn'),
+          difficultyBtn = document.getElementById('difficulty-btn'),
+          backBtn = document.getElementById('back-btn'),
+          statusBar = document.getElementById('status-bar'),
+          nextTaskBtn = document.getElementById('next-task-btn'),
+          resetBtn = document.getElementById('reset-btn');
+
+    function updateLayout() {
+        mainContent.classList.toggle('activity-visible', showActivity);
+        infoPanel.style.width = showActivity ? '340px' : `${Math.min(700, window.innerWidth - 48)}px`;
+        const level = gameData[difficulties[difficultyIdx]]?.[currentFoodIndex];
+        headerTitle.textContent = showActivity ? (level?.title || "Digestive Detective") : 'Information';
+        toggleViewBtn.textContent = showActivity ? 'Information' : 'Activity';
+        statusBar.textContent = `Score: ${score}`;
+    }
+    
+    function startGame() {
+        score = 0;
+        currentFoodIndex = 0;
+        loadLevel();
+    }
+
+    function loadLevel() {
+        currentOrganStep = 0;
+        const difficulty = difficulties[difficultyIdx];
+        const level = gameData[difficulty]?.[currentFoodIndex];
+
+        if (!level) {
+            gameArea.innerHTML = `<div style="text-align: center; animation: fadeIn 0.5s;">
+                <h2>🎉 Difficulty Complete!</h2>
+                <p>You're a master detective! Your final score is ${score}.</p>
+            </div>`;
+            return;
+        }
+
+        gameArea.innerHTML = `
+            <div class="organ-grid" id="organ-grid"></div>
+            <div class="draggable-item-area">
+                <div id="draggable-food" draggable="true">${level.foodStages[0]}</div>
+            </div>
+            <div class="guide-area">
+                <div class="guide__character">👩‍🏫</div>
+                <div class="guide__speech-bubble" id="speech-bubble"></div>
+            </div>`;
+
+        const organGrid = document.getElementById('organ-grid');
+        [...level.organs].sort(() => 0.5 - Math.random()).forEach(organ => {
+            const organEl = document.createElement('div');
+            organEl.className = 'organ';
+            organEl.id = organ.id;
+            organEl.innerHTML = `<div class="organ__icon">${organ.icon}</div><div>${organ.name}</div>`;
+            organGrid.appendChild(organEl);
+        });
+
+        addDragDropListeners();
+        updateGameState();
+        updateLayout();
+    }
+    
+    function updateGameState() {
+        const difficulty = difficulties[difficultyIdx];
+        const level = gameData[difficulty][currentFoodIndex];
+        const speechBubble = document.getElementById('speech-bubble');
+        const draggableFood = document.getElementById('draggable-food');
+        
+        nextTaskBtn.style.display = 'none';
+
+        if (currentOrganStep >= level.sequence.length) {
+            draggableFood.style.display = 'none';
+            document.querySelectorAll('.organ').forEach(o => o.classList.remove('organ--next'));
+            
+            const isLastFood = currentFoodIndex >= gameData[difficulty].length - 1;
+            speechBubble.innerHTML = `✅ <strong>Journey Complete!</strong> You know how a ${level.foodIcon} is digested.`;
+            
+            nextTaskBtn.textContent = isLastFood ? "Finish" : "Next Task →";
+            nextTaskBtn.style.display = 'inline-block';
+            return;
+        }
+
+        const nextOrganId = level.sequence[currentOrganStep];
+        if (currentOrganStep === 0) {
+            speechBubble.textContent = `Let's investigate this ${level.foodIcon}! Drag it to the first organ in its journey.`;
+        }
+        
+        draggableFood.textContent = level.foodStages[currentOrganStep > 0 ? 1 : 0];
+        document.querySelectorAll('.organ').forEach(o => {
+            o.classList.remove('organ--next');
+            if (difficulty === 'easy' && o.id === nextOrganId) {
+                o.classList.add('organ--next');
+            }
+        });
+    }
+
+    function addDragDropListeners() {
+        const draggableFood = document.getElementById('draggable-food');
+        draggableFood.addEventListener('dragstart', e => {
+            e.target.classList.add('dragging');
+        });
+        draggableFood.addEventListener('dragend', e => e.target.classList.remove('dragging'));
+        document.querySelectorAll('.organ').forEach(organ => {
+            organ.addEventListener('dragover', e => e.preventDefault());
+            organ.addEventListener('drop', handleDrop);
+        });
+    }
+
+    function handleDrop(e) {
+        e.preventDefault();
+        const organEl = e.currentTarget;
+        const level = gameData[difficulties[difficultyIdx]][currentFoodIndex];
+        const speechBubble = document.getElementById('speech-bubble');
+        const draggableFood = document.getElementById('draggable-food');
+
+        if (organEl.id === level.sequence[currentOrganStep]) {
+            score += 10;
+            statusBar.textContent = `Score: ${score}`;
+            organEl.classList.add('organ--visited');
+            currentOrganStep++;
+            
+            const organRect = organEl.getBoundingClientRect();
+            const startRect = draggableFood.parentElement.getBoundingClientRect();
+            const dx = (organRect.left + organRect.width / 2) - (startRect.left + startRect.width / 2);
+            const dy = (organRect.top + organRect.height / 2) - (startRect.top + startRect.height / 2);
+
+            draggableFood.style.transition = 'transform 0.5s ease-in, opacity 0.5s ease-in';
+            draggableFood.style.transform = `translate(${dx}px, ${dy}px) scale(0.5)`;
+            draggableFood.style.opacity = '0';
+            
+            setTimeout(() => {
+                speechBubble.innerHTML = `✅ <strong>Correct!</strong> ${level.messages[organEl.id]}`;
+                draggableFood.style.transition = 'opacity 0.3s ease-out';
+                draggableFood.style.transform = 'translate(-50%, 0) scale(1)';
+                draggableFood.style.opacity = '1';
+                updateGameState();
+            }, 600);
+        } else {
+            speechBubble.innerHTML = `❌ <strong>Oops!</strong> That's not the next step. Try again!`;
+        }
+    }
+    
+    // --- EVENT LISTENERS ---
+    toggleViewBtn.addEventListener('click', () => {
+        showActivity = !showActivity;
+        if (showActivity) { startGame(); }
+        updateLayout();
+    });
+    difficultyBtn.addEventListener('click', () => {
+        difficultyIdx = (difficultyIdx + 1) % difficulties.length;
+        difficultyBtn.textContent = `Difficulty: ${difficulties[difficultyIdx].charAt(0).toUpperCase() + difficulties[difficultyIdx].slice(1)}`;
+        if (showActivity) startGame();
+    });
+    backBtn.addEventListener('click', () => {
+        if (showActivity) {
+            showActivity = false;
+            updateLayout();
+        } else {
+            window.history.back();
+        }
+    });
+    resetBtn.addEventListener('click', () => {
+        if(showActivity) startGame();
+    });
+    nextTaskBtn.addEventListener('click', () => {
+        currentFoodIndex++;
+        loadLevel();
+    });
+ 
+    updateLayout();
+});
+</script>
+</body>
+</html>

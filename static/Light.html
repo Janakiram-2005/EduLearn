@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Light Basics Educational Module</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --header-bg: #ffffff; --page-bg: #f0f2f5; --panel-bg: #ffffff;
+            --border-color: #e5e7eb; --text-dark: #1f2937; --accent-blue: #3b82f6;
+            --secondary-gray: #6c757d; --primary-blue-btn: #007bff; --accent-red: #ef4444;
+        }
+        body { font-family: 'Poppins', sans-serif; background-color: var(--page-bg); color: var(--text-dark); margin: 0; height: 100vh; overflow: hidden; }
+        .page-container { display: flex; flex-direction: column; height: 100vh; }
+        .header {
+            position: fixed; top: 0; left: 0; width: 100%; height: 60px;
+            background-color: var(--header-bg); display: flex; align-items: center; justify-content: space-between;
+            padding: 0 24px; border-bottom: 1px solid var(--border-color);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05); z-index: 1000;
+        }
+        .header-section { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .header-section.center { text-align: center; font-size: 1.2em; font-weight: bold; }
+        .header-section.right { display: flex; justify-content: flex-end; }
+        .button {
+            padding: 8px 16px; margin-left: 10px; cursor: pointer;
+            border: none; border-radius: 6px; font-weight: 600; color: white;
+            white-space: nowrap; transition: transform 0.1s;
+        }
+        .button:active:not(:disabled) { transform: scale(0.95); }
+        .button:disabled { opacity: 0.6; cursor: not-allowed; }
+        .main-content { margin-top: 60px; padding: 24px; display: flex; gap: 24px; flex-grow: 1; overflow: hidden; justify-content: center; }
+        .panel {
+            background-color: var(--panel-bg); border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: 1px solid var(--border-color);
+            overflow-y: auto; padding: 32px 48px; height: calc(100vh - 108px);
+            transition: width 400ms ease-in-out;
+        }
+        #info-panel { flex-shrink: 0; }
+        #activity-panel { display: none; flex-grow: 1; padding: 0; flex-direction: column; }
+        .main-content.activity-visible { justify-content: flex-start; }
+        .main-content.activity-visible #info-panel { width: 340px; min-width: 340px; padding: 24px 32px; }
+        .main-content.activity-visible #activity-panel { display: flex; }
+        
+        .activity-area { flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; }
+        .bottom-control-bar { height: 60px; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; background-color: var(--page-bg); border-top: 1px solid var(--border-color); flex-shrink: 0; border-radius: 0 0 12px 12px;}
+        .status-bar { font-weight: bold; color: var(--text-dark); font-size: 1.2rem;}
+        .reset-button { padding: 8px 16px; cursor: pointer; background-color: var(--accent-red); color: white; border: none; border-radius: 6px; font-weight: 600; }
+        .info-panel-content { background-color: #ffffff; padding: 1.5rem; border-radius: 0.75rem; border: 1px solid #e5e7eb; }
+        .info-panel-content table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+        .info-panel-content th, .info-panel-content td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        .info-panel-content th { background-color: #f2f2f2; }
+
+        /* Game Styles */
+        .game-container { text-align: center; width:100%; max-width: 600px; animation: 0.5s fadeIn ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .game-options { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1.5rem; }
+        .game-option { padding: 1rem; border: 2px solid #d1d5db; border-radius: 0.5rem; cursor: pointer; transition: all 0.2s; font-size: 1.1rem; }
+        .game-option:hover { border-color: var(--accent-blue); background-color: #eff6ff; }
+        .game-option.correct { background-color: #dcfce7; border-color: #22c55e; }
+        .game-option.incorrect { background-color: #fee2e2; border-color: #ef4444; }
+    </style>
+</head>
+<body class="page-container">
+    <header class="header">
+        <div class="header-section font-bold text-lg" style="color: var(--accent-blue);">Physics: Light</div>
+        <div id="header-title" class="header-section center">Information</div>
+        <div class="header-section right">
+            <button id="back-btn" class="button" style="background-color: var(--secondary-gray);">Back</button>
+            <button id="activity-info-btn" class="button" style="background-color: var(--primary-blue-btn);">Activity</button>
+            <button id="difficulty-btn" class="button" style="background-color: var(--accent-blue);">Difficulty: Easy</button>
+        </div>
+    </header>
+
+    <main id="main-content" class="main-content">
+        <section id="info-panel" class="panel">
+            <h1 class="text-3xl font-bold mb-4" style="color: var(--accent-blue);">Light: Properties and Behavior</h1>
+            <p class="mt-2 text-gray-600">Light is a form of energy that travels in waves. Understanding its behavior is fundamental to physics.</p>
+            <div class="info-panel-content mt-4">
+                <h3 class="text-xl font-semibold text-gray-900">Key Properties</h3>
+                <ul class="list-disc list-inside mt-2 text-gray-600">
+                    <li><b>Reflection:</b> Bouncing off surfaces (like a mirror).</li>
+                    <li><b>Refraction:</b> Bending when passing through different materials (like a straw in water).</li>
+                    <li><b>Dispersion:</b> Separating into different colors (like a rainbow).</li>
+                </ul>
+            </div>
+            <div class="info-panel-content mt-4">
+                <h3 class="text-xl font-semibold text-gray-900">Quiz Difficulties</h3>
+                <ul class="list-disc list-inside mt-2 text-gray-600">
+                    <li><b>Easy:</b> Focuses on basic definitions and common examples.</li>
+                    <li><b>Medium:</b> Introduces more specific concepts like lenses and the electromagnetic spectrum.</li>
+                    <li><b>Hard:</b> Covers advanced topics like quantum theory and optical principles.</li>
+                </ul>
+            </div>
+        </section>
+
+        <section id="activity-panel" class="panel">
+            <div id="activity-area" class="activity-area"></div>
+            <footer class="bottom-control-bar">
+                <div id="status-bar" class="status-bar">Score: 0</div>
+                <button id="reset-btn" class="reset-button">Reset</button>
+            </footer>
+        </section>
+    </main>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const gameData = {
+                easy: [
+                    { question: "What is the primary source of light for Earth?", options: ["The Moon", "The Sun", "Stars", "Electric bulbs"], answer: "The Sun" },
+                    { question: "What happens when light bounces off a mirror?", options: ["Refraction", "Reflection", "Absorption", "Dispersion"], answer: "Reflection" },
+                    { question: "Which color has the longest wavelength in the visible spectrum?", options: ["Violet", "Blue", "Green", "Red"], answer: "Red" },
+                    { question: "Which of these is a natural light source?", options: ["Light bulb", "Candle", "Firefly", "Laser"], answer: "Firefly" }
+                ],
+                medium: [
+                    { question: "What is the phenomenon where light separates into different colors, like in a rainbow?", options: ["Reflection", "Refraction", "Dispersion", "Absorption"], answer: "Dispersion" },
+                    { question: "Which type of lens converges light rays to a single focal point?", options: ["Concave lens", "Convex lens", "Plano-concave lens", "Cylindrical lens"], answer: "Convex lens" },
+                    { question: "Which type of electromagnetic radiation has a wavelength shorter than visible light but longer than X-rays?", options: ["Infrared", "Microwave", "Ultraviolet", "Radio waves"], answer: "Ultraviolet" }
+                ],
+                hard: [
+                    { question: "According to quantum theory, light is composed of particles called...", options: ["Electrons", "Protons", "Neutrons", "Photons"], answer: "Photons" },
+                    { question: "What is the bending of light as it passes around an obstacle or through a narrow opening called?", options: ["Reflection", "Refraction", "Diffraction", "Interference"], answer: "Diffraction" },
+                    { question: "Which principle states that light takes the path that can be traversed in the least time?", options: ["Huygens' principle", "Fermat's principle", "Heisenberg's principle", "Pauli's principle"], answer: "Fermat's principle" }
+                ]
+            };
+            
+            const difficulties = ['easy', 'medium', 'hard'];
+            let difficultyIdx = 0, score = 0, showActivity = false, currentQuestionIndex = 0, isAnswered = false;
+
+            const mainContent = document.getElementById('main-content'), infoPanel = document.getElementById('info-panel'), activityPanel = document.getElementById('activity-panel'), activityInfoBtn = document.getElementById('activity-info-btn'), backBtn = document.getElementById('back-btn'), headerTitle = document.getElementById('header-title'), difficultyBtn = document.getElementById('difficulty-btn'), activityArea = document.getElementById('activity-area'), statusBar = document.getElementById('status-bar'), resetBtn = document.getElementById('reset-btn');
+
+            function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+            
+            function updateLayout() {
+                mainContent.classList.toggle('activity-visible', showActivity);
+                infoPanel.style.width = showActivity ? '340px' : `${Math.min(800, window.innerWidth - 48)}px`;
+                headerTitle.textContent = showActivity ? 'Light Basics Quiz' : 'Information';
+                activityInfoBtn.textContent = showActivity ? 'Information' : 'Activity';
+                updateScoreDisplay();
+            }
+
+            function startGame() {
+                score = 0;
+                currentQuestionIndex = 0;
+                const difficulty = difficulties[difficultyIdx];
+                gameData[difficulty].sort(() => .5 - Math.random());
+                loadGame();
+            }
+
+            function loadGame() {
+                const difficulty = difficulties[difficultyIdx];
+                const questions = gameData[difficulty];
+                if (currentQuestionIndex >= questions.length) {
+                    showCompletionScreen();
+                    return;
+                }
+                isAnswered = false;
+                const question = questions[currentQuestionIndex];
+                activityArea.innerHTML = `
+                    <div class="game-container">
+                        <h2 class="text-2xl font-bold">${capitalize(difficulty)} Challenge</h2>
+                        <p class="text-xl my-4">${question.question}</p>
+                        <div class="game-options">
+                            ${question.options.map(opt => `<button class="game-option">${opt}</button>`).join('')}
+                        </div>
+                    </div>`;
+                activityArea.querySelectorAll('.game-option').forEach(btn => {
+                    btn.onclick = (e) => handleAnswer(e, question.answer);
+                });
+                updateScoreDisplay();
+            }
+
+            function handleAnswer(e, correctAnswer) {
+                if (isAnswered) return;
+                isAnswered = true;
+                const selectedBtn = e.currentTarget;
+                const isCorrect = selectedBtn.textContent === correctAnswer;
+                
+                selectedBtn.classList.add(isCorrect ? 'correct' : 'incorrect');
+
+                if (isCorrect) {
+                    score += 10;
+                    updateScoreDisplay();
+                }
+
+                setTimeout(() => {
+                    currentQuestionIndex++;
+                    loadGame();
+                }, 1500);
+            }
+
+            function showCompletionScreen() {
+                activityArea.innerHTML = `<div class="text-center"><h2 class="text-3xl font-bold text-green-600">${capitalize(difficulties[difficultyIdx])} Mode Complete!</h2><p class="text-xl mt-4">Final Score: ${score}</p></div>`;
+            }
+
+            function updateScoreDisplay() { statusBar.textContent = `Score: ${score}`; }
+            
+            activityInfoBtn.addEventListener('click', () => {
+                showActivity = !showActivity;
+                if(showActivity) startGame();
+                updateLayout();
+            });
+            backBtn.addEventListener('click', () => {
+                if (showActivity) {
+                    showActivity = false;
+                    updateLayout();
+                } else {
+                    window.history.back();
+                }
+            });
+            difficultyBtn.addEventListener('click', () => {
+                difficultyIdx = (difficultyIdx + 1) % difficulties.length;
+                difficultyBtn.textContent = `Difficulty: ${capitalize(difficulties[difficultyIdx])}`;
+                if (showActivity) startGame();
+            });
+            resetBtn.addEventListener('click', () => {
+                if(showActivity) startGame();
+            });
+            
+            updateLayout();
+        });
+    </script>
+</body>
+</html>

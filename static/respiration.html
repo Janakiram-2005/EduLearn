@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Respiration Rush</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --header-bg: #ffffff; --page-bg: #f1f5f9; --panel-bg: #ffffff; --border: #e2e8f0;
+            --text: #0f172a; --muted: #475569; --accent: #4338ca; --accent-light: #e0e7ff;
+            --primary-blue: #007bff; --secondary-gray: #6c757d; --accent-red: #ef4444;
+        }
+        * { box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: var(--page-bg); margin: 0; height: 100vh; overflow: hidden; color: var(--text); }
+        .page-container { display: flex; flex-direction: column; height: 100vh; }
+        .main-content {
+            margin-top: 60px; padding: 22px; display: flex; gap: 20px;
+            align-items: flex-start; flex-grow: 1; overflow: hidden;
+        }
+        .panel { background: var(--panel-bg); border-radius: 12px; box-shadow: 0 6px 20px rgba(15, 23, 42, 0.08); overflow: auto; height: calc(100vh - 108px); flex-shrink: 0; padding: 24px 32px; }
+        #info-panel {
+            width: 100%;
+            max-width: 700px;
+            margin: 0 auto;
+            transition: width 400ms ease-in-out, min-width 400ms ease-in-out;
+        }
+        #activity-panel { display: none; flex-direction: column; flex-grow: 1; min-width: 400px; padding: 0; }
+        .main-content.activity-visible { justify-content: flex-start; }
+        .main-content.activity-visible #info-panel { width: 340px; min-width: 340px; margin: 0; }
+        .main-content.activity-visible #activity-panel { display: flex; }
+        .header {
+            position: fixed; top: 0; left: 0; width: 100%; height: 60px;
+            background: var(--header-bg); display: flex; align-items: center;
+            justify-content: space-between; padding: 0 24px;
+            border-bottom: 1px solid var(--border); z-index: 1000; box-sizing: border-box;
+        }
+        .header-section { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .header-section.center { text-align: center; font-size: 1.2em; font-weight: bold; }
+        .header-section.right { display: flex; justify-content: flex-end; }
+        .button {
+            padding: 8px 16px; margin-left: 10px; cursor: pointer;
+            border: none; border-radius: 6px; font-weight: 600; color: white;
+            transition: transform 0.1s;
+        }
+        .button:active { transform: scale(0.95); }
+        .activity-area { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 22px; flex-grow: 1; overflow: auto; background-color: #eef2ff; position: relative; }
+        #gameCanvas { border: 3px solid #1e293b; display: block; max-width: 100%; height: auto; background-color: #0f172a; image-rendering: pixelated; image-rendering: crisp-edges;}
+        .info-box { text-align: center; font-size: 1.1rem; padding: 15px; border-radius: 8px; background-color: var(--accent); color: white; width: 100%; max-width: 600px; }
+        .bottom-control-bar { height: 60px; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; background: #f8fafc; border-top: 1px solid var(--border); border-radius: 0 0 12px 12px; flex-shrink: 0; }
+        .status-bar { font-weight: 700; color: var(--accent); font-size: 1.1rem;}
+        .reset-button { padding: 8px 16px; cursor: pointer; background-color: var(--accent-red); color: white; border: none; border-radius: 6px; font-weight: 600; }
+        #atp-timer-bar { width: 200px; height: 10px; background: rgba(0,0,0,0.2); border-radius: 5px; overflow: hidden; margin-top: 10px; }
+        #atp-timer-fill { width: 100%; height: 100%; background: #f59e0b; transition: width 0.1s linear; }
+    </style>
+</head>
+<body class="page-container">
+    <header class="header">
+        <div class="header-section">Biology - Respiration Rush</div>
+        <div id="header-title" class="header-section center">Information</div>
+        <div class="header-section right">
+            <button id="back-btn" class="button" style="background-color: var(--secondary-gray);">Back</button>
+            <button id="toggle-view-btn" class="button" style="background-color: var(--primary-blue);">Activity</button>
+            <button id="difficulty-btn" class="button" style="background-color: var(--accent-indigo);">Mode: Easy</button>
+        </div>
+    </header>
+
+    <main class="main-content" id="main-content">
+        <section id="info-panel" class="panel">
+            <h1 style="color:var(--accent-indigo);">The Energy Pipeline!</h1>
+            <p style="color:var(--text-light)">This game visualizes how your body creates energy through cellular respiration.</p>
+            
+            <h3 style="color: var(--accent-indigo); margin-top: 1rem;">The Stages of Energy:</h3>
+            <ol style="margin-top:12px;line-height:1.6;color:var(--text-light)">
+                <li><strong>Oxygen's Journey 🌬️</strong><br>Guide Oxygen from the Lungs to a muscle cell.</li>
+                <li><strong>The Cellular Maze 🍞</strong><br>Guide Glucose to the Mitochondria.</li>
+                <li><strong>ATP RUSH! ⚡</strong><br>Collect ATP energy tokens.</li>
+                <li><strong>Waste Removal 💨</strong><br>Guide Carbon Dioxide (CO₂) back to the lungs.</li>
+            </ol>
+            <h3 style="margin-top:18px; color: var(--accent-indigo);">The Recipe for Energy:</h3>
+            <p style="background:#eef2ff; padding:15px; border-radius:8px; font-weight:600; text-align:center; font-size:1.1rem;">
+                🍞 Glucose + 🌬️ Oxygen → ⚡ ATP Energy + 💨 CO₂
+            </p>
+        </section>
+
+        <section id="activity-panel" class="panel">
+            <div class="activity-area" id="activity-area">
+                <canvas id="gameCanvas"></canvas>
+                <div class="info-box" id="info-box">Select a mode to begin!</div>
+                <div id="atp-timer-bar" style="display:none;"><div id="atp-timer-fill"></div></div>
+            </div>
+            <footer class="bottom-control-bar">
+                <div id="status-bar" class="status-bar">Score: 0</div>
+                <button id="reset-btn" class="reset-button">Reset</button>
+            </footer>
+        </section>
+    </main>
+
+    <script src="./neutralino.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        try { Neutralino.init(); } catch (e) { console.error("Neutralino not found."); }
+
+        const TILE_COLORS = { 0: '#1e293b', 1: '#312e81', 2: '#dc2626', 3: '#7dd3fc', 4: '#818cf8', 5: '#f5f3ff', 6: '#f59e0b', 7: '#bef264' };
+        const gameData = {
+            easy: { gridSize: 15, map: [[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],[1,3,2,2,2,2,2,2,2,2,2,2,2,2,1],[1,3,1,1,1,1,1,1,1,1,1,1,1,2,1],[1,1,1,4,4,4,1,1,1,1,1,1,1,2,1],[1,2,2,2,2,4,1,1,2,2,2,2,2,2,1],[1,2,1,1,1,4,1,1,2,1,1,1,1,1,1],[1,2,1,4,5,6,5,4,2,1,1,1,1,1,1],[1,2,1,4,5,5,5,4,2,1,1,1,1,1,1],[1,2,1,4,4,4,4,4,2,1,1,1,1,1,1],[1,2,2,2,2,2,2,2,2,2,1,1,1,1,1],[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]], starts: { oxygen: {x:1, y:1}, glucose: {x:3, y:7}, co2: {x:5, y:6} }, atpSpawns: [{x:4,y:6},{x:6,y:6},{x:5,y:7}] },
+            medium: { gridSize: 20, map: [[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],[1,3,3,2,2,2,2,1,1,4,4,4,4,4,1,1,1,1,1,1],[1,3,3,1,1,1,2,1,4,5,5,5,4,1,2,2,2,2,2,1],[1,1,1,1,1,1,2,1,4,5,6,5,4,1,2,1,1,1,2,1],[1,2,2,2,2,2,2,1,4,5,5,5,4,1,2,1,1,1,2,1],[1,2,1,1,1,1,1,1,4,4,4,4,4,1,2,2,2,2,2,1],[1,2,2,2,2,2,2,2,2,2,2,2,2,1,1,1,1,1,1,1],[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]], starts: { oxygen: {x:1, y:1}, glucose: {x:9, y:1}, co2: {x:10, y:3} }, atpSpawns: [{x:9,y:3},{x:10,y:2},{x:11,y:3}] },
+            hard: { gridSize: 25, map: [[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],[1,3,3,2,2,1,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1],[1,3,3,1,2,2,1,1,2,1,1,1,1,1,4,4,4,1,1,1,1,1,1,1,1],[1,1,1,1,1,2,2,2,2,1,4,5,4,1,4,1,2,2,2,2,1,1,1,1,1],[1,1,2,2,2,2,2,1,1,1,4,5,7,5,4,1,2,1,1,2,1,1,1,1,1],[1,1,2,1,1,1,1,1,1,1,4,5,6,5,4,1,2,1,1,2,2,2,2,1,1],[1,1,2,1,1,7,1,1,1,1,4,5,5,5,4,1,2,1,1,1,1,1,2,1,1],[1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,1,2,2,2,2,2,2,2,1,1],[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]], starts: { oxygen: {x:1, y:1}, glucose: {x:10, y:3}, co2: {x:12, y:6} }, atpSpawns: [{x:11,y:6},{x:12,y:5},{x:13,y:6}] }
+        };
+        const difficulties = ['Easy', 'Medium', 'Hard'];
+        let showActivity = false, score = 0, difficultyIdx = 0, isGameActive = false;
+        let player, activeMolecule, gameStage, tileSize, map, atpTokens = [];
+        let atpTimer = 0, atpTotalTime = 10000;
+        let animationFrameId;
+
+        const mainContent = document.getElementById('main-content');
+        const infoPanel = document.getElementById('info-panel');
+        const activityArea = document.getElementById('activity-area');
+        const headerTitle = document.getElementById('header-title');
+        const toggleViewBtn = document.getElementById('toggle-view-btn');
+        const difficultyBtn = document.getElementById('difficulty-btn');
+        const backBtn = document.getElementById('back-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const statusBar = document.getElementById('status-bar');
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const infoBox = document.getElementById('info-box');
+        const atpTimerBar = document.getElementById('atp-timer-bar');
+        const atpTimerFill = document.getElementById('atp-timer-fill');
+
+        function updateLayout() {
+            if (showActivity) mainContent.classList.add('activity-visible');
+            else mainContent.classList.remove('activity-visible');
+            headerTitle.textContent = showActivity ? 'Activity' : 'Information';
+            toggleViewBtn.textContent = showActivity ? 'Information' : 'Activity';
+            statusBar.textContent = `Score: ${score}`;
+        }
+
+        function startGame() {
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+            isGameActive = false;
+            let level = gameData[difficulties[difficultyIdx].toLowerCase()];
+            if (!level) return;
+            
+            canvas.style.display = 'block';
+            infoBox.style.display = 'block';
+            map = level.map;
+            const containerWidth = activityArea.clientWidth > 0 ? activityArea.clientWidth : 600;
+            tileSize = Math.floor(Math.max(12, (containerWidth - 44) / level.gridSize));
+            canvas.width = level.gridSize * tileSize;
+            canvas.height = map.length * tileSize;
+            
+            atpTokens = (level.atpSpawns || []).map(pos => ({...pos, collected: false}));
+            score = 0;
+            setStage(level, 'OXYGEN_JOURNEY');
+            animationFrameId = requestAnimationFrame(gameLoop);
+        }
+
+        function setStage(level, newStage) {
+            gameStage = newStage;
+            const stageInstructions = {
+                OXYGEN_JOURNEY: { molecule: 'oxygen', start: level.starts.oxygen, text: `<b>Stage 1:</b> Guide Oxygen (O₂) to the Cell!`},
+                GLUCOSE_MAZE: { molecule: 'glucose', start: level.starts.glucose, text: `<b>Stage 2:</b> Guide Glucose (🍞) to the Mitochondria!`},
+                ATP_RUSH: { molecule: 'glucose', start: player, text: `<b style="color: #f59e0b">ATP RUSH!</b> Collect the ⚡!`},
+                CO2_RETURN: { molecule: 'co2', start: level.starts.co2, text: `<b>Stage 3:</b> Take the CO₂ (💨) back to the Lungs!`}
+            };
+            const stage = stageInstructions[newStage];
+            activeMolecule = stage.molecule;
+            player = { ...stage.start, isMoving: false, animProgress: 1, tx: stage.start.x, ty: stage.start.y };
+            infoBox.innerHTML = stage.text;
+            isGameActive = true;
+        }
+    
+        function gameLoop() {
+            update(); draw();
+            animationFrameId = requestAnimationFrame(gameLoop);
+        }
+
+        let lastTime = 0;
+        function update() {
+            const now = performance.now();
+            const deltaTime = now - (lastTime || now);
+            lastTime = now;
+            if (!player || !isGameActive) return;
+
+            if (player.isMoving) {
+                player.animProgress += 0.2;
+                if (player.animProgress >= 1) {
+                    player.animProgress = 1; player.isMoving = false;
+                    player.x = player.tx; player.y = player.ty;
+                    checkStageCompletion();
+                }
+            }
+            if(gameStage === 'ATP_RUSH') {
+                atpTimer -= deltaTime;
+                atpTimerFill.style.width = `${Math.max(0, (atpTimer / atpTotalTime) * 100)}%`;
+                atpTokens.forEach(token => {
+                    if(!token.collected && Math.hypot(player.x - token.x, player.y - token.y) < 0.8) {
+                        token.collected = true; score += 50; updateLayout();
+                    }
+                });
+                if(atpTimer <= 0) {
+                    atpTimerBar.style.display = 'none';
+                    setStage(gameData[difficulties[difficultyIdx].toLowerCase()], 'CO2_RETURN');
+                }
+            }
+        }
+
+        function draw() {
+            if (!map || !player) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            let level = gameData[difficulties[difficultyIdx].toLowerCase()];
+            for (let y = 0; y < map.length; y++) {
+                for (let x = 0; x < level.gridSize; x++) {
+                    ctx.fillStyle = TILE_COLORS[map[y]?.[x] || 0];
+                    ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
+                }
+            }
+            const drawX = player.x + (player.tx - player.x) * player.animProgress;
+            const drawY = player.y + (player.ty - player.y) * player.animProgress;
+            drawMolecule(activeMolecule, drawX, drawY);
+
+            if(gameStage === 'GLUCOSE_MAZE') {
+                const goal = level.starts.co2;
+                drawMolecule('oxygen', goal.x, goal.y);
+            }
+            atpTokens.forEach(token => {
+                if(!token.collected) {
+                    ctx.font = `${tileSize*0.75}px Arial`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                    ctx.fillText('⚡', token.x * tileSize + tileSize/2, token.y * tileSize + tileSize/2);
+                }
+            });
+        }
+        
+        function drawMolecule(type, x, y) {
+            const cx = x * tileSize + tileSize/2, cy = y * tileSize + tileSize/2, r = tileSize * 0.35;
+            const molecules = {'oxygen': {c:'#ef4444',s:'O₂'},'glucose':{c:'#fbbf24',s:'🍞'},'co2':{c:'#94a3b8',s:'💨'}};
+            const mol = molecules[type];
+            ctx.fillStyle = mol.c; ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = '#fff'; ctx.font = `bold ${tileSize * 0.4}px Inter`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillText(mol.s, cx, cy);
+        }
+    
+        function movePlayer(dx, dy) {
+            if (!isGameActive || player.isMoving) return;
+            const newX = player.tx + dx; const newY = player.ty + dy;
+            const targetTile = map[newY]?.[newX];
+            if (targetTile !== 1 && targetTile !== undefined) {
+                player.isMoving = true; player.animProgress = 0;
+                player.x = player.tx; player.y = player.ty;
+                player.tx = newX; player.ty = newY;
+            }
+        }
+
+        function checkStageCompletion() {
+            let level = gameData[difficulties[difficultyIdx].toLowerCase()];
+            const currentTile = map[player.y][player.x];
+            if (currentTile === undefined) return;
+            if (gameStage === 'OXYGEN_JOURNEY' && currentTile === 4) { score += 100; setStage(level, 'GLUCOSE_MAZE'); }
+            else if (gameStage === 'GLUCOSE_MAZE' && currentTile === 6) { score += 100; isGameActive = false; setTimeout(() => { setStage(level, 'ATP_RUSH'); atpTimer = atpTotalTime; atpTimerBar.style.display = 'block'; }, 500); }
+            else if (gameStage === 'CO2_RETURN' && currentTile === 3) { score += 100; isGameActive = false; infoBox.innerHTML = `<h3>✅ Success!</h3><p>Cycle complete! Final score: ${score}</p>`; }
+            updateLayout();
+        }
+        
+        backBtn.addEventListener('click', () => { window.history.back(); });
+        toggleViewBtn.addEventListener('click', () => {
+            showActivity = !showActivity;
+            updateLayout();
+            if (showActivity) {
+                // FIX: Start the game only AFTER the layout is visible
+                setTimeout(startGame, 50); 
+            } else if(animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = null;
+            }
+        });
+        difficultyBtn.addEventListener('click', () => {
+            difficultyIdx = (difficultyIdx + 1) % difficulties.length;
+            difficultyBtn.textContent = `Mode: ${difficulties[difficultyIdx]}`;
+            if (showActivity) startGame();
+        });
+        resetBtn.addEventListener('click', startGame);
+        document.addEventListener("keydown", e => {
+            if (!isGameActive || !showActivity) return;
+            const moves = { "ArrowUp": [0, -1], "ArrowDown": [0, 1], "ArrowLeft": [-1, 0], "ArrowRight": [1, 0] };
+            if (moves[e.key]) { e.preventDefault(); movePlayer(...moves[e.key]); }
+        });
+        window.addEventListener('resize', () => { if(showActivity) startGame(); });
+
+        updateLayout();
+    });
+    </script>
+</body>
+</html>

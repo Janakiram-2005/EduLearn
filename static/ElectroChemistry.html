@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chemistry Hub - Electrochemistry</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* --- CORE TEMPLATE & GLOBAL STYLES (Light Theme) --- */
+        :root {
+            --header-bg: #ffffff;
+            --page-bg: #f4f7f9;
+            --panel-bg: #ffffff;
+            --border-color: #e0e0e0;
+            --text-dark: #1e293b;
+            --text-light: #475569;
+            --accent-blue: #38bdf8;
+            --accent-green: #34d399;
+            --accent-red: #f87171;
+            --accent-yellow: #facc15;
+            --primary-blue: #007bff;
+            --secondary-gray: #6c757d;
+        }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--page-bg);
+            color: var(--text-dark);
+            margin: 0;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .page-container { display: flex; flex-direction: column; height: 100vh; }
+        .header {
+            position: fixed; top: 0; left: 0; width: 100%; height: 60px;
+            background-color: var(--header-bg);
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 24px;
+            border-bottom: 1px solid var(--border-color);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            z-index: 1000;
+            box-sizing: border-box;
+        }
+        .header-section { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .header-section.center { text-align: center; font-size: 1.2em; font-weight: bold; }
+        .header-section.right { display: flex; justify-content: flex-end; }
+        .button {
+            padding: 8px 16px; margin-left: 10px; cursor: pointer;
+            border: none; border-radius: 6px; font-weight: 600; color: white;
+            transition: transform 0.1s;
+        }
+        .button:active { transform: scale(0.95); }
+        .main-content {
+            margin-top: 60px; padding: 24px; display: flex;
+            flex-grow: 1; overflow: hidden; box-sizing: border-box;
+            gap: 24px; justify-content: center;
+        }
+        .panel {
+            background-color: var(--panel-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            border: 1px solid var(--border-color);
+            box-sizing: border-box;
+            overflow-y: auto; padding: 24px 32px;
+            height: calc(100vh - 108px);
+        }
+        #info-panel { flex-shrink: 0; transition: width 400ms ease-in-out, margin 400ms ease-in-out; }
+        #activity-panel { display: none; flex-grow: 1; padding: 0; flex-direction: column; }
+        .main-content.activity-visible { justify-content: flex-start; }
+        .main-content.activity-visible #info-panel { width: 340px; min-width: 340px; }
+        .main-content.activity-visible #activity-panel { display: flex; }
+
+        /* --- ACTIVITY-SPECIFIC STYLES --- */
+        .activity-area { flex-grow: 1; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; padding: 1.5rem; }
+        .bottom-control-bar { height: 60px; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; background-color: var(--page-bg); border-top: 1px solid var(--border-color); flex-shrink: 0; }
+        .status-bar { font-weight: bold; color: var(--text-dark); }
+        .reset-button { padding: 8px 16px; cursor: pointer; background-color: var(--accent-red); color: white; border: none; border-radius: 6px; font-weight: 600; }
+        .game-header { display: flex; justify-content: space-between; align-items: center; width: 100%; max-width: 700px; margin: 0 auto 1rem; }
+        .feedback { min-height: 30px; margin-top: 1rem; font-weight: 600; font-size: 1.1rem; }
+        .correct { color: var(--accent-green); }
+        .incorrect { color: var(--accent-red); }
+        
+        /* Game 1: Battery Builder */
+        .battery-builder { display: flex; flex-direction: column; align-items: center; gap: 1.5rem; }
+        .battery-setup { display: flex; align-items: flex-end; justify-content: center; gap: 1rem; position: relative;}
+        .beaker { width: 120px; height: 150px; border: 4px solid var(--border-color); border-top: none; background: rgba(96, 165, 250, 0.2); position: relative; }
+        .electrode { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 20px; height: 120px; background: #9ca3af; border: 2px solid var(--text-dark); }
+        .voltmeter { width: 100px; height: 60px; background: var(--text-dark); border-radius: 10px; margin-bottom: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 700; color: var(--accent-green); }
+        .wire { position: absolute; height: 30px; border: 2px solid var(--text-dark); border-bottom: none; z-index: -1; }
+        #wire-left { width: 90px; bottom: 150px; left: -25px; border-radius: 20px 0 0 0; }
+        #wire-right { width: 90px; bottom: 150px; right: -25px; border-radius: 0 20px 0 0; }
+        .component-pool { display: flex; gap: 1rem; margin-top: 1rem; }
+        .component { padding: 10px 20px; background: var(--bg-light); color: var(--text-light); border-radius: 8px; cursor: pointer; }
+        .component.selected { background: var(--accent-blue); color: white; }
+
+        /* Game 2: Redox Battle */
+        .redox-battle { width: 100%; }
+        .battle-arena { display: flex; justify-content: space-around; align-items: center; margin: 2rem 0; }
+        .ion { font-size: 4rem; transition: transform 0.5s; }
+        #electron-transfer { font-size: 3rem; opacity: 0; transition: opacity 0.5s; }
+        .redox-options button { font-size: 1.2rem; padding: 1rem; border-radius: 8px; border: none; cursor: pointer; }
+        
+        /* Game 3: Electroplating */
+        .electroplating-sim { display: flex; flex-direction: column; align-items: center; gap: 1.5rem; }
+        .plating-tank { width: 250px; height: 200px; background: rgba(96, 165, 250, 0.3); border: 4px solid var(--border-color); position: relative; }
+        #object-to-plate { width: 60px; height: 100px; background: #9ca3af; position: absolute; top: 20px; left: 50%; transform: translateX(-50%); transition: background-color 1s; font-size: 3rem; display: flex; justify-content: center; align-items: center;}
+        #plating-layer { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); width: 0; height: 0; background: var(--accent-yellow); transition: all 1s; opacity: 0.7; }
+        .plating-controls { width: 100%; max-width: 400px; }
+        
+        /* Modal */
+        .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); justify-content: center; align-items: center; }
+        .modal.active { display: flex; }
+        .modal-content { background: var(--panel-bg); padding: 40px 50px; border-radius: 20px; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.2); position: relative; }
+    </style>
+</head>
+<body class="page-container">
+    
+    <header class="header">
+        <div class="header-section">Grade 11 - Chemistry</div>
+        <div id="header-title" class="header-section center">Information</div>
+        <div class="header-section right">
+            <button id="back-btn" class="button" style="background-color: var(--secondary-gray);">Back</button>
+            <button id="toggle-view-btn" class="button" style="background-color: var(--primary-blue);">Activity</button>
+            <button id="difficulty-btn" class="button" style="background-color: var(--accent-blue);">Difficulty: Easy</button>
+        </div>
+    </header>
+
+    <main class="main-content" id="main-content">
+        <section id="info-panel" class="panel">
+            <h1 class="text-3xl font-bold mb-4" style="color: var(--accent-blue);">Electrochemistry</h1>
+            <div style="display:flex; flex-direction:column; gap:1.5rem;">
+                <div>
+                    <h2 class="text-xl font-semibold">What is Electrochemistry? ⚡</h2>
+                    <p class="mt-2 text-gray-600">Electrochemistry is the study of chemical reactions that produce or are caused by electricity. It's the science behind batteries, fuel cells, and processes like electroplating.</p>
+                </div>
+                <div>
+                    <h2 class="text-xl font-semibold">Key Concepts</h2>
+                    <ul class="list-disc list-inside mt-2 space-y-2 text-gray-600">
+                        <li><b>Galvanic Cell (Battery):</b> A device that converts chemical energy into electrical energy using two different metals (electrodes) and salt solutions (electrolytes).</li>
+                        <li><b>Redox Reactions:</b> Reactions involving the transfer of electrons. Oxidation is the loss of electrons, and Reduction is the gain of electrons.</li>
+                        <li><b>Electroplating:</b> A process that uses electric current to coat an object with a thin layer of metal.</li>
+                    </ul>
+                </div>
+                 <div>
+                    <h2 class="text-xl font-semibold">How to Play the Games</h2>
+                     <ul class="list-disc list-inside mt-2 text-gray-600">
+                        <li><b>Easy (Battery Builder):</b> Select two different electrodes to create a working battery and measure its voltage.</li>
+                        <li><b>Medium (Redox Battle):</b> Determine which substance is oxidized and which is reduced in a reaction.</li>
+                        <li><b>Hard (Electroplating):</b> Adjust current and time to perfectly plate an object with a new metal layer.</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="activity-panel" class="panel">
+            <div class="activity-area" id="activity-area"></div>
+            <footer class="bottom-control-bar">
+                <div id="status-bar" class="status-bar">Good luck!</div>
+                <button id="reset-btn" class="reset-button">Reset</button>
+            </footer>
+        </section>
+    </main>
+
+    <div class="modal" id="end-game-modal">
+        <div class="modal-content"><h2 id="modal-title"></h2><p id="modal-score"></p><button class="button" id="modal-close-btn" style="background-color: var(--primary-blue);">Play Again</button></div>
+    </div>
+
+    <script src="./neutralino.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            try { Neutralino.init(); } catch (e) { console.error("Neutralino not found."); }
+            
+            const difficulties = ['Easy', 'Medium', 'Hard'];
+            let showActivity = false, difficultyIdx = 0;
+
+            const mainContent = document.getElementById('main-content');
+            const infoPanel = document.getElementById('info-panel');
+            const activityArea = document.getElementById('activity-area');
+            const headerTitle = document.getElementById('header-title');
+            const toggleViewBtn = document.getElementById('toggle-view-btn');
+            const difficultyBtn = document.getElementById('difficulty-btn');
+            const backBtn = document.getElementById('back-btn');
+            const resetBtn = document.getElementById('reset-btn');
+            const modal = document.getElementById('end-game-modal');
+            const modalCloseBtn = document.getElementById('modal-close-btn');
+            
+            function updateLayout() {
+                if (showActivity) mainContent.classList.add('activity-visible');
+                else mainContent.classList.remove('activity-visible');
+                infoPanel.style.width = showActivity ? '340px' : `${Math.min(700, window.innerWidth - 48)}px`;
+                headerTitle.textContent = showActivity ? `Activity (${difficulties[difficultyIdx]})` : 'Information';
+                toggleViewBtn.textContent = showActivity ? 'Information' : 'Activity';
+            }
+
+            function startGame() {
+                const difficulty = difficulties[difficultyIdx];
+                if (difficulty === 'Easy') initBatteryBuilder();
+                else if (difficulty === 'Medium') initRedoxBattle();
+                else if (difficulty === 'Hard') initElectroplatingSim();
+            }
+            
+            function showEndModal(title, scoreText) {
+                document.getElementById('modal-title').textContent = title;
+                document.getElementById('modal-score').textContent = scoreText;
+                modal.classList.add('active');
+            }
+            
+            let initBatteryBuilder = () => {}, initRedoxBattle = () => {}, initElectroplatingSim = () => {};
+
+            // --- Game 1: Battery Builder (Easy) ---
+            (() => {
+                const electrodes = [{ name: "Zn", potential: -0.76 }, { name: "Cu", potential: 0.34 }, { name: "Fe", potential: -0.44 }, { name: "Ag", potential: 0.80 }];
+                let batteryScore, selected, attempts;
+                initBatteryBuilder = () => {
+                    batteryScore = 0; attempts = 0;
+                    loadBatteryProblem();
+                };
+                function loadBatteryProblem(){
+                     selected = {e1:null, e2:null};
+                     activityArea.innerHTML = `
+                        <div class="game-header w-full max-w-lg"><h2>Battery Builder</h2><div class="stat-display">Score: <span>${batteryScore}</span></div></div>
+                        <div class="battery-builder">
+                            <h3>Build a Galvanic Cell!</h3>
+                            <div class="voltmeter" id="voltmeter">0.00 V</div>
+                            <div class="battery-setup">
+                                <div class="beaker"><div class="electrode" id="electrode1">?</div></div>
+                                <div class="beaker"><div class="electrode" id="electrode2">?</div></div>
+                            </div>
+                            <div class="component-pool" id="component-pool"></div>
+                            <p id="battery-feedback" class="feedback"></p>
+                        </div>`;
+                    
+                    document.getElementById('battery-feedback').textContent = "Select two different electrodes to build a cell.";
+                    const pool = document.getElementById('component-pool');
+                    electrodes.forEach(el => {
+                        const btn = document.createElement('button');
+                        btn.className = 'component'; btn.textContent = `${el.name} Electrode`;
+                        btn.onclick = () => selectElectrode(el);
+                        pool.appendChild(btn);
+                    });
+                }
+                function selectElectrode(el) {
+                    if (!selected.e1) {
+                         selected.e1 = el;
+                         document.getElementById('electrode1').textContent = el.name;
+                    } else if (!selected.e2) {
+                        selected.e2 = el;
+                        document.getElementById('electrode2').textContent = el.name;
+                    }
+                    
+                    if (selected.e1 && selected.e2) {
+                        if (selected.e1.name === selected.e2.name) {
+                            document.getElementById('battery-feedback').textContent = "Electrodes must be different! Resetting...";
+                            setTimeout(loadBatteryProblem, 2000);
+                            return;
+                        }
+                        const voltage = Math.abs(selected.e1.potential - selected.e2.potential).toFixed(2);
+                        document.getElementById('voltmeter').textContent = `${voltage} V`;
+                        document.getElementById('battery-feedback').textContent = `Success! You generated ${voltage}V.`;
+                        batteryScore += 10;
+                        document.querySelector('.stat-display span').textContent = batteryScore;
+                        attempts++;
+                        if(attempts >= 3) {
+                            showEndModal("Battery Genius 🔋", `You built ${attempts} batteries! Final Score: ${batteryScore}`);
+                        } else {
+                            setTimeout(loadBatteryProblem, 2000);
+                        }
+                    }
+                }
+            })();
+
+            // --- Game 2: Redox Battle (Medium) ---
+            (() => {
+                const allRedoxPairs = [{ox: "Zn", red: "Cu²⁺"}, {ox: "Fe", red: "Pb²⁺"}, {ox: "Mg", red: "H⁺"}, {ox: "Al", red: "Ag⁺"}, {ox:"H₂", red:"Cl₂"}];
+                let redoxScore, currentRedoxPair, redoxProblems;
+                initRedoxBattle = () => {
+                    redoxScore = 0;
+                    redoxProblems = [...allRedoxPairs].sort(()=>0.5-Math.random()).slice(0,5);
+                    loadRedoxProblem(0);
+                };
+                function loadRedoxProblem(level) {
+                    if(level >= redoxProblems.length){
+                        showEndModal("Redox Explorer ⚡", `Final score: ${redoxScore}`);
+                        return;
+                    }
+                    currentRedoxPair = redoxProblems[level];
+                    activityArea.innerHTML = `
+                         <div class="game-header w-full max-w-lg"><h2>Redox Reaction Battle</h2><div class="stat-display">Score: <span>${redoxScore}</span></div></div>
+                        <div class="redox-battle">
+                            <h3 id="redox-question">Which gets oxidized and which gets reduced?</h3>
+                            <div class="battle-arena">
+                                <div class="ion">${currentRedoxPair.ox}</div>
+                                <div id="electron-transfer">e⁻</div>
+                                <div class="ion">${currentRedoxPair.red}</div>
+                            </div>
+                            <div id="redox-options" class="flex gap-4"></div>
+                        </div>`;
+
+                    const optionsEl = document.getElementById('redox-options');
+                    optionsEl.innerHTML = `
+                        <button class="button" style="background:var(--accent-green)">${currentRedoxPair.ox} is Oxidized</button>
+                        <button class="button" style="background:var(--accent-red)">${currentRedoxPair.red} is Oxidized</button>`;
+                    optionsEl.querySelectorAll('.button').forEach(btn => btn.addEventListener('click', (e) => handleRedoxAnswer(e, level)));
+                }
+                function handleRedoxAnswer(e, level) {
+                    const isCorrect = e.target.textContent.includes(currentRedoxPair.ox);
+                    if (isCorrect) {
+                        redoxScore += 10;
+                        document.getElementById('electron-transfer').style.opacity = 1;
+                        setTimeout(() => { if(document.getElementById('electron-transfer')) document.getElementById('electron-transfer').style.opacity = 0; }, 1000);
+                    }
+                    document.querySelector('.stat-display span').textContent = redoxScore;
+                    setTimeout(() => loadRedoxProblem(level + 1), 1500);
+                }
+            })();
+
+            // --- Game 3: Electroplating Simulator (Hard) ---
+            (() => {
+                let platingBadges;
+                initElectroplatingSim = () => {
+                    platingBadges = 0;
+                     activityArea.innerHTML = `
+                        <div class="game-header w-full max-w-lg"><h2>Electroplating Simulator</h2><div class="stat-display">Badges: <span>0</span> ⭐</div></div>
+                        <div class="electroplating-sim">
+                            <h3>Plate the Key!</h3>
+                            <div class="plating-tank">
+                                <div id="object-to-plate">🔑</div>
+                                <div id="plating-layer"></div>
+                            </div>
+                            <div class="plating-controls">
+                                <div class="slider-group"><label>Current: <span id="current-value">1</span> A</label><input type="range" id="current-slider" min="1" max="10" value="1"></div>
+                                <div class="slider-group"><label>Time: <span id="time-value">5</span> s</label><input type="range" id="time-slider" min="5" max="20" value="5"></div>
+                            </div>
+                            <button id="plate-btn" class="button" style="background:var(--accent-green)">Plate It!</button>
+                        </div>`;
+                    
+                    document.getElementById('plate-btn').addEventListener('click', handlePlateClick);
+                    document.getElementById('current-slider').oninput = e => document.getElementById('current-value').textContent = e.target.value;
+                    document.getElementById('time-slider').oninput = e => document.getElementById('time-value').textContent = e.target.value;
+                };
+                
+                function handlePlateClick() {
+                    const current = document.getElementById('current-slider').value;
+                    const time = document.getElementById('time-slider').value;
+                    const thickness = (current * time) / 4; // Adjusted formula
+                    
+                    const layer = document.getElementById('plating-layer');
+                    layer.style.width = `${Math.min(60, thickness)}px`;
+                    layer.style.height = `${Math.min(100, thickness * 1.6)}px`;
+
+                    if (thickness > 20 && thickness < 30) {
+                        platingBadges++;
+                        document.querySelector('.stat-display span').textContent = platingBadges;
+                    }
+                    document.getElementById('plate-btn').disabled = true;
+                    setTimeout(() => {
+                        if(platingBadges >= 3) {
+                            showEndModal("Electrochem Master ✨", "You've perfected the art of plating!");
+                        } else {
+                            document.getElementById('plate-btn').disabled = false;
+                        }
+                    }, 2000);
+                }
+            })();
+            
+            // --- Main Event Listeners ---
+            backBtn.addEventListener('click', () => {  window.history.back();  });
+            toggleViewBtn.addEventListener('click', () => {
+                showActivity = !showActivity;
+                if (showActivity) startGame();
+                updateLayout();
+            });
+            difficultyBtn.addEventListener('click', () => {
+                difficultyIdx = (difficultyIdx + 1) % difficulties.length;
+                const newDifficulty = difficulties[difficultyIdx];
+                difficultyBtn.textContent = `Difficulty: ${newDifficulty}`;
+                if (showActivity) {
+                    startGame();
+                    updateLayout();
+                }
+            });
+            resetBtn.addEventListener('click', startGame);
+            modalCloseBtn.addEventListener('click', () => {
+                modal.classList.remove('active');
+                startGame();
+            });
+            
+            updateLayout();
+        });
+    </script>
+</body>
+</html>
+

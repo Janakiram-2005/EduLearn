@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cell Structure Puzzle</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f9;
+        }
+
+        .page-container {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 60px;
+            background-color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            border-bottom: 1px solid #e0e0e0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            z-index: 1000;
+            box-sizing: border-box;
+        }
+
+        .header-section { flex: 1; }
+        .header-button {
+            padding: 8px 16px;
+            margin-left: 12px;
+            cursor: pointer;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            color: white;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .main-content {
+            padding: 24px;
+            padding-top: 84px;
+            display: flex;
+            flex-grow: 1;
+            overflow: hidden;
+            box-sizing: border-box;
+            gap: 24px;
+            justify-content: center; /* Default centering */
+        }
+
+        .main-content.activity-visible {
+            justify-content: flex-start;
+        }
+
+        .panel {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            box-sizing: border-box;
+            overflow-y: auto;
+            height: calc(100vh - 108px);
+            transition: all 350ms ease-in-out;
+            padding: 24px 32px;
+            flex-shrink: 0;
+        }
+        
+        #info-panel {
+            width: 100%;
+            max-width: 700px;
+        }
+        
+        .main-content.activity-visible #info-panel {
+            width: 320px;
+            min-width: 320px;
+        }
+
+        #activity-panel {
+            flex-grow: 1;
+            padding: 0;
+            display: none; /* Hidden by default */
+            flex-direction: row;
+        }
+        
+        .main-content.activity-visible #activity-panel {
+            display: flex;
+        }
+
+        .puzzle-area {
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+        
+        .grid {
+            display: grid;
+            width: 100%;
+            max-height: calc(100vh - 148px);
+            aspect-ratio: 1 / 1;
+            gap: 4px;
+            padding: 4px;
+            border: 2px solid #dbeafe;
+            border-radius: 8px;
+            background-color: #eff6ff;
+        }
+
+        .grid-slot {
+            width: 100%;
+            height: 100%;
+            background-color: #dbeafe;
+            border-radius: 6px;
+            border: 2px dashed #93c5fd;
+            background-size: cover;
+            background-position: center;
+        }
+
+        .sidebar {
+            width: 240px;
+            flex-shrink: 0;
+            border-left: 1px solid #e5e7eb;
+            background-color: #f9fafb;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .status-box {
+            width: 100%;
+            background: #e0efff;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            text-align: center;
+        }
+        
+        .sidebar-button {
+            width: 100%;
+            padding: 10px;
+            cursor: pointer;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            color: white;
+            background-color: #3b82f6;
+            transition: background-color 0.2s;
+        }
+        .sidebar-button:hover {
+            background-color: #2563eb;
+        }
+
+        .pieces-container {
+            width: 100%;
+            border-top: 2px solid #d1d5db;
+            padding-top: 12px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px;
+            flex-grow: 1;
+            overflow-y: auto;
+            align-content: flex-start;
+        }
+        
+        .draggable-piece {
+            width: 60px;
+            height: 60px;
+            border-radius: 6px;
+            border: 2px solid #3b82f6;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            cursor: grab;
+        }
+        .draggable-piece:active {
+            cursor: grabbing;
+        }
+
+        .celebration-container {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 9999;
+        }
+        .particle {
+            position: absolute;
+            border-radius: 50%;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="page-container">
+        <div id="celebration-container" class="celebration-container"></div>
+        
+        <header class="header">
+            <div class="header-section">Class 6 - Chapter 8 (Biology)</div>
+            <div class="header-section" style="text-align: center; font-size: 1.25em; font-weight: 700;" id="header-title">
+                Information: Cell Structure
+            </div>
+            <div class="header-section" style="display: flex; justify-content: flex-end;">
+                <button class="header-button" style="background-color: #6c757d;" id="back-btn">Back</button>
+                <button class="header-button" style="background-color: #007bff;" id="toggle-view-btn">Activity</button>
+                <button class="header-button" style="background-color: #28a745; min-width: 130px;" id="difficulty-btn">
+                    Difficulty: Medium
+                </button>
+            </div>
+        </header>
+
+        <main class="main-content" id="main-content">
+            <aside class="panel" id="info-panel">
+                <h1>Cell Structure & Functions</h1>
+                <p>The cell is the basic unit of life. This activity will help you identify key organelles by assembling their images.</p>
+                <h2>Key Organelles</h2>
+                <ul>
+                    <li><b>Animal Cell:</b> Shows the overall structure and multiple organelles.</li>
+                    <li><b>Nucleus:</b> Controls cell activities and contains DNA.</li>
+                    <li><b>Mitochondria:</b> The "powerhouse" of the cell, generating energy.</li>
+                    <li><b>Ribosome:</b> The site of protein synthesis.</li>
+                </ul>
+                <h2>How to Play the Puzzle</h2>
+                <ol>
+                    <li>Click 'Activity' to start the game.</li>
+                    <li>Drag pieces from the right panel to their correct position on the grid.</li>
+                    <li>Pieces will lock in place only when they are correct.</li>
+                    <li>Use the "Next"/"Previous" buttons to change the puzzle image.</li>
+                    <li>Change the puzzle size using the "Difficulty" button in the header.</li>
+                </ol>
+            </aside>
+            
+            <section class="panel" id="activity-panel">
+                <div class="puzzle-area">
+                    <div class="grid" id="puzzle-grid">
+                        </div>
+                </div>
+                <aside class="sidebar">
+                    <h3 style="margin-top: 0; text-align: center; color: #1e3a8a;">Controls & Pieces</h3>
+                    <div class="status-box">
+                        <div style="font-weight: bold; color: #1d4ed8;" id="score-display">Score: 0 / 9</div>
+                        <div style="font-size: 0.9em; color: #4b5563; margin-top: 4px;" id="status-text">
+                            Drag pieces to the correct slots.
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 8px; width: 100%;">
+                        <button class="sidebar-button" id="prev-puzzle-btn">Previous</button>
+                        <button class="sidebar-button" id="next-puzzle-btn">Next</button>
+                    </div>
+                    <button class="sidebar-button" style="background-color: #e11d48;" id="reset-puzzle-btn">Reset Puzzle</button>
+                    <div class="pieces-container" id="pieces-container">
+                        </div>
+                </aside>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            // --- DATA & CONFIGURATION ---
+            const puzzleData = [
+                { id: "animal", name: "Animal Cell", image: "icons/animalcell.png" },
+                { id: "nucleus", name: "Nucleus", image: "icons/nucleus.webp" },
+                { id: "mitochondria", name: "Mitochondria", image: "icons/mitocondria.jpeg" },
+                { id: "ribosome", name: "Ribosome", image: "icons/ribosome.webp" },
+            ];
+
+            const DIFFICULTY_LEVELS = [
+                { key: "easy", label: "Easy", size: 2 },
+                { key: "medium", label: "Medium", size: 3 },
+                { key: "hard", label: "Hard", size: 4 },
+            ];
+
+            // --- STATE (Replaces React's useState) ---
+            let showActivity = false;
+            let difficultyIdx = 1;
+            let puzzleIdx = 0;
+            let pieces = [];
+            let score = 0;
+            let isCompleted = false;
+            let draggedId = null;
+
+            // --- DOM ELEMENT REFERENCES ---
+            const mainContent = document.getElementById('main-content');
+            const toggleViewBtn = document.getElementById('toggle-view-btn');
+            const backBtn = document.getElementById('back-btn');
+            const headerTitle = document.getElementById('header-title');
+            const infoPanel = document.getElementById('info-panel');
+            const activityPanel = document.getElementById('activity-panel');
+            const difficultyBtn = document.getElementById('difficulty-btn');
+            const puzzleGrid = document.getElementById('puzzle-grid');
+            const piecesContainer = document.getElementById('pieces-container');
+            const scoreDisplay = document.getElementById('score-display');
+            const statusText = document.getElementById('status-text');
+            const prevPuzzleBtn = document.getElementById('prev-puzzle-btn');
+            const nextPuzzleBtn = document.getElementById('next-puzzle-btn');
+            const resetPuzzleBtn = document.getElementById('reset-puzzle-btn');
+            const celebrationContainer = document.getElementById('celebration-container');
+            
+            // --- CORE LOGIC & RENDERING ---
+
+            function resetPuzzle() {
+                const difficulty = DIFFICULTY_LEVELS[difficultyIdx];
+                const GRID_SIZE = difficulty.size;
+                const TOTAL_PIECES = GRID_SIZE * GRID_SIZE;
+                
+                // Create ordered pieces
+                const initialPieces = Array.from({ length: TOTAL_PIECES }, (_, i) => ({
+                    id: i,
+                    correctIndex: i,
+                    placedIndex: null, // Where it is currently placed on the board
+                    locked: false,
+                }));
+                
+                // Shuffle for the sidebar
+                pieces = initialPieces.sort(() => Math.random() - 0.5);
+                
+                score = 0;
+                isCompleted = false;
+                
+                render(); // Re-render the UI
+            }
+
+            function render() {
+                const difficulty = DIFFICULTY_LEVELS[difficultyIdx];
+                const currentPuzzle = puzzleData[puzzleIdx];
+                const GRID_SIZE = difficulty.size;
+                const TOTAL_PIECES = GRID_SIZE * GRID_SIZE;
+                
+                // Update Layout
+                if (showActivity) {
+                    mainContent.classList.add('activity-visible');
+                    headerTitle.textContent = `Activity: ${currentPuzzle.name}`;
+                    toggleViewBtn.textContent = 'Information';
+                } else {
+                    mainContent.classList.remove('activity-visible');
+                    headerTitle.textContent = 'Information: Cell Structure';
+                    toggleViewBtn.textContent = 'Activity';
+                }
+
+                // Update Controls and Status
+                difficultyBtn.textContent = `Difficulty: ${difficulty.label}`;
+                scoreDisplay.textContent = `Score: ${score} / ${TOTAL_PIECES}`;
+                statusText.textContent = isCompleted ? "🎉 Puzzle Complete!" : "Drag pieces to the correct slots.";
+
+                // Render Puzzle Grid
+                puzzleGrid.innerHTML = '';
+                puzzleGrid.style.gridTemplateColumns = `repeat(${GRID_SIZE}, 1fr)`;
+                puzzleGrid.style.gridTemplateRows = `repeat(${GRID_SIZE}, 1fr)`;
+                
+                for (let i = 0; i < TOTAL_PIECES; i++) {
+                    const slot = document.createElement('div');
+                    slot.className = 'grid-slot';
+                    
+                    const placedPiece = pieces.find(p => p.placedIndex === i);
+
+                    if(placedPiece) {
+                        slot.style.backgroundImage = `url(${currentPuzzle.image})`;
+                        slot.style.backgroundSize = `${GRID_SIZE * 100}% ${GRID_SIZE * 100}%`;
+                        const bgPosX = (placedPiece.correctIndex % GRID_SIZE) * (100 / (GRID_SIZE - 1));
+                        const bgPosY = Math.floor(placedPiece.correctIndex / GRID_SIZE) * (100 / (GRID_SIZE - 1));
+                        slot.style.backgroundPosition = `${bgPosX}% ${bgPosY}%`;
+                    }
+                    
+                    slot.addEventListener('dragover', (e) => e.preventDefault());
+                    slot.addEventListener('drop', (e) => handleDrop(e, i));
+                    puzzleGrid.appendChild(slot);
+                }
+
+                // Render Draggable Pieces in Sidebar
+                piecesContainer.innerHTML = '';
+                const draggablePieces = pieces.filter(p => !p.locked);
+
+                if (draggablePieces.length === 0 && !isCompleted) {
+                    piecesContainer.textContent = 'Loading...';
+                } else if (isCompleted) {
+                     piecesContainer.innerHTML = `<div style="text-align: center; color: #166534; font-weight: bold;">All pieces placed!</div>`;
+                }
+                
+                draggablePieces.forEach(piece => {
+                    const pieceEl = document.createElement('div');
+                    pieceEl.className = 'draggable-piece';
+                    pieceEl.draggable = true;
+                    pieceEl.style.backgroundImage = `url(${currentPuzzle.image})`;
+                    pieceEl.style.backgroundSize = `${GRID_SIZE * 100}% ${GRID_SIZE * 100}%`;
+                    const bgPosX = (piece.correctIndex % GRID_SIZE) * (100 / (GRID_SIZE - 1));
+                    const bgPosY = Math.floor(piece.correctIndex / GRID_SIZE) * (100 / (GRID_SIZE - 1));
+                    pieceEl.style.backgroundPosition = `${bgPosX}% ${bgPosY}%`;
+                    
+                    pieceEl.addEventListener('dragstart', (e) => {
+                        draggedId = piece.id;
+                        e.dataTransfer.setData("text/plain", piece.id);
+                    });
+                    
+                    piecesContainer.appendChild(pieceEl);
+                });
+            }
+
+            // --- EVENT HANDLERS ---
+            function handleDrop(e, dropIndex) {
+                e.preventDefault();
+                if (isCompleted) return;
+
+                const droppedId = Number(e.dataTransfer.getData("text/plain"));
+                const draggedPiece = pieces.find(p => p.id === droppedId);
+
+                if (!draggedPiece) return;
+
+                if (draggedPiece.correctIndex === dropIndex) {
+                    draggedPiece.placedIndex = dropIndex;
+                    draggedPiece.locked = true;
+                    score++;
+                    
+                    if (score === (DIFFICULTY_LEVELS[difficultyIdx].size ** 2)) {
+                        isCompleted = true;
+                        triggerCelebration();
+                    }
+                } else {
+                    statusText.textContent = "That's not the right spot. Try again!";
+                    setTimeout(() => { if (!isCompleted) statusText.textContent = "Drag pieces to the correct slots."; }, 2000);
+                }
+                render();
+            }
+
+            toggleViewBtn.addEventListener('click', () => {
+                showActivity = !showActivity;
+                if (showActivity) {
+                    resetPuzzle();
+                }
+                render();
+            });
+
+            backBtn.addEventListener('click', () => {
+                window.history.back();
+            });
+
+            difficultyBtn.addEventListener('click', () => {
+                difficultyIdx = (difficultyIdx + 1) % DIFFICULTY_LEVELS.length;
+                resetPuzzle();
+            });
+
+            prevPuzzleBtn.addEventListener('click', () => {
+                puzzleIdx = (puzzleIdx - 1 + puzzleData.length) % puzzleData.length;
+                resetPuzzle();
+            });
+
+            nextPuzzleBtn.addEventListener('click', () => {
+                puzzleIdx = (puzzleIdx + 1) % puzzleData.length;
+                resetPuzzle();
+            });
+
+            resetPuzzleBtn.addEventListener('click', resetPuzzle);
+
+            // --- CELEBRATION EFFECT LOGIC ---
+            function triggerCelebration() {
+                let particles = [];
+                for (let i = 0; i < 80; i++) {
+                    particles.push({
+                        x: Math.random() * window.innerWidth,
+                        y: Math.random() * -window.innerHeight,
+                        color: ['#FFD700', '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4'][Math.floor(Math.random() * 5)],
+                        size: Math.random() * 8 + 4,
+                        speedX: (Math.random() - 0.5) * 6,
+                        speedY: Math.random() * 5 + 2,
+                    });
+                }
+                
+                let animationFrameId;
+
+                function animate() {
+                    celebrationContainer.innerHTML = '';
+                    particles = particles.map(p => {
+                        const newP = { ...p };
+                        newP.x += newP.speedX;
+                        newP.y += newP.speedY;
+                        newP.speedY += 0.08; // Gravity
+                        return newP;
+                    }).filter(p => p.y < window.innerHeight);
+
+                    particles.forEach(p => {
+                        const el = document.createElement('div');
+                        el.className = 'particle';
+                        el.style.left = `${p.x}px`;
+                        el.style.top = `${p.y}px`;
+                        el.style.width = `${p.size}px`;
+                        el.style.height = `${p.size}px`;
+                        el.style.backgroundColor = p.color;
+                        celebrationContainer.appendChild(el);
+                    });
+
+                    if (particles.length > 0) {
+                        animationFrameId = requestAnimationFrame(animate);
+                    }
+                }
+
+                animate();
+            }
+
+            // --- INITIAL RENDER ---
+            render();
+        });
+    </script>
+</body>
+</html>

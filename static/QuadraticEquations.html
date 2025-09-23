@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quadratic Equations: Root Finder</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --header-bg: #ffffff; --page-bg: #f0f2f5; --panel-bg: #ffffff;
+            --border-color: #e5e7eb; --text-dark: #1f2937; --accent-blue: #3b82f6;
+            --secondary-gray: #6c757d; --primary-blue-btn: #007bff;
+        }
+        body { font-family: 'Poppins', sans-serif; background-color: var(--page-bg); color: var(--text-dark); margin: 0; height: 100vh; overflow: hidden; }
+        .page-container { display: flex; flex-direction: column; height: 100vh; }
+        .header {
+            position: fixed; top: 0; left: 0; width: 100%; height: 60px;
+            background-color: var(--header-bg); display: flex; align-items: center; justify-content: space-between;
+            padding: 0 24px; border-bottom: 1px solid var(--border-color);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05); z-index: 1000;
+        }
+        .header-section { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .header-section.center { text-align: center; font-size: 1.2em; font-weight: bold; }
+        .header-section.right { display: flex; justify-content: flex-end; }
+        .button {
+            padding: 8px 16px; margin-left: 10px; cursor: pointer;
+            border: none; border-radius: 6px; font-weight: 600; color: white;
+            white-space: nowrap; transition: transform 0.1s;
+        }
+        .button:active { transform: scale(0.95); }
+        .main-content { margin-top: 60px; padding: 24px; display: flex; gap: 24px; flex-grow: 1; overflow: hidden; justify-content: center; }
+        .panel {
+            background-color: var(--panel-bg); border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: 1px solid var(--border-color);
+            overflow-y: auto; padding: 32px 48px; height: calc(100vh - 108px);
+            transition: width 400ms ease-in-out;
+        }
+        #info-panel { flex-shrink: 0; }
+        #activity-panel { display: none; flex-grow: 1; padding: 0; flex-direction: column; }
+        .main-content.activity-visible { justify-content: flex-start; }
+        .main-content.activity-visible #info-panel { width: 340px; min-width: 340px; padding: 24px 32px; }
+        .main-content.activity-visible #activity-panel { display: flex; }
+        
+        /* Activity Styles */
+        .activity-area { flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; }
+        .bottom-control-bar { height: 60px; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; background-color: var(--page-bg); border-top: 1px solid var(--border-color); flex-shrink: 0; border-radius: 0 0 12px 12px;}
+        .status-bar { font-weight: bold; color: var(--text-dark); font-size: 1.2rem;}
+        .reset-button { padding: 8px 16px; cursor: pointer; background-color: #ef4444; color: white; border: none; border-radius: 6px; font-weight: 600; }
+        #question-text { font-size: 2rem; font-weight: 700; color: #111827; }
+        .info-panel-content { background-color: #ffffff; padding: 1.5rem; border-radius: 0.75rem; border: 1px solid #e5e7eb; }
+        .answer-input { -moz-appearance: textfield; }
+        .answer-input::-webkit-outer-spin-button, .answer-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    </style>
+</head>
+<body class="page-container">
+    <header class="header">
+        <div class="header-section font-bold text-lg" style="color: var(--accent-blue);">Class-10</div>
+        <div id="header-title" class="header-section center">Information</div>
+        <div class="header-section right">
+            <button id="back-btn" class="button" style="background-color: var(--secondary-gray);">Back</button>
+            <button id="activity-info-btn" class="button" style="background-color: var(--primary-blue-btn);">Activity</button>
+            <button id="difficulty-btn" class="button" style="background-color: var(--accent-blue);">Difficulty: Easy</button>
+        </div>
+    </header>
+
+    <main id="main-content" class="main-content">
+        <section id="info-panel" class="panel">
+            <h2 class="text-3xl font-bold mb-6 text-center" style="color: var(--accent-blue);">Solving Quadratic Equations</h2>
+            <div class="space-y-4">
+                <div class="info-panel-content">
+                    <h3 class="text-xl font-semibold text-gray-900">Standard Form</h3>
+                    <p class="mt-2 text-gray-600">A quadratic equation's standard form is: <b>ax² + bx + c = 0</b>, where 'a' is not zero.</p>
+                </div>
+                <div class="info-panel-content">
+                    <h3 class="text-xl font-semibold text-gray-900">Methods of Solving</h3>
+                    <ul class="list-disc list-inside mt-3 space-y-2 text-gray-600">
+                        <li><b>Factorization:</b> Splitting the middle term.</li>
+                        <li><b>Quadratic Formula:</b> The universal formula to find the roots: <b>x = [-b ± √(b² - 4ac)] / 2a</b>.</li>
+                    </ul>
+                </div>
+                <div class="info-panel-content">
+                    <h3 class="text-xl font-semibold text-gray-900">The Discriminant</h3>
+                    <p class="mt-2 text-gray-600">The value of <b>D = b² - 4ac</b> tells you about the roots:</p>
+                     <ul class="list-disc list-inside mt-3 space-y-2 text-gray-600">
+                         <li>If D > 0, there are two distinct real roots.</li>
+                         <li>If D = 0, there is exactly one real root.</li>
+                         <li>If D < 0, there are no real roots.</li>
+                     </ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="activity-panel" class="panel">
+            <div class="activity-area">
+                <div class="text-center w-full">
+                    <h2 id="level-title" class="text-2xl font-bold text-gray-900">Easy Challenge</h2>
+                    <p class="text-left text-gray-500">Find the roots of the equation. Enter the smaller root first.</p>
+                    <p id="question-text" class="my-6"></p>
+                    <form id="answer-form" class="flex flex-col sm:flex-row justify-center items-center gap-2 sm:gap-4 mt-6">
+                        <input type="number" step="any" id="answer-input-1" class="answer-input text-center text-xl font-bold w-32 p-3 rounded-lg border-2 border-gray-300 focus:border-blue-500 focus:ring-blue-500" placeholder="Root 1" required>
+                        <input type="number" step="any" id="answer-input-2" class="answer-input text-center text-xl font-bold w-32 p-3 rounded-lg border-2 border-gray-300 focus:border-blue-500 focus:ring-blue-500" placeholder="Root 2" required>
+                        <button type="submit" class="btn primary-btn text-lg px-6 py-3" style="background-color: var(--accent-blue);">Check</button>
+                    </form>
+                    <p id="feedback-text" class="mt-4 font-semibold text-lg h-6"></p>
+                    <div id="level-complete-container" style="display: none;" class="text-center py-8">
+                        <h3 id="level-complete-title" class="text-3xl font-bold" style="color: var(--accent-blue);">Level Complete!</h3>
+                        <p id="level-complete-score" class="text-xl mt-2 text-gray-700"></p>
+                        <button id="next-level-btn" class="btn primary-btn mt-6 text-lg py-3 px-8" style="background-color: var(--accent-blue);">Next Level</button>
+                    </div>
+                </div>
+            </div>
+            <footer class="bottom-control-bar">
+                <div id="status-bar" class="status-bar">Score: 0</div>
+                <button id="reset-game-btn" class="reset-button">Reset Game</button>
+            </footer>
+        </section>
+    </main>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const mainContent=document.getElementById('main-content'),infoPanel=document.getElementById('info-panel'),activityPanel=document.getElementById('activity-panel'),activityInfoBtn=document.getElementById('activity-info-btn'),difficultyBtn=document.getElementById('difficulty-btn'),backBtn=document.getElementById('back-btn'),headerTitle=document.getElementById('header-title'),levelTitle=document.getElementById('level-title'),statusBar=document.getElementById('status-bar'),questionText=document.getElementById('question-text'),answerForm=document.getElementById('answer-form'),answerInput1=document.getElementById('answer-input-1'),answerInput2=document.getElementById('answer-input-2'),feedbackText=document.getElementById('feedback-text'),levelCompleteContainer=document.getElementById('level-complete-container'),levelCompleteScore=document.getElementById('level-complete-score'),nextLevelBtn=document.getElementById('next-level-btn'),resetGameBtn=document.getElementById('reset-game-btn');
+            const problems={easy:[{q:"x² - 5x + 6 = 0",a:[2,3]},{q:"x² - 7x + 10 = 0",a:[2,5]},{q:"x² + 5x + 4 = 0",a:[-4,-1]},{q:"x² - x - 12 = 0",a:[-3,4]},{q:"x² - 8x + 16 = 0",a:[4,4]}],medium:[{q:"2x² + 5x - 3 = 0",a:[-3,0.5]},{q:"4x² - 12x + 9 = 0",a:[1.5,1.5]},{q:"x² - 3x - 4 = 0",a:[-1,4]},{q:"6x² - x - 2 = 0",a:[-0.5,0.67]},{q:"x² + 2x - 8 = 0",a:[-4,2]}],hard:[{q:"(x-2)² = 25",a:[-3,7]},{q:"x⁴ - 13x² + 36 = 0",a:[-3,3]},{q:"√2x² + 7x + 5√2 = 0",a:[-3.54,-1.41]},{q:"3(x-4)² - 5(x-4) = 12",a:[1.33,7]},{q:"1/(x-2) + 2/(x-1) = 6/x",a:[0.67,3]}]};
+            const levelOrder=['easy','medium','hard'];let currentLevel,score,isAnswered,currentQuestion,shuffledProblems,showActivity=false;
+
+            function capitalize(s){return s.charAt(0).toUpperCase()+s.slice(1)}
+            function updateLayout(){
+                mainContent.classList.toggle('activity-visible',showActivity);
+                infoPanel.style.width=showActivity?'340px':`${Math.min(800,window.innerWidth-48)}px`;
+                headerTitle.textContent=showActivity?'Root Finder Challenge':'Information';
+                activityInfoBtn.textContent=showActivity?'Information':'Activity'
+            }
+            function initializeGame(){currentLevel='easy';resetGame()}
+            function resetGame(){score=0;resetLevel()}
+            function resetLevel(){
+                shuffledProblems=[...problems[currentLevel]].sort(()=>Math.random()-.5);
+                updateScoreDisplay();loadQuestion()
+            }
+            function loadQuestion(){
+                if(shuffledProblems.length===0){showLevelComplete();return}
+                currentQuestion=shuffledProblems.pop();isAnswered=false;
+                levelCompleteContainer.style.display='none';
+                answerForm.style.display='flex';
+                feedbackText.textContent="";
+                levelTitle.textContent=`${capitalize(currentLevel)} Challenge`;
+                questionText.innerHTML=currentQuestion.q.replace(/(\d+)/g,'<b>$1</b>').replace(/x²/g,'x<sup>2</sup>').replace(/x⁴/g,'x<sup>4</sup>').replace(/√2/g,'√2');
+                answerInput1.value="";answerInput2.value="";
+                answerInput1.disabled=false;answerInput2.disabled=false;
+                answerForm.querySelector('button').disabled=false
+            }
+            function handleAnswerSubmit(e){
+                e.preventDefault();if(isAnswered)return;isAnswered=true;
+                answerInput1.disabled=true;answerInput2.disabled=true;answerForm.querySelector('button').disabled=true;
+                let userA1=parseFloat(answerInput1.value);let userA2=parseFloat(answerInput2.value);
+                if(isNaN(userA1)||isNaN(userA2)){
+                    feedbackText.textContent="Please enter valid numbers.";feedbackText.style.color='#ef4444';
+                    isAnswered=false;answerInput1.disabled=false;answerInput2.disabled=false;answerForm.querySelector('button').disabled=false;return
+                }
+                const correctAnswers=currentQuestion.a.map(val=>Math.round(val*100)/100);
+                const userAnswers=[userA1,userA2].sort((a,b)=>a-b).map(val=>Math.round(val*100)/100);
+                const sortedCorrect=correctAnswers.sort((a,b)=>a-b);
+                if(JSON.stringify(userAnswers)===JSON.stringify(sortedCorrect)){
+                    score+=10;updateScoreDisplay();
+                    feedbackText.textContent="Correct!";feedbackText.style.color='#22c55e'
+                }else{
+                    feedbackText.textContent=`Not quite! The correct roots were ${sortedCorrect.join(' and ')}.`;
+                    feedbackText.style.color='#ef4444'
+                }
+                setTimeout(()=>{loadQuestion()},2000)
+            }
+            function showLevelComplete(){
+                answerForm.style.display='none';questionText.textContent="";
+                levelCompleteContainer.style.display='block';
+                levelCompleteScore.textContent=`Your final score: ${score}.`;
+                const isLastLevel=levelOrder.indexOf(currentLevel)===levelOrder.length-1;
+                nextLevelBtn.style.display=isLastLevel?'none':'inline-flex'
+            }
+            function handleNextLevel(){
+                const currentLevelIdx=levelOrder.indexOf(currentLevel);
+                if(currentLevelIdx<levelOrder.length-1){
+                    currentLevel=levelOrder[currentLevelIdx+1];
+                    difficultyBtn.textContent=`Difficulty: ${capitalize(currentLevel)}`;resetGame()
+                }
+            }
+            function updateScoreDisplay(){statusBar.textContent=`Score: ${score}`}
+
+            activityInfoBtn.addEventListener('click',()=>{showActivity=!showActivity;updateLayout()});
+            backBtn.addEventListener('click',()=>{if(showActivity){showActivity=false;updateLayout()}else{window.history.back()}});
+            difficultyBtn.addEventListener('click',()=>{
+                const currentLevelIdx=levelOrder.indexOf(currentLevel);
+                currentLevel=levelOrder[(currentLevelIdx+1)%levelOrder.length];
+                difficultyBtn.textContent=`Difficulty: ${capitalize(currentLevel)}`;
+                if(showActivity)resetGame()
+            });
+            resetGameBtn.addEventListener('click',resetGame);
+            nextLevelBtn.addEventListener('click',handleNextLevel);
+            answerForm.addEventListener('submit',handleAnswerSubmit);
+            
+            initializeGame();updateLayout();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tissue Memory Match</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --header-bg: #ffffff;
+            --page-bg: #f4f7f9;
+            --panel-bg: #ffffff;
+            --border-color: #e0e0e0;
+            --text-dark: #1e293b;
+            --text-light: #64748b;
+            --accent-blue: #3b82f6;
+            --accent-green: #22c55e;
+            --accent-red: #ef4444;
+            --accent-orange: #f97316;
+            --primary-blue: #007bff;
+            --secondary-gray: #6c757d;
+            --card-front: #f8fafc;
+        }
+
+        /* --- Base Layout --- */
+        body { font-family: 'Poppins', sans-serif; background-color: var(--page-bg); color: var(--text-dark); margin: 0; height: 100vh; overflow: hidden; }
+        .page-container { display: flex; flex-direction: column; height: 100vh; }
+        .header {
+            position: fixed; top: 0; left: 0; width: 100%; height: 60px;
+            background-color: var(--header-bg); display: flex; align-items: center; justify-content: space-between;
+            padding: 0 24px; border-bottom: 1px solid var(--border-color); box-shadow: 0 2px 4px rgba(0,0,0,0.05); z-index: 1000; box-sizing: border-box;
+        }
+        .header-section { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .header-section.center { text-align: center; font-size: 1.2em; font-weight: bold; }
+        .header-section.right { display: flex; justify-content: flex-end; }
+        .button {
+            padding: 8px 16px; margin-left: 10px; cursor: pointer;
+            border: none; border-radius: 6px; font-weight: 600; color: white;
+            transition: transform 0.1s, background-color 0.2s;
+        }
+        .button:active { transform: scale(0.95); }
+        .main-content {
+            margin-top: 60px; padding: 24px; display: flex;
+            flex-grow: 1; overflow: hidden; box-sizing: border-box;
+            gap: 24px; justify-content: center;
+        }
+        .panel {
+            background-color: var(--panel-bg); border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: 1px solid var(--border-color);
+            box-sizing: border-box; overflow-y: auto;
+            height: calc(100vh - 108px);
+            transition: width 400ms ease-in-out, min-width 400ms ease-in-out, margin 400ms ease-in-out;
+        }
+        #info-panel {
+            padding: 24px 32px;
+            width: 100%;
+            max-width: 700px;
+            margin: 0 auto;
+            flex-shrink: 0;
+        }
+        #activity-panel { display: none; flex-grow: 1; min-width: 400px; padding: 24px; flex-direction: column; gap: 20px; }
+        
+        .main-content.activity-visible { justify-content: flex-start; }
+        .main-content.activity-visible #info-panel { width: 340px; min-width: 340px; margin: 0; }
+        .main-content.activity-visible #activity-panel { display: flex; }
+
+        /* --- Info Panel Content Styling --- */
+        #info-panel h1 { color: var(--accent-blue); margin-top: 0; }
+        #info-panel h3 { margin-top: 24px; border-bottom: 2px solid var(--accent-blue); padding-bottom: 5px; }
+        #info-panel p, #info-panel li { color: var(--text-light); line-height: 1.6; }
+        #info-panel ul { padding-left: 20px; list-style-type: '🔬 '; }
+
+        /* --- MEMORY GAME STYLES --- */
+        #scoreboard {
+            background-color: var(--page-bg); padding: 10px 15px; border-radius: 12px;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.06); display: flex; justify-content: space-between;
+            align-items: center; flex-shrink: 0; gap: 15px;
+        }
+        .score-group { display: flex; gap: 20px; }
+        .score-item { text-align: center; font-size: 1rem; font-weight: 600; }
+        .score-item span { display: block; font-size: 1.4rem; color: var(--accent-blue); }
+        .controls .button { padding: 6px 12px; font-size: 0.9rem; margin-left: 5px; }
+
+        .memory-game { display: grid; gap: 12px; flex-grow: 1; min-height: 0; }
+        .memory-game.easy { grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 1fr); }
+        .memory-game.medium { grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(3, 1fr); }
+        .memory-game.hard { grid-template-columns: repeat(6, 1fr); grid-template-rows: repeat(3, 1fr); }
+
+        .memory-card {
+            background-color: transparent; width: 100%; height: 100%;
+            border-radius: 12px; cursor: pointer; position: relative;
+            perspective: 1000px;
+        }
+        .memory-card.flip .card-inner { transform: rotateY(180deg); }
+        .memory-card.matched { cursor: default; opacity: 0.7; }
+        .card-inner { position: relative; width: 100%; height: 100%; transition: transform 0.6s; transform-style: preserve-3d; }
+        .front-face, .back-face {
+            width: 100%; height: 100%; padding: 5px;
+            position: absolute; backface-visibility: hidden; border-radius: 12px;
+            display: flex; justify-content: center; align-items: center;
+            text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+            font-size: clamp(0.6rem, 1.5vw, 1rem); box-sizing: border-box;
+        }
+        .front-face { background-color: var(--card-front); color: var(--text-dark); transform: rotateY(180deg); border: 1px solid var(--border-color); }
+        .back-face { background: linear-gradient(45deg, var(--accent-blue), #2563eb); color: white; font-size: 2rem; border: 1px solid #1d4ed8; }
+
+        /* --- Completion Modal --- */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.6); display: none;
+            justify-content: center; align-items: center; z-index: 2000;
+        }
+        .modal-content {
+            background-color: white; padding: 40px; border-radius: 12px;
+            text-align: center; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            animation: fadeIn 0.5s;
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+    </style>
+</head>
+<body class="page-container">
+    <header class="header">
+        <div class="header-section">Class 9 - Tissues</div>
+        <div id="header-title" class="header-section center">Information</div>
+        <div class="header-section right">
+            <button id="back-btn" class="button" style="background-color: var(--secondary-gray);">Back</button>
+            <button id="toggle-view-btn" class="button" style="background-color: var(--primary-blue);">Activity</button>
+            <button id="difficulty-btn" class="button" style="background-color: var(--accent-blue);">Mode: Easy</button>
+        </div>
+    </header>
+
+    <main class="main-content" id="main-content">
+        <section id="info-panel" class="panel">
+            <h1>🌿 Biological Tissues</h1>
+            <p>Tissues are groups of cells that have a similar structure and act together to perform a specific function. There are four main types of tissue in animals and several types in plants.</p>
+            
+            <h3>Plant Tissues</h3>
+            <ul>
+                <li><b>Xylem:</b> Transports water from roots to other parts.</li>
+                <li><b>Phloem:</b> Transports food from leaves to other parts.</li>
+                <li><b>Parenchyma:</b> Stores food and performs photosynthesis.</li>
+                <li><b>Collenchyma:</b> Provides flexible support to plant parts.</li>
+                <li><b>Sclerenchyma:</b> Provides rigid strength to plants.</li>
+            </ul>
+
+            <h3>Animal Tissues</h3>
+            <ul>
+                <li><b>Epithelial:</b> Covers body surfaces and lines internal organs.</li>
+                <li><b>Connective:</b> Supports, connects, and binds other tissues. (e.g., bone, blood)</li>
+                <li><b>Muscular:</b> Composed of cells that can contract to cause movement.</li>
+                <li><b>Nervous:</b> Transmits electrical signals between the brain, spinal cord, and nerves.</li>
+            </ul>
+        </section>
+
+        <section id="activity-panel" class="panel">
+            <div id="scoreboard">
+                <div class="score-group">
+                    <div class="score-item">Matches<span id="matches-count">0</span></div>
+                    <div class="score-item">Attempts<span id="attempts-count">0</span></div>
+                </div>
+                <div class="controls">
+                    <button id="reset-btn" class="button" style="background-color: var(--accent-red);">Reset</button>
+                </div>
+            </div>
+            <div class="memory-game"></div>
+        </section>
+    </main>
+
+    <div id="completion-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h2 id="modal-title">🎉 Congratulations! 🎉</h2>
+            <p id="final-score-text"></p>
+            <button id="play-again-btn" class="button" style="background-color: var(--accent-green);">Play Again</button>
+            <button id="close-modal-btn" class="button" style="background-color: var(--text-light);">Close</button>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const mainContent = document.querySelector('.main-content');
+        const headerTitle = document.getElementById('header-title');
+        const toggleViewBtn = document.getElementById('toggle-view-btn');
+        const difficultyBtn = document.getElementById('difficulty-btn');
+        const backBtn = document.getElementById('back-btn');
+        const gameBoard = document.querySelector('.memory-game');
+        const matchesCountEl = document.getElementById('matches-count');
+        const attemptsCountEl = document.getElementById('attempts-count');
+        const completionModal = document.getElementById('completion-modal');
+        const finalScoreText = document.getElementById('final-score-text');
+        const playAgainBtn = document.getElementById('play-again-btn');
+        const closeModalBtn = document.getElementById('close-modal-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        
+        const allTissues = [
+            { name: 'Xylem', func: 'Transports water', id: 1 },
+            { name: 'Phloem', func: 'Transports food', id: 2 },
+            { name: 'Parenchyma', func: 'Stores food', id: 3 },
+            { name: 'Collenchyma', func: 'Provides flexibility', id: 4 },
+            { name: 'Sclerenchyma', func: 'Provides strength', id: 5 },
+            { name: 'Epithelial', func: 'Covers surfaces', id: 6 },
+            { name: 'Connective', func: 'Supports & binds', id: 7 },
+            { name: 'Muscular', func: 'Enables movement', id: 8 },
+            { name: 'Nervous', func: 'Transmits signals', id: 9 },
+        ];
+        
+        const difficultySettings = {
+            easy: { pairs: 4, label: "Easy" },
+            medium: { pairs: 6, label: "Medium" },
+            hard: { pairs: 9, label: "Hard" }
+        };
+        const difficulties = ['easy', 'medium', 'hard'];
+        let difficultyIndex = 0;
+        let showActivity = false;
+        let hasFlippedCard, lockBoard, firstCard, secondCard;
+        let matches, attempts, totalPairs;
+
+        function updateLayout() {
+            mainContent.classList.toggle('activity-visible', showActivity);
+            headerTitle.textContent = showActivity ? 'Activity' : 'Information';
+            toggleViewBtn.textContent = showActivity ? 'Information' : 'Activity';
+        }
+        
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        function startGame() {
+            resetGameState();
+            const currentDifficultyKey = difficulties[difficultyIndex];
+            const currentDifficulty = difficultySettings[currentDifficultyKey];
+            totalPairs = currentDifficulty.pairs;
+            const selectedTissues = shuffle([...allTissues]).slice(0, totalPairs);
+
+            const gameCardsData = [];
+            selectedTissues.forEach(tissue => {
+                gameCardsData.push({ type: 'name', content: tissue.name, id: tissue.id });
+                gameCardsData.push({ type: 'function', content: tissue.func, id: tissue.id });
+            });
+            createBoard(shuffle(gameCardsData), currentDifficultyKey);
+        }
+
+        function createBoard(cards, difficulty) {
+            gameBoard.innerHTML = '';
+            gameBoard.className = 'memory-game';
+            gameBoard.classList.add(difficulty);
+            cards.forEach(cardData => {
+                const card = document.createElement('div');
+                card.classList.add('memory-card');
+                card.dataset.id = cardData.id;
+                card.innerHTML = `<div class="card-inner">
+                    <div class="front-face">${cardData.content}</div>
+                    <div class="back-face">🧬</div>
+                </div>`;
+                card.addEventListener('click', flipCard);
+                gameBoard.appendChild(card);
+            });
+        }
+
+        function flipCard() {
+            if (lockBoard || this === firstCard || this.classList.contains('flip')) return;
+            this.classList.add('flip');
+            if (!hasFlippedCard) {
+                hasFlippedCard = true;
+                firstCard = this;
+                return;
+            }
+            secondCard = this;
+            updateAttempts();
+            checkForMatch();
+        }
+
+        function checkForMatch() {
+            lockBoard = true;
+            const isMatch = firstCard.dataset.id === secondCard.dataset.id;
+            isMatch ? disableCards() : unflipCards();
+        }
+
+        function disableCards() {
+            firstCard.removeEventListener('click', flipCard);
+            secondCard.removeEventListener('click', flipCard);
+            firstCard.classList.add('matched');
+            secondCard.classList.add('matched');
+            matches++;
+            matchesCountEl.textContent = matches;
+            resetBoard();
+            if (matches === totalPairs) {
+                setTimeout(() => {
+                    finalScoreText.textContent = `You found all ${totalPairs} pairs in ${attempts} attempts!`;
+                    completionModal.style.display = 'flex';
+                }, 800);
+            }
+        }
+
+        function unflipCards() {
+            setTimeout(() => {
+                firstCard.classList.remove('flip');
+                secondCard.classList.remove('flip');
+                resetBoard();
+            }, 1200);
+        }
+
+        function updateAttempts() {
+            attempts++;
+            attemptsCountEl.textContent = attempts;
+        }
+
+        function resetBoard() {
+            [hasFlippedCard, lockBoard] = [false, false];
+            [firstCard, secondCard] = [null, null];
+        }
+
+        function resetGameState() {
+            matches = 0;
+            attempts = 0;
+            matchesCountEl.textContent = '0';
+            attemptsCountEl.textContent = '0';
+            completionModal.style.display = 'none';
+            resetBoard();
+        }
+
+        // --- Event Listeners ---
+        toggleViewBtn.addEventListener('click', () => {
+            showActivity = !showActivity;
+            updateLayout();
+            if (showActivity) startGame();
+        });
+
+        difficultyBtn.addEventListener('click', () => {
+            difficultyIndex = (difficultyIndex + 1) % difficulties.length;
+            const newDifficulty = difficulties[difficultyIndex];
+            difficultyBtn.textContent = `Mode: ${difficultySettings[newDifficulty].label}`;
+            if (showActivity) startGame();
+        });
+        
+        resetBtn.addEventListener('click', startGame);
+        
+        playAgainBtn.addEventListener('click', () => {
+            completionModal.style.display = 'none';
+            startGame();
+        });
+        
+        closeModalBtn.addEventListener('click', () => {
+             completionModal.style.display = 'none';
+        });
+        
+        backBtn.addEventListener('click', () => {
+            window.history.back();
+        });
+
+        updateLayout();
+    });
+    </script>
+</body>
+</html>

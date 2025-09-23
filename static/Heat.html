@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Heat Educational Module</title>
+    <style>
+        :root {
+            --header-bg: #ffffff;
+            --page-bg: #f5f7fa;
+            --panel-bg: #ffffff;
+            --border-color: #e0e0e0;
+            --text-dark: #2c3e50;
+            --text-light: #475569;
+            --accent-red: #d32f2f;
+            --accent-orange: #f57c00;
+            --primary-blue: #007bff;
+            --secondary-gray: #6c757d;
+        }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body { background-color: var(--page-bg); color: var(--text-dark); margin: 0; height: 100vh; overflow: hidden; }
+        .page-container { display: flex; flex-direction: column; height: 100vh; }
+        .header {
+            position: fixed; top: 0; left: 0; width: 100%; height: 60px;
+            background-color: var(--header-bg); display: flex; align-items: center; justify-content: space-between;
+            padding: 0 24px; border-bottom: 1px solid var(--border-color); box-shadow: 0 2px 4px rgba(0,0,0,0.05); z-index: 1000; box-sizing: border-box;
+        }
+        .header-section { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .header-section.center { text-align: center; font-size: 1.2em; font-weight: bold; }
+        .header-section.right { display: flex; justify-content: flex-end; }
+        .button {
+            padding: 8px 16px; margin-left: 10px; cursor: pointer;
+            border: none; border-radius: 6px; font-weight: 600; color: white;
+            transition: transform 0.1s, background-color 0.2s;
+        }
+        .button:active { transform: scale(0.95); }
+        .main-content {
+            margin-top: 60px; padding: 24px; display: flex;
+            flex-grow: 1; overflow: hidden; box-sizing: border-box;
+            gap: 24px; justify-content: center;
+        }
+        .panel {
+            background-color: var(--panel-bg); border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: 1px solid var(--border-color);
+            box-sizing: border-box; overflow-y: auto;
+            height: calc(100vh - 108px);
+            transition: width 400ms ease-in-out, min-width 400ms ease-in-out, margin 400ms ease-in-out;
+        }
+        #info-panel {
+            padding: 24px 32px;
+            width: 100%;
+            max-width: 700px;
+            margin: 0 auto;
+            flex-shrink: 0;
+        }
+        #activity-panel { display: none; flex-grow: 1; min-width: 400px; padding: 0; flex-direction: column; background-color: #f0f4f8; }
+        
+        .main-content.activity-visible { justify-content: flex-start; }
+        .main-content.activity-visible #info-panel { width: 340px; min-width: 340px; margin: 0; }
+        .main-content.activity-visible #activity-panel { display: flex; }
+
+        /* General Info Styles */
+        #info-panel h1 { color: var(--accent-red); margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid var(--accent-orange); }
+        #info-panel h2 { color: var(--accent-orange); margin: 20px 0 10px; }
+        #info-panel table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        #info-panel th, #info-panel td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+        #info-panel th { background-color: #fbe9e7; color: var(--accent-red); }
+        #info-panel ul { list-style-position: inside; }
+
+        /* Game Styles */
+        .activity-area { flex-grow: 1; padding: 20px; overflow-y: auto; }
+        .game-container { max-width: 800px; margin: 0 auto; }
+        .game-card { background-color: white; border-radius: 8px; padding: 20px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); }
+        .game-question { font-size: 1.2rem; margin-bottom: 20px; text-align: center; }
+        .options-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 20px; }
+        @media (min-width: 768px) { .options-container { grid-template-columns: repeat(4, 1fr); } }
+        .option { display: flex; flex-direction: column; align-items: center; padding: 15px; background-color: #fbe9e7; border: 2px solid #ffab91; border-radius: 8px; cursor: pointer; transition: all 0.3s; }
+        .option:hover { transform: translateY(-5px); box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1); }
+        .option.selected { border-color: var(--accent-red); background-color: #ffcdd2; }
+        .option.correct { border-color: #4caf50; background-color: #e8f5e9; }
+        .option.incorrect { border-color: #f44336; background-color: #ffebee; }
+        .option-icon { width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; font-size: 2rem; margin-bottom: 10px; border-radius: 50%; background-color: white; }
+        .option-text { text-align: center; font-weight: 600; }
+        .submit-button { padding: 12px 20px; background-color: var(--accent-red); color: white; border: none; border-radius: 6px; cursor: pointer; width: 100%; font-size: 1rem; transition: background-color 0.3s; }
+        .submit-button:hover:not(:disabled) { background-color: #b71c1c; }
+        .submit-button:disabled { background-color: #bdc3c7; cursor: not-allowed; }
+        .game-feedback { padding: 15px; border-radius: 6px; margin-top: 20px; text-align: center; font-weight: bold; }
+        .feedback-correct { background-color: #e8f5e9; color: #2e7d32; }
+        .feedback-incorrect { background-color: #ffebee; color: #c62828; }
+        .bottom-control-bar { height: 60px; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; background-color: white; border-top: 1px solid #ddd; }
+        .status-bar { font-weight: bold; }
+        .reset-button { background-color: var(--accent-red); }
+    </style>
+</head>
+<body class="page-container">
+    <header class="header">
+        <div class="header-section">Class 7 - Heat</div>
+        <div id="header-title" class="header-section center">Information</div>
+        <div class="header-section right">
+            <button id="back-btn" class="button" style="background-color: var(--secondary-gray);">Back</button>
+            <button id="toggle-view-btn" class="button" style="background-color: var(--primary-blue);">Activity</button>
+            <button id="difficulty-btn" class="button" style="background-color: var(--accent-orange);">Mode: Easy</button>
+        </div>
+    </header>
+
+    <main class="main-content" id="main-content">
+        <section id="info-panel" class="panel">
+            <h1>Heat: Transfer and Effects</h1>
+            <p>Heat is a form of energy that is transferred between objects with different temperatures. It always flows from a hotter object to a cooler one.</p>
+            
+            <h2>Methods of Heat Transfer</h2>
+            <ul>
+                <li><strong>Conduction:</strong> Transfer through direct contact.</li>
+                <li><strong>Convection:</strong> Transfer through the movement of fluids (liquids or gases).</li>
+                <li><strong>Radiation:</strong> Transfer through electromagnetic waves.</li>
+            </ul>
+
+            <h2>Effects of Heat</h2>
+            <table>
+                <tr><th>Effect</th><th>Description</th></tr>
+                <tr><td>Expansion</td><td>Most substances expand when heated.</td></tr>
+                <tr><td>Change of State</td><td>Solid to liquid (melting), liquid to gas (boiling).</td></tr>
+                <tr><td>Temperature Change</td><td>Increase in molecular kinetic energy.</td></tr>
+            </table>
+        </section>
+
+        <section id="activity-panel" class="panel">
+            <div class="activity-area">
+                <div class="game-container">
+                    <h2 class="text-2xl font-bold text-center">Heat Concepts: Find the Odd One Out</h2>
+                    <p class="text-center text-gray-500 mb-4">Identify which item doesn't belong with the others based on the question.</p>
+                    <div class="game-card">
+                        <div class="game-question" id="game-question"></div>
+                        <div class="options-container" id="options-container"></div>
+                        <button class="submit-button" id="submit-button" disabled>Check Answer</button>
+                        <div id="game-feedback" class="game-feedback"></div>
+                    </div>
+                </div>
+            </div>
+            <footer class="bottom-control-bar">
+                <div id="status-bar" class="status-bar">Score: 0 | Question: 1/5</div>
+                <button id="reset-btn" class="button reset-button">Reset</button>
+            </footer>
+        </section>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const mainContent = document.getElementById('main-content');
+            const infoPanel = document.getElementById('info-panel');
+            const activityPanel = document.getElementById('activity-panel');
+            const headerTitle = document.getElementById('header-title');
+            const toggleViewBtn = document.getElementById('toggle-view-btn');
+            const difficultyBtn = document.getElementById('difficulty-btn');
+            const backBtn = document.getElementById('back-btn');
+            const resetBtn = document.getElementById('reset-btn');
+            const gameArea = document.getElementById('game-area');
+            const gameQuestion = document.getElementById('game-question');
+            const optionsContainer = document.getElementById('options-container');
+            const submitButton = document.getElementById('submit-button');
+            const gameFeedback = document.getElementById('game-feedback');
+            const statusBar = document.getElementById('status-bar');
+
+            let showActivity = false;
+            let difficultyIdx = 0;
+            const difficulties = ['easy', 'medium', 'hard'];
+            
+            let state = {};
+
+            const gameData = {
+                easy: [
+                    { q: "Which of these is NOT a method of heat transfer?", o: [{ t: "Conduction", i: "⇄" }, { t: "Convection", i: "↻" }, { t: "Radiation", i: "☀️" }, { t: "Friction", i: "⚙️", odd: true }], ex: "Friction generates heat but is not a method of transfer." },
+                    { q: "Which material is a POOR conductor (an insulator)?", o: [{ t: "Copper", i: "🔩" }, { t: "Wood", i: "🪵", odd: true }, { t: "Aluminum", i: "🥫" }, { t: "Silver", i: "💍" }], ex: "Wood is an insulator; metals are good conductors." },
+                    { q: "Which is NOT a natural source of heat?", o: [{ t: "Sun", i: "☀️" }, { t: "Fire", i: "🔥" }, { t: "Geothermal", i: "🌋" }, { t: "Heater", i: "♨️", odd: true }], ex: "A heater is an artificial (man-made) source of heat." },
+                ],
+                medium: [
+                    { q: "Which of these processes does NOT involve convection?", o: [{ t: "Sea Breeze", i: "🌊" }, { t: "Boiling Water", i: "💧" }, { t: "Heating a Metal Rod", i: "🔩", odd: true }, { t: "Room Heater", i: "♨️" }], ex: "Heating a metal rod is an example of conduction." },
+                    { q: "Which is NOT a standard unit of heat energy?", o: [{ t: "Joule", i: "J" }, { t: "Calorie", i: "cal" }, { t: "BTU", i: "BTU" }, { t: "Watt", i: "W", odd: true }], ex: "A Watt is a unit of power, not energy." },
+                    { q: "Which of these does NOT work primarily on the principle of thermal expansion?", o: [{ t: "Thermometer", i: "🌡️" }, { t: "Bridge Joints", i: "🌉" }, { t: "Bimetallic Strip", i: "🔩" }, { t: "Pressure Cooker", i: "🍲", odd: true }], ex: "A pressure cooker works by increasing pressure to raise the boiling point of water." },
+                ],
+                hard: [
+                    { q: "Which of these concepts is NOT a law of thermodynamics?", o: [{ t: "Zeroth Law", i: "0️⃣" }, { t: "First Law", i: "1️⃣" }, { t: "Second Law", i: "2️⃣" }, { t: "Law of Gravity", i: "🍎", odd: true }], ex: "The Law of Gravity is part of classical mechanics, not thermodynamics." },
+                    { q: "Which phenomenon is primarily caused by heat radiation?", o: [{ t: "Feeling warm from a fire without touching it", i: "🔥" }, { t: "A spoon getting hot in a cup of tea", i: "🥄" }, { t: "Wind currents", i: "💨" }, { t: "Ice melting in your hand", i: "🧊", odd: true }], ex: "Ice melting in your hand is primarily due to conduction." },
+                    { q: "Which of these is NOT a primary greenhouse gas?", o: [{ t: "Carbon Dioxide", i: "CO₂" }, { t: "Methane", i: "CH₄" }, { t: "Water Vapor", i: "💧" }, { t: "Oxygen", i: "O₂", odd: true }], ex: "Oxygen does not significantly contribute to the greenhouse effect." },
+                ]
+            };
+            
+            function updateLayout() {
+                mainContent.classList.toggle('activity-visible', showActivity);
+                headerTitle.textContent = showActivity ? 'Activity' : 'Information';
+                toggleViewBtn.textContent = showActivity ? 'Information' : 'Activity';
+            }
+
+            function startGame() {
+                const difficulty = difficulties[difficultyIdx];
+                const problems = gameData[difficulty];
+                
+                state = {
+                    problems: [...problems].sort(() => 0.5 - Math.random()),
+                    currentQuestionIndex: 0,
+                    score: 0,
+                    correctAnswers: 0,
+                    gameOver: false,
+                    selectedOption: null
+                };
+                
+                loadQuestion();
+            }
+            
+            function loadQuestion() {
+                if (state.currentQuestionIndex >= state.problems.length) {
+                    showFinalResults();
+                    return;
+                }
+                
+                const questionData = state.problems[state.currentQuestionIndex];
+                state.selectedOption = null;
+                submitButton.disabled = true;
+
+                gameQuestion.textContent = questionData.q;
+                optionsContainer.innerHTML = '';
+
+                questionData.o.forEach((opt, index) => {
+                    const optionEl = document.createElement('div');
+                    optionEl.className = 'option';
+                    optionEl.innerHTML = `<div class="option-icon">${opt.i}</div><div class="option-text">${opt.t}</div>`;
+                    optionEl.onclick = () => selectOption(optionEl, index);
+                    optionsContainer.appendChild(optionEl);
+                });
+
+                gameFeedback.style.display = 'none';
+                updateStatus();
+            }
+
+            function selectOption(el, index) {
+                if (state.gameOver) return;
+                document.querySelectorAll('.option').forEach(opt => opt.classList.remove('selected'));
+                el.classList.add('selected');
+                state.selectedOption = index;
+                submitButton.disabled = false;
+            }
+
+            function checkAnswer() {
+                if (state.selectedOption === null) return;
+                state.gameOver = true; // Temporarily disable clicks
+                submitButton.disabled = true;
+
+                const questionData = state.problems[state.currentQuestionIndex];
+                const selectedData = questionData.o[state.selectedOption];
+                const isCorrect = !!selectedData.odd;
+
+                if (isCorrect) {
+                    state.score += (difficultyIdx + 1) * 10;
+                    state.correctAnswers++;
+                }
+
+                document.querySelectorAll('.options-container .option').forEach((el, index) => {
+                    const optData = questionData.o[index];
+                    if (optData.odd) el.classList.add('correct');
+                    if (index === state.selectedOption && !isCorrect) el.classList.add('incorrect');
+                });
+                
+                gameFeedback.textContent = isCorrect ? "Correct! " + questionData.ex : "Incorrect. " + questionData.ex;
+                gameFeedback.className = isCorrect ? "game-feedback feedback-correct" : "game-feedback feedback-incorrect";
+                gameFeedback.style.display = "block";
+
+                setTimeout(() => {
+                    state.currentQuestionIndex++;
+                    state.gameOver = false;
+                    loadQuestion();
+                }, 3000);
+            }
+
+            function showFinalResults() {
+                gameArea.innerHTML = `<div class="game-card text-center">
+                    <h2 class="text-2xl font-bold">Game Over!</h2>
+                    <p class="text-xl my-4">Final Score: ${state.score}</p>
+                    <p>${state.correctAnswers} out of ${state.problems.length} correct.</p>
+                </div>`;
+            }
+
+            function updateStatus() {
+                const totalQuestions = state.problems.length;
+                statusBar.textContent = `Score: ${state.score} | Question: ${state.currentQuestionIndex + 1}/${totalQuestions}`;
+            }
+
+            // --- Event Listeners ---
+            toggleViewBtn.addEventListener('click', () => {
+                showActivity = !showActivity;
+                updateLayout();
+                if (showActivity) {
+                    startGame();
+                }
+            });
+
+            difficultyBtn.addEventListener('click', () => {
+                difficultyIdx = (difficultyIdx + 1) % difficulties.length;
+                const newDifficulty = difficulties[difficultyIdx];
+                difficultyBtn.textContent = `Mode: ${newDifficulty.charAt(0).toUpperCase() + newDifficulty.slice(1)}`;
+                if (showActivity) {
+                    startGame();
+                }
+            });
+            
+            resetBtn.addEventListener('click', () => {
+                if (showActivity) {
+                    startGame();
+                }
+            });
+            
+            backBtn.addEventListener('click', () => {
+                window.history.back();
+            });
+
+            submitButton.addEventListener('click', checkAnswer);
+            
+            updateLayout();
+        });
+    </script>
+</body>
+</html>

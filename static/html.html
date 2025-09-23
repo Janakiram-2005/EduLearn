@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTML Galaxy Quest</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --header-bg: #ffffff; --page-bg: #f0f2f5; --panel-bg: #ffffff;
+            --border-color: #e5e7eb; --text-dark: #1f2937; --accent-blue: #3b82f6;
+            --secondary-gray: #6c757d; --primary-blue-btn: #007bff; --accent-red: #ef4444;
+        }
+        body { font-family: 'Poppins', sans-serif; background-color: var(--page-bg); color: var(--text-dark); margin: 0; height: 100vh; overflow: hidden; }
+        .page-container { display: flex; flex-direction: column; height: 100vh; }
+        .header {
+            position: fixed; top: 0; left: 0; width: 100%; height: 60px;
+            background-color: var(--header-bg); display: flex; align-items: center; justify-content: space-between;
+            padding: 0 24px; border-bottom: 1px solid var(--border-color);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05); z-index: 1000;
+        }
+        .header-section { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .header-section.center { text-align: center; font-size: 1.2em; font-weight: bold; }
+        .header-section.right { display: flex; justify-content: flex-end; }
+        .button {
+            padding: 8px 16px; margin-left: 10px; cursor: pointer;
+            border: none; border-radius: 6px; font-weight: 600; color: white;
+            white-space: nowrap; transition: transform 0.1s;
+        }
+        .button:active:not(:disabled) { transform: scale(0.95); }
+        .main-content { margin-top: 60px; padding: 24px; display: flex; gap: 24px; flex-grow: 1; overflow: hidden; justify-content: center; }
+        .panel {
+            background-color: var(--panel-bg); border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: 1px solid var(--border-color);
+            overflow-y: auto; padding: 32px 48px; height: calc(100vh - 108px);
+            transition: width 400ms ease-in-out;
+        }
+        #info-panel { flex-shrink: 0; }
+        #activity-panel { display: none; flex-grow: 1; padding: 0; flex-direction: column; background-color: #111827; color: white; }
+        .main-content.activity-visible { justify-content: flex-start; }
+        .main-content.activity-visible #info-panel { width: 340px; min-width: 340px; padding: 24px 32px; }
+        .main-content.activity-visible #activity-panel { display: flex; }
+        
+        .activity-area { flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; }
+        .bottom-control-bar { height: 60px; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; background-color: #1f293b; border-top: 1px solid #374151; flex-shrink: 0; border-radius: 0 0 12px 12px;}
+        .status-bar { font-weight: bold; color: white; font-size: 1.1rem; display: flex; gap: 1rem; }
+        .reset-button { padding: 8px 16px; cursor: pointer; background-color: var(--accent-red); color: white; border: none; border-radius: 6px; font-weight: 600; }
+        .info-panel-content { background-color: #ffffff; padding: 1.5rem; border-radius: 0.75rem; border: 1px solid #e5e7eb; }
+        
+        /* Game Styles */
+        .game-title { color: #facc15; }
+        .option-btn { background-color: #374151; color: #d1d5db; transition: all 0.2s; }
+        .option-btn:hover:not(:disabled) { background-color: #4b5563; color: white; transform: scale(1.05); }
+        .option-btn.correct { background-color: #22c55e; color: white; }
+        .option-btn.incorrect { background-color: #ef4444; color: white; }
+        .drag-item { background-color: #3b82f6; cursor: grab; }
+        .drop-zone { border: 4px dashed #3b82f6; background-color: #1f293b; }
+        .drop-zone.filled { background-color: #374151; border-style: solid; }
+        .drop-zone .drop-zone { min-height: 50px; margin-left: 2rem; } /* Nested drop zones */
+        #code-input { background-color: #0d1117; color: #56d364; font-family: monospace; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    </style>
+</head>
+<body class="page-container">
+    <header class="header">
+        <div class="header-section font-bold text-lg" style="color: var(--accent-blue);">HTML Galaxy Quest</div>
+        <div id="header-title" class="header-section center">Information</div>
+        <div class="header-section right">
+            <button id="back-btn" class="button" style="background-color: var(--secondary-gray);">Back</button>
+            <button id="activity-info-btn" class="button" style="background-color: var(--primary-blue-btn);">Activity</button>
+            <button id="difficulty-btn" class="button" style="background-color: var(--accent-blue);">Difficulty: Easy</button>
+        </div>
+    </header>
+
+    <main id="main-content" class="main-content">
+        <section id="info-panel" class="panel">
+            <h1 class="text-3xl font-bold mb-4" style="color: var(--accent-blue);">🚀 What is HTML?</h1>
+            <p class="mt-2 text-gray-600"><b>HTML</b> (HyperText Markup Language) is the skeleton of a website. It uses special codes called <b>tags</b> to structure content.</p>
+            <div class="info-panel-content mt-4">
+                <h3 class="text-xl font-semibold text-gray-900">Key Tags</h3>
+                <ul class="list-disc list-inside mt-2 text-gray-600">
+                    <li><code>&lt;h1&gt;</code> for headings, <code>&lt;p&gt;</code> for paragraphs.</li>
+                    <li><code>&lt;img&gt;</code> to insert images, using the <code>src</code> attribute.</li>
+                    <li><code>&lt;a&gt;</code> to create links, using the <code>href</code> attribute.</li>
+                </ul>
+            </div>
+             <div class="info-panel-content mt-4">
+                <h3 class="text-xl font-semibold text-gray-900">Challenge Modes</h3>
+                <ul class="list-disc list-inside mt-2 text-gray-600">
+                   <li><b>Easy (Tag Triage):</b> Identify the correct HTML tag for the job.</li>
+                   <li><b>Medium (Structure Scramble):</b> Drag and drop tags to build a valid webpage structure.</li>
+                   <li><b>Hard (Code Cadet):</b> Write HTML code to complete the mission.</li>
+                </ul>
+            </div>
+        </section>
+
+        <section id="activity-panel" class="panel">
+            <div id="activity-area" class="activity-area">
+                </div>
+            <footer class="bottom-control-bar">
+                <div id="status-bar" class="status-bar"></div>
+                <button id="reset-btn" class="reset-button">Reset Mission</button>
+            </footer>
+        </section>
+    </main>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const gameData = {
+                easy: [
+                    { prompt: "A tag for a main heading.", options: ["<p>", "<h1>", "<img>", "<a>"], answer: "<h1>" },
+                    { prompt: "A tag for a paragraph of text.", options: ["<span>", "<div>", "<p>", "<h1>"], answer: "<p>" },
+                    { prompt: "A tag to create a link.", options: ["<link>", "<img>", "<a>", "<p>"], answer: "<a>" },
+                    { prompt: "A tag to display an image.", options: ["<image>", "<pic>", "<img>", "<src>"], answer: "<img>" },
+                    { prompt: "The main container for all visible content.", options: ["<head>", "<html>", "<main>", "<body>"], answer: "<body>" }
+                ],
+                medium: [
+                    {
+                        title: "Build a Basic Webpage",
+                        instruction: "Drag and drop the tags to form a correct HTML skeleton.",
+                        parts: ["<html>", "<head>", "<body>", "<title>", "<h1>"],
+                        solution: { "<html>": { "<head>": { "<title>": {} }, "<body>": { "<h1>": {} } } }
+                    }
+                ],
+                hard: [
+                    { prompt: "Create a heading that says 'Hello World'.", solution: { tag: 'h1', text: 'hello world' } },
+                    { prompt: "Create an image with the source 'planet.png' and alt text 'A planet'.", solution: { tag: 'img', src: 'planet.png', alt: 'a planet' } },
+                    { prompt: "Create a link to '#' with the text 'Explore'.", solution: { tag: 'a', href: '#', text: 'explore' } }
+                ]
+            };
+            const difficulties = ['easy', 'medium', 'hard'];
+            let difficultyIdx = 0, score = 0, lives = 3, showActivity = false, currentQuestionIndex = 0, isAnswered = false;
+
+            const mainContent = document.getElementById('main-content'), infoPanel = document.getElementById('info-panel'), activityPanel = document.getElementById('activity-panel'), activityInfoBtn = document.getElementById('activity-info-btn'), backBtn = document.getElementById('back-btn'), headerTitle = document.getElementById('header-title'), difficultyBtn = document.getElementById('difficulty-btn'), activityArea = document.getElementById('activity-area'), statusBar = document.getElementById('status-bar'), resetBtn = document.getElementById('reset-btn');
+
+            function updateLayout() {
+                mainContent.classList.toggle('activity-visible', showActivity);
+                infoPanel.style.width = showActivity ? '340px' : `${Math.min(800, window.innerWidth - 48)}px`;
+                headerTitle.textContent = showActivity ? 'HTML Galaxy Quest' : 'Information';
+                activityInfoBtn.textContent = showActivity ? 'Information' : 'Activity';
+                updateScoreDisplay();
+            }
+
+            function startGame() {
+                score = 0; lives = 3; currentQuestionIndex = 0;
+                gameData.easy.sort(() => .5 - Math.random());
+                gameData.hard.sort(() => .5 - Math.random());
+                loadGame();
+            }
+
+            function loadGame() {
+                const difficulty = difficulties[difficultyIdx];
+                switch (difficulty) {
+                    case 'easy': renderTagTriage(gameData.easy[currentQuestionIndex]); break;
+                    case 'medium': renderStructureScramble(gameData.medium[0]); break;
+                    case 'hard': renderCodeCadet(gameData.hard[currentQuestionIndex]); break;
+                }
+                updateScoreDisplay();
+            }
+
+            function renderTagTriage(question) {
+                if (!question) { showCompletionScreen(); return; }
+                isAnswered = false;
+                activityArea.innerHTML = `
+                    <div class="text-center w-full max-w-xl">
+                        <p class="text-gray-400 mb-4">Easy: Tag Triage</p>
+                        <h2 class="text-2xl font-bold mb-6">${question.prompt}</h2>
+                        <div class="grid grid-cols-2 gap-4">
+                            ${question.options.map(opt => `<button class="option-btn p-6 text-2xl" data-answer="${opt}">${opt.replace(/</g, '&lt;')}</button>`).join('')}
+                        </div>
+                    </div>`;
+                activityArea.querySelectorAll('.option-btn').forEach(btn => btn.onclick = handleTagTriageAnswer);
+            }
+            
+            function renderStructureScramble(level) {
+                isAnswered = false;
+                activityArea.innerHTML = `
+                    <div class="text-center w-full max-w-2xl">
+                        <p class="text-gray-400 mb-2">Medium: Structure Scramble</p>
+                        <h2 class="text-2xl font-bold mb-4">${level.title}</h2>
+                        <p class="text-gray-300 mb-6">${level.instruction}</p>
+                        <div class="flex gap-4">
+                            <div id="drag-items" class="flex flex-col gap-2 p-4 bg-gray-800 rounded-lg">
+                                ${level.parts.map(p => `<div class="drag-item p-2 rounded text-white" draggable="true" data-tag="${p}">${p.replace(/</g, '&lt;')}</div>`).join('')}
+                            </div>
+                            <div id="drop-zone" class="drop-zone flex-grow p-4 rounded-lg"></div>
+                        </div>
+                        <button id="check-btn" class="button mt-6" style="background-color: #22c55e;">Check Structure</button>
+                    </div>`;
+                setupDragDrop();
+                activityArea.querySelector('#check-btn').onclick = checkStructureAnswer;
+            }
+
+            function renderCodeCadet(question) {
+                if (!question) { showCompletionScreen(); return; }
+                isAnswered = false;
+                activityArea.innerHTML = `
+                    <div class="text-center w-full max-w-xl">
+                        <p class="text-gray-400 mb-2">Hard: Code Cadet</p>
+                        <h2 class="text-2xl font-bold mb-6">${question.prompt}</h2>
+                        <textarea id="code-input" class="w-full h-32 p-4 rounded-lg resize-y" placeholder="<tag attribute='value'>content</tag>"></textarea>
+                        <button id="check-btn" class="button mt-6" style="background-color: #22c55e;">Check Code</button>
+                    </div>`;
+                activityArea.querySelector('#check-btn').onclick = checkCodeAnswer;
+            }
+
+            function handleCorrect() {
+                score += 10; updateScoreDisplay();
+                currentQuestionIndex++;
+                setTimeout(loadGame, 1500);
+            }
+
+            function handleIncorrect() {
+                lives--; updateScoreDisplay();
+                if (lives <= 0) { showGameOver(); }
+                else { setTimeout(loadGame, 1500); }
+            }
+            
+            function handleTagTriageAnswer(e) {
+                if(isAnswered) return; isAnswered = true;
+                const isCorrect = e.target.dataset.answer === gameData.easy[currentQuestionIndex].answer;
+                e.target.classList.add(isCorrect ? 'correct' : 'incorrect');
+                if (isCorrect) handleCorrect(); else handleIncorrect();
+            }
+
+            function setupDragDrop() {
+                const dropZone = activityArea.querySelector('#drop-zone');
+                dropZone.innerHTML = '<div class="drop-zone-placeholder text-gray-500">Drop `&lt;html&gt;` here</div>';
+                
+                activityArea.querySelectorAll('.drag-item').forEach(item => {
+                    item.addEventListener('dragstart', e => e.dataTransfer.setData('text/plain', e.target.dataset.tag));
+                });
+
+                dropZone.addEventListener('dragover', e => e.preventDefault());
+                dropZone.addEventListener('drop', e => {
+                    e.preventDefault();
+                    const tag = e.dataTransfer.getData('text/plain');
+                    // This is a simplified drop logic. A full implementation would build a nested structure.
+                    const item = document.createElement('div');
+                    item.className = 'drag-item p-2 rounded text-white';
+                    item.textContent = tag;
+                    if(dropZone.querySelector('.drop-zone-placeholder')) dropZone.innerHTML = '';
+                    dropZone.appendChild(item);
+                });
+            }
+
+            function checkStructureAnswer() {
+                 // Simplified check for demonstration
+                 const droppedTags = Array.from(activityArea.querySelectorAll('#drop-zone .drag-item')).map(el => el.textContent);
+                 if (droppedTags.includes('<html>') && droppedTags.includes('<body>') && droppedTags.includes('<head>')) {
+                     alert('Structure looks good!');
+                     score += 30;
+                     showCompletionScreen();
+                 } else {
+                     alert('Incorrect structure!');
+                     lives--;
+                     if (lives <= 0) showGameOver();
+                 }
+                 updateScoreDisplay();
+            }
+
+            function checkCodeAnswer() {
+                const code = activityArea.querySelector('#code-input').value.toLowerCase().trim();
+                const question = gameData.hard[currentQuestionIndex];
+                let isCorrect = false;
+                const doc = new DOMParser().parseFromString(code, 'text/html');
+                if (question.solution.tag === 'h1') {
+                    const h1 = doc.querySelector('h1');
+                    isCorrect = h1 && h1.textContent.trim() === question.solution.text;
+                } else if (question.solution.tag === 'img') {
+                    const img = doc.querySelector('img');
+                    isCorrect = img && img.src.includes(question.solution.src) && img.alt.trim() === question.solution.alt;
+                } else if (question.solution.tag === 'a') {
+                    const a = doc.querySelector('a');
+                    isCorrect = a && a.href.includes(question.solution.href) && a.textContent.toLowerCase().trim() === question.solution.text;
+                }
+                if (isCorrect) handleCorrect(); else handleIncorrect();
+            }
+
+            function showCompletionScreen() {
+                activityArea.innerHTML = `<div class="text-center"><h2 class="text-4xl font-bold game-title">Mission Complete!</h2><p class="text-xl text-gray-300 mt-4">Final Score: ${score}</p></div>`;
+            }
+
+            function showGameOver() {
+                 activityArea.innerHTML = `<div class="text-center"><h2 class="text-4xl font-bold text-red-500">Mission Failed!</h2><p class="text-xl text-gray-300 mt-4">You ran out of lives. Score: ${score}</p></div>`;
+            }
+
+            function updateScoreDisplay() {
+                statusBar.innerHTML = `<span>Score: ${score}</span> <span>Lives: ${'❤️'.repeat(lives)}</span>`;
+            }
+
+            activityInfoBtn.addEventListener('click', () => { showActivity = !showActivity; updateLayout(); });
+            backBtn.addEventListener('click', () => { if (showActivity) { showActivity = false; updateLayout(); } else { window.history.back(); } });
+            difficultyBtn.addEventListener('click', () => {
+                difficultyIdx = (difficultyIdx + 1) % difficulties.length;
+                difficultyBtn.textContent = `Difficulty: ${difficulties[difficultyIdx].charAt(0).toUpperCase() + difficulties[difficultyIdx].slice(1)}`;
+                if (showActivity) startGame();
+            });
+            resetBtn.addEventListener('click', startGame);
+            
+            updateLayout();
+        });
+    </script>
+</body>
+</html>

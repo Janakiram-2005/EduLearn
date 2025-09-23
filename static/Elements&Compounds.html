@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elements & Compounds Game Hub</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* --- CORE TEMPLATE & GLOBAL STYLES (Light Theme) --- */
+        :root {
+            --header-bg: #ffffff;
+            --page-bg: #f4f7f9;
+            --panel-bg: #ffffff;
+            --border-color: #e0e0e0;
+            --text-dark: #1e293b;
+            --text-light: #475569;
+            --accent-cyan: #0891b2;
+            --accent-green: #22c55e;
+            --accent-red: #ef4444;
+            --accent-yellow: #f59e0b;
+            --primary-blue: #007bff;
+            --secondary-gray: #6c757d;
+        }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--page-bg);
+            color: var(--text-dark);
+            margin: 0;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .page-container { display: flex; flex-direction: column; height: 100vh; }
+        .header {
+            position: fixed; top: 0; left: 0; width: 100%; height: 60px;
+            background-color: var(--header-bg);
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 24px;
+            border-bottom: 1px solid var(--border-color);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            z-index: 1000;
+            box-sizing: border-box;
+        }
+        .header-section { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .header-section.center { text-align: center; font-size: 1.2em; font-weight: bold; }
+        .header-section.right { display: flex; justify-content: flex-end; }
+        .button {
+            padding: 8px 16px; margin-left: 10px; cursor: pointer;
+            border: none; border-radius: 6px; font-weight: 600; color: white;
+            transition: transform 0.1s;
+        }
+        .button:active { transform: scale(0.95); }
+        .main-content {
+            margin-top: 60px; padding: 24px; display: flex;
+            flex-grow: 1; overflow: hidden; box-sizing: border-box;
+            gap: 24px; justify-content: center;
+        }
+        .panel {
+            background-color: var(--panel-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            border: 1px solid var(--border-color);
+            box-sizing: border-box;
+            overflow-y: auto; padding: 24px 32px;
+            height: calc(100vh - 108px);
+        }
+        #info-panel { flex-shrink: 0; transition: width 400ms ease-in-out, margin 400ms ease-in-out; }
+        #activity-panel { display: none; flex-grow: 1; padding: 0; flex-direction: column; }
+        .main-content.activity-visible { justify-content: flex-start; }
+        .main-content.activity-visible #info-panel { width: 340px; min-width: 340px; }
+        .main-content.activity-visible #activity-panel { display: flex; }
+
+        /* --- ACTIVITY-SPECIFIC STYLES --- */
+        .activity-area { flex-grow: 1; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; padding: 1.5rem; }
+        .bottom-control-bar { height: 60px; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; background-color: var(--page-bg); border-top: 1px solid var(--border-color); flex-shrink: 0; }
+        .status-bar { font-weight: bold; color: var(--text-dark); }
+        .reset-button { padding: 8px 16px; cursor: pointer; background-color: var(--accent-red); color: white; border: none; border-radius: 6px; font-weight: 600; }
+        .game-header { display: flex; justify-content: space-between; align-items: flex-start; width: 100%; }
+        
+        /* Game 1: Quiz Battle */
+        .quiz-question { font-size: 1.5rem; font-weight: 600; margin-bottom: 25px; min-height: 70px; }
+        .quiz-options { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; width: 100%; max-width: 500px; }
+        .quiz-option { background-color: #e2e8f0; border: 2px solid #cbd5e1; padding: 20px; font-size: 1.5rem; font-weight: 700; border-radius: 12px; cursor: pointer; transition: transform 0.2s; }
+        .quiz-option:hover:not(:disabled) { transform: translateY(-5px); }
+
+        /* Game 2: Treasure Hunt */
+        .instructions { font-size: 1.2rem; margin-bottom: 20px; color: var(--accent-yellow); font-weight: 600; }
+        .treasure-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; perspective: 1000px; width:100%; max-width: 500px; }
+        .chest { aspect-ratio: 1 / 1; cursor: pointer; }
+        .chest-inner { position: relative; width: 100%; height: 100%; transition: transform 0.6s; transform-style: preserve-3d; }
+        .chest.flipped .chest-inner { transform: rotateY(180deg); }
+        .chest-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; display: flex; flex-direction:column; justify-content: center; align-items: center; border-radius: 12px; }
+        .chest-front { background: var(--accent-yellow); font-size: 3rem; color: #422006; }
+        .chest-back { background: var(--page-bg); font-size: 1rem; font-weight: 600; border: 1px solid var(--border-color); text-align: center; padding: 5px;}
+        .chest-back .icon { font-size: 2rem; }
+
+        /* Game 3: Build the Molecule */
+        .atom-pool { display: flex; justify-content: center; flex-wrap: wrap; gap: 15px; background: #e2e8f0; padding: 15px; border-radius: 12px; margin-top: 1.5rem; }
+        .atom { width: 50px; height: 50px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 1.5rem; font-weight: 700; cursor: grab; user-select: none; transition: transform 0.2s; }
+        .atom:active { cursor: grabbing; transform: scale(1.1); }
+        .atom[data-atom="H"] { background: #e0f2fe; color: #0c4a6e; } .atom[data-atom="O"] { background: #fee2e2; color: #991b1b; }
+        .atom[data-atom="Na"] { background: #fefce8; color: #854d0e; } .atom[data-atom="Cl"] { background: #dcfce7; color: #166534; }
+        .atom[data-atom="C"] { background: #d1d5db; color: #1f2937; }
+        .atom[data-atom="N"] { background: #e0e7ff; color: #3730a3; }
+        .reaction-zone { width: 100%; min-height: 120px; background: #f1f5f9; border: 3px dashed #cbd5e1; border-radius: 15px; display: flex; justify-content: center; align-items: center; padding: 20px; transition: border-color 0.3s; flex-wrap: wrap; gap: 10px; }
+        .reaction-zone.drag-over { border-color: var(--accent-cyan); }
+        
+        /* Feedback & Animations */
+        .correct { background-color: var(--accent-green) !important; border-color: var(--accent-green) !important; color: white; }
+        .incorrect { background-color: var(--accent-red) !important; border-color: var(--accent-red) !important; color: white; }
+        .shake { animation: shake 0.5s ease-in-out; }
+        .glow { animation: glow 1s ease-in-out; }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 20%, 60% { transform: translateX(-8px); } 40%, 80% { transform: translateX(8px); } }
+        @keyframes glow { 0%, 100% { box-shadow: 0 0 5px var(--accent-green); } 50% { box-shadow: 0 0 20px var(--accent-green); } }
+        
+        /* Modal */
+        .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); justify-content: center; align-items: center; }
+        .modal.active { display: flex; }
+        .modal-content { background: var(--panel-bg); padding: 40px 50px; border-radius: 20px; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.2); position: relative; }
+    </style>
+</head>
+<body class="page-container">
+    
+    <header class="header">
+        <div class="header-section">Class 6 - Chemistry</div>
+        <div id="header-title" class="header-section center">Information</div>
+        <div class="header-section right">
+            <button id="back-btn" class="button" style="background-color: var(--secondary-gray);">Back</button>
+            <button id="toggle-view-btn" class="button" style="background-color: var(--primary-blue);">Activity</button>
+            <button id="difficulty-btn" class="button" style="background-color: var(--accent-cyan);">Difficulty: Easy</button>
+        </div>
+    </header>
+
+    <main class="main-content" id="main-content">
+        <section id="info-panel" class="panel">
+            <h1 class="text-3xl font-bold mb-4" style="color: var(--accent-cyan);">Elements & Compounds</h1>
+            <div style="display:flex; flex-direction:column; gap:1.5rem;">
+                <div>
+                    <h2 class="text-xl font-semibold">What is an Element? ⚛️</h2>
+                    <p class="mt-2 text-gray-600">An <b>element</b> is a pure substance that cannot be broken down into simpler substances. Think of them as the basic building blocks of everything. Examples include Oxygen (O), Hydrogen (H), and Iron (Fe).</p>
+                </div>
+                <div>
+                    <h2 class="text-xl font-semibold">What is a Compound? 💧</h2>
+                    <p class="mt-2 text-gray-600">A <b>compound</b> is formed when two or more different elements are chemically joined together. For example, when two Hydrogen atoms (H) bond with one Oxygen atom (O), they form the compound Water (H₂O).</p>
+                </div>
+                 <div>
+                    <h2 class="text-xl font-semibold">Example Compound Structures</h2>
+                    <p class="mt-2 text-gray-600">Here is what some of the common compounds look like when we draw their chemical structures.</p>
+                    <div id="structure-images" style="margin-top: 1rem; text-align: center;">
+                        <img src="https://storage.googleapis.com/gemini-generative-ai-api-prod/v1/files/4252bc5a69774a3f4e24abf47b56f3f00e2bb33f6797b5e43c5b36481cf13038" alt="Chemical structures of Water, Carbon Dioxide, and Sodium Chloride" style="max-width: 100%; border-radius: 8px;">
+                    </div>
+                </div>
+                <div>
+                    <h2 class="text-xl font-semibold">How to Play</h2>
+                    <ul class="list-disc list-inside mt-2 text-gray-600">
+                        <li><b>Easy:</b> Quiz Battle - Decide if a substance is an element or a compound.</li>
+                        <li><b>Medium:</b> Treasure Hunt - Find all the hidden elements or compounds.</li>
+                        <li><b>Hard:</b> Build the Molecule - Drag atoms to build specific compounds.</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="activity-panel" class="panel">
+            <div class="activity-area" id="activity-area">
+                </div>
+            <footer class="bottom-control-bar">
+                <div id="status-bar" class="status-bar">Good luck!</div>
+                <button id="reset-btn" class="reset-button">Reset</button>
+            </footer>
+        </section>
+    </main>
+
+    <div class="modal" id="end-game-modal">
+        <div class="modal-content">
+            <h2 id="modal-title" class="text-2xl font-bold mb-2"></h2>
+            <p id="modal-score" class="text-lg mb-4"></p>
+            <button class="button" id="modal-close-btn" style="background-color: var(--primary-blue);">Play Again</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            const difficulties = ['Easy', 'Medium', 'Hard'];
+            let showActivity = false, difficultyIdx = 0;
+
+            const mainContent = document.getElementById('main-content');
+            const infoPanel = document.getElementById('info-panel');
+            const activityArea = document.getElementById('activity-area');
+            const headerTitle = document.getElementById('header-title');
+            const toggleViewBtn = document.getElementById('toggle-view-btn');
+            const difficultyBtn = document.getElementById('difficulty-btn');
+            const backBtn = document.getElementById('back-btn');
+            const resetBtn = document.getElementById('reset-btn');
+            const modal = document.getElementById('end-game-modal');
+            const modalCloseBtn = document.getElementById('modal-close-btn');
+
+            /**
+             * Shuffles an array in place using the Fisher-Yates algorithm.
+             * @param {Array} array The array to shuffle.
+             */
+            function shuffleArray(array) {
+                for (let i = array.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [array[i], array[j]] = [array[j], array[i]];
+                }
+            }
+
+            function updateLayout() {
+                if (showActivity) mainContent.classList.add('activity-visible');
+                else mainContent.classList.remove('activity-visible');
+                infoPanel.style.width = showActivity ? '340px' : `${Math.min(700, window.innerWidth - 48)}px`;
+                headerTitle.textContent = showActivity ? 'Activity' : 'Information';
+                toggleViewBtn.textContent = showActivity ? 'Information' : 'Activity';
+            }
+
+            function startGame() {
+                const difficulty = difficulties[difficultyIdx];
+                if (difficulty === 'Easy') initQuizGame();
+                else if (difficulty === 'Medium') initTreasureHuntGame();
+                else if (difficulty === 'Hard') initMoleculeGame();
+            }
+            
+            function showEndModal(title, scoreText) {
+                document.getElementById('modal-title').textContent = title;
+                document.getElementById('modal-score').textContent = scoreText;
+                modal.classList.add('active');
+            }
+            
+            let initQuizGame = () => {}, initTreasureHuntGame = () => {}, initMoleculeGame = () => {};
+
+            // --- Game 1: Quiz Battle (Easy) ---
+            (() => {
+                const quizPool = [
+                    { item: "O₂", type: "Element" }, { item: "CO₂", type: "Compound" }, 
+                    { item: "Na", type: "Element" }, { item: "H₂O", type: "Compound" }, 
+                    { item: "Fe", type: "Element" }, { item: "NaCl", type: "Compound" },
+                    { item: "He", type: "Element" }, { item: "CH₄", type: "Compound" },
+                    { item: "Au", type: "Element" }, { item: "C₆H₁₂O₆", type: "Compound" },
+                    { item: "N₂", type: "Element" }, { item: "NH₃", type: "Compound" },
+                    { item: "Ag", type: "Element" }, { item: "HCl", type: "Compound" },
+                    { item: "C", type: "Element" }, { item: "H₂SO₄", type: "Compound" }
+                ];
+                let currentQuestions, quizLevel, quizScore;
+                const QUESTIONS_PER_GAME = 10;
+
+                initQuizGame = () => {
+                    quizLevel = 0; quizScore = 0;
+                    shuffleArray(quizPool);
+                    currentQuestions = quizPool.slice(0, QUESTIONS_PER_GAME);
+                    loadQuizQuestion();
+                };
+
+                function loadQuizQuestion() {
+                    if (quizLevel >= currentQuestions.length) {
+                        const message = quizScore > 70 ? "Chemistry Wizard ⚡" : "Great Try! 🔬";
+                        showEndModal(message, `Your final score is ${quizScore}.`);
+                        return;
+                    }
+                    activityArea.innerHTML = `
+                        <div class="game-header w-full max-w-lg"><h2>Quiz Battle (${quizLevel + 1}/${QUESTIONS_PER_GAME})</h2><div class="stat-display">Score: <span>${quizScore}</span></div></div>
+                        <p class="quiz-question">Is ${currentQuestions[quizLevel].item} an Element or a Compound?</p>
+                        <div class="quiz-options"><button class="quiz-option" data-answer="Element">Element</button><button class="quiz-option" data-answer="Compound">Compound</button></div>`;
+                    activityArea.querySelectorAll('.quiz-option').forEach(btn => btn.addEventListener('click', () => handleQuizAnswer(btn.dataset.answer)));
+                }
+
+                function handleQuizAnswer(selectedAnswer) {
+                    const correctAnswer = currentQuestions[quizLevel].type;
+                    const buttons = activityArea.querySelectorAll('.quiz-option');
+                    buttons.forEach(btn => {
+                        btn.disabled = true;
+                        if (btn.dataset.answer === correctAnswer) btn.classList.add('correct');
+                    });
+                    if (selectedAnswer === correctAnswer) {
+                        quizScore += 10;
+                    } else if (selectedAnswer) {
+                        document.querySelector(`.quiz-option[data-answer="${selectedAnswer}"]`).classList.add('incorrect');
+                    }
+                    quizLevel++;
+                    setTimeout(loadQuizQuestion, 1500);
+                }
+            })();
+
+            // --- Game 2: Treasure Hunt (Medium) ---
+            (() => {
+                const treasurePool = [
+                    { n: "Iron (Fe)", t: "Element", i: "⚙️" }, { n: "Hydrogen (H₂)", t: "Element", i: "H" }, 
+                    { n: "Oxygen (O₂)", t: "Element", i: "O" }, { n: "Sodium (Na)", t: "Element", i: "Na" },
+                    { n: "Gold (Au)", t: "Element", i: "🥇" }, { n: "Carbon (C)", t: "Element", i: "C" },
+                    { n: "Nitrogen (N₂)", t: "Element", i: "N" }, { n: "Helium (He)", t: "Element", i: "🎈"},
+                    { n: "Water (H₂O)", t: "Compound", i: "💧" }, { n: "Salt (NaCl)", t: "Compound", i: "🧂" }, 
+                    { n: "Carbon Dioxide (CO₂)", t: "Compound", i: "💨" }, { n: "Sugar (C₆H₁₂O₆)", t: "Compound", i: "🍬" },
+                    { n: "Ammonia (NH₃)", t: "Compound", i: "⚗️"}, { n: "Vinegar (CH₃COOH)", t: "Compound", i: "🧪"},
+                    { n: "Methane (CH₄)", t: "Compound", i: "🔥"}, { n: "Sand (SiO₂)", t: "Compound", i: "⏳"}
+                ];
+                let treasureScore, targetType, openedChests;
+                const GRID_SIZE = 12;
+
+                initTreasureHuntGame = () => {
+                    treasureScore = 0; openedChests = 0;
+                    targetType = Math.random() > 0.5 ? "Element" : "Compound";
+                    activityArea.innerHTML = `
+                        <div class="game-header w-full max-w-xl"><h2>Periodic Treasure Hunt</h2><div class="stat-display">Score: <span id="treasure-score">${treasureScore}</span></div></div>
+                        <p class="instructions">Your mission: Find all the ${targetType}s!</p>
+                        <div class="treasure-grid" id="treasure-grid"></div>`;
+                    
+                    shuffleArray(treasurePool);
+                    const gameTreasures = treasurePool.slice(0, GRID_SIZE);
+                    shuffleArray(gameTreasures); 
+
+                    const grid = document.getElementById('treasure-grid');
+                    gameTreasures.forEach(treasure => {
+                        const chest = document.createElement('div');
+                        chest.className = 'chest';
+                        chest.dataset.type = treasure.t;
+                        chest.innerHTML = `<div class="chest-inner"><div class="chest-face chest-front">💎</div><div class="chest-face chest-back"><div class="icon">${treasure.i}</div>${treasure.n}</div></div>`;
+                        chest.addEventListener('click', handleChestClick, { once: true });
+                        grid.appendChild(chest);
+                    });
+                };
+
+                function handleChestClick(e) {
+                    const chest = e.currentTarget;
+                    chest.classList.add('flipped');
+                    openedChests++;
+                    if (chest.dataset.type === targetType) {
+                        treasureScore += 10;
+                    } else { 
+                        treasureScore -= 5; 
+                        chest.classList.add('shake'); 
+                    }
+                    document.getElementById('treasure-score').textContent = treasureScore;
+                    if (openedChests === GRID_SIZE) setTimeout(() => showEndModal("Treasure Hunt Complete!", `Your final score is ${treasureScore}.`), 1000);
+                }
+            })();
+
+            // --- Game 3: Build the Molecule (Hard) ---
+            (() => {
+                const moleculePool = [
+                    { n: "Water", f: "H₂O", a: ["H", "H", "O"] }, 
+                    { n: "Salt", f: "NaCl", a: ["Na", "Cl"] }, 
+                    { n: "Carbon Dioxide", f: "CO₂", a: ["C", "O", "O"] },
+                    { n: "Methane", f: "CH₄", a: ["C", "H", "H", "H", "H"] },
+                    { n: "Ammonia", f: "NH₃", a: ["N", "H", "H", "H"] }
+                ];
+                let currentChallenges, moleculeLevel, atomsInZone, moleculeScore;
+
+                initMoleculeGame = () => {
+                    moleculeLevel = 0; moleculeScore = 0;
+                    shuffleArray(moleculePool);
+                    currentChallenges = [...moleculePool];
+                    loadMoleculeChallenge();
+                };
+
+                function loadMoleculeChallenge() {
+                    if (moleculeLevel >= currentChallenges.length) {
+                         showEndModal("Mission Accomplished!", `Your final score is ${moleculeScore}.`);
+                         return;
+                    }
+
+                    atomsInZone = [];
+                    const target = currentChallenges[moleculeLevel];
+                    activityArea.innerHTML = `
+                        <div class="game-header w-full max-w-lg"><h2>Build the Molecule (${moleculeLevel + 1}/${currentChallenges.length})</h2><div class="stat-display">Score: <span>${moleculeScore}</span></div></div>
+                        <h3 class="text-2xl font-bold" style="text-align:center;">Build: ${target.n} (${target.f})</h3>
+                        <div class="reaction-zone" id="reaction-zone">Drag atoms here to build the molecule!</div>
+                        <div class="atom-pool" id="atom-pool"></div>`;
+                    renderAtoms();
+                    const reactionZone = document.getElementById('reaction-zone');
+                    reactionZone.addEventListener('dragover', e => { e.preventDefault(); reactionZone.classList.add('drag-over'); });
+                    reactionZone.addEventListener('dragleave', () => reactionZone.classList.remove('drag-over'));
+                    reactionZone.addEventListener('drop', handleDrop);
+                }
+                
+                function renderAtoms() {
+                    const atomPool = document.getElementById('atom-pool');
+                    const atomsToRender = ["H", "O", "Na", "Cl", "C", "N", "H", "O", "C", "H", "H"];
+                    shuffleArray(atomsToRender);
+                    atomsToRender.forEach(atomType => {
+                        const atomDiv = document.createElement('div');
+                        atomDiv.className = 'atom';
+                        atomDiv.textContent = atomType;
+                        atomDiv.dataset.atom = atomType;
+                        atomDiv.draggable = true;
+                        atomDiv.addEventListener('dragstart', e => e.dataTransfer.setData('text/atom', atomType));
+                        atomPool.appendChild(atomDiv);
+                    });
+                }
+                
+                function handleDrop(e) {
+                    const reactionZone = e.currentTarget;
+                    if (atomsInZone.length === 0) {
+                        reactionZone.textContent = '';
+                    }
+                    reactionZone.classList.remove('drag-over');
+                    const atomType = e.dataTransfer.getData('text/atom');
+                    atomsInZone.push(atomType);
+                    atomsInZone.sort();
+                    
+                    const atomDiv = document.createElement('div');
+                    atomDiv.className = 'atom';
+                    atomDiv.textContent = atomType;
+                    atomDiv.dataset.atom = atomType;
+                    reactionZone.appendChild(atomDiv);
+
+                    const targetAtoms = [...currentChallenges[moleculeLevel].a].sort();
+                    if (atomsInZone.length === targetAtoms.length) {
+                        if (JSON.stringify(atomsInZone) === JSON.stringify(targetAtoms)) {
+                            moleculeScore += 10;
+                            reactionZone.classList.add('glow');
+                            setTimeout(() => {
+                                moleculeLevel++;
+                                loadMoleculeChallenge();
+                            }, 1500);
+                        } else {
+                            reactionZone.classList.add('shake');
+                            setTimeout(() => {
+                                atomsInZone = [];
+                                reactionZone.innerHTML = 'Incorrect! Try again.';
+                                reactionZone.classList.remove('shake');
+                            }, 500);
+                        }
+                    }
+                }
+            })();
+
+            // --- Main Event Listeners ---
+            backBtn.addEventListener('click', () => { 
+                window.history.back(); 
+            });
+            toggleViewBtn.addEventListener('click', () => {
+                showActivity = !showActivity;
+                if (showActivity) startGame();
+                updateLayout();
+            });
+            difficultyBtn.addEventListener('click', () => {
+                difficultyIdx = (difficultyIdx + 1) % difficulties.length;
+                const newDifficulty = difficulties[difficultyIdx];
+                difficultyBtn.textContent = `Difficulty: ${newDifficulty}`;
+                if (showActivity) startGame();
+            });
+            resetBtn.addEventListener('click', startGame);
+            modalCloseBtn.addEventListener('click', () => {
+                modal.classList.remove('active');
+                startGame();
+            });
+            
+            updateLayout();
+        });
+    </script>
+</body>
+</html>

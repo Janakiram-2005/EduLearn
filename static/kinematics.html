@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kinematics Adventure</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --header-bg: #ffffff; --page-bg: #f4f7f9; --panel-bg: #ffffff;
+            --border-color: #e0e0e0; --text-dark: #1e293b; --text-light: #475569;
+            --accent-purple: #8b5cf6; --accent-green: #22c55e; --accent-red: #ef4444;
+            --primary-blue: #007bff; --secondary-gray: #6c757d;
+        }
+        body { font-family: 'Poppins', sans-serif; background-color: var(--page-bg); color: var(--text-dark); margin: 0; height: 100vh; overflow: hidden; }
+        .page-container { display: flex; flex-direction: column; height: 100vh; }
+        .header {
+            position: fixed; top: 0; left: 0; width: 100%; height: 60px;
+            background-color: var(--header-bg); display: flex; align-items: center; justify-content: space-between;
+            padding: 0 24px; border-bottom: 1px solid var(--border-color); box-shadow: 0 2px 4px rgba(0,0,0,0.05); z-index: 1000; box-sizing: border-box;
+        }
+        .header-section { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .header-section.center { text-align: center; font-size: 1.2em; font-weight: bold; }
+        .header-section.right { display: flex; justify-content: flex-end; }
+        .button { padding: 8px 16px; margin-left: 10px; cursor: pointer; border: none; border-radius: 6px; font-weight: 600; color: white; transition: transform 0.1s; }
+        .button:disabled { opacity: 0.6; cursor: not-allowed; }
+        .button:active:not(:disabled) { transform: scale(0.95); }
+        .main-content { margin-top: 60px; padding: 24px; display: flex; flex-grow: 1; overflow: hidden; box-sizing: border-box; gap: 24px; justify-content: center; }
+        .panel { background-color: var(--panel-bg); border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: 1px solid var(--border-color); box-sizing: border-box; overflow-y: auto; padding: 24px 32px; height: calc(100vh - 108px); }
+        #info-panel { flex-shrink: 0; transition: width 400ms ease-in-out, margin 400ms ease-in-out; }
+        #activity-panel { display: none; flex-grow: 1; padding: 0; flex-direction: column; }
+        .main-content.activity-visible { justify-content: flex-start; }
+        .main-content.activity-visible #info-panel { width: 340px; min-width: 340px; }
+        .main-content.activity-visible #activity-panel { display: flex; }
+        .activity-area { flex-grow: 1; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 1rem; padding: 24px; overflow-y: auto; }
+        .bottom-control-bar { height: 60px; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; background-color: var(--page-bg); border-top: 1px solid var(--border-color); flex-shrink: 0; }
+        .status-bar { font-weight: bold; color: var(--text-dark); }
+        .reset-button { padding: 8px 16px; cursor: pointer; background-color: var(--accent-red); color: white; border: none; border-radius: 6px; font-weight: 600; }
+        .game-controls { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; justify-content: center; padding: 1rem; background-color: #eef2ff; border-radius: 8px; }
+        .game-controls label { font-weight: 500; display: flex; align-items: center; gap: 0.5rem;}
+        .game-controls input, .game-controls button { padding: 8px 12px; border-radius: 6px; border: 1px solid #c7d2fe; }
+        .game-controls button { background-color: var(--primary-blue); color: white; font-weight: 600; }
+        .game-controls .value-display { font-weight: 600; color: var(--primary-blue); min-width: 50px; text-align: left; }
+        
+        /* Velocity Racer Styles */
+        .track-container { width: 100%; height: 100px; background-color: #d1d5db; border-radius: 8px; margin-top: 2rem; position: relative; overflow: hidden; border-bottom: 5px solid #9ca3af; }
+        .car, .flag { position: absolute; font-size: 3rem; bottom: 5px; transition: left 2s ease-in-out; }
+        .flag { bottom: 25px; }
+
+        /* Projectile Shooter Styles */
+        #game-canvas { background-color: #f0f9ff; border-radius: 12px; border: 2px solid #a5b4fc; }
+        
+        /* Graph Racer Styles */
+        .graph-options { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; width: 100%; margin-top: 1rem; }
+        .graph-option { border: 2px solid var(--border-color); border-radius: 8px; padding: 0.5rem; cursor: pointer; transition: all 0.2s; }
+        .graph-option:hover { border-color: var(--accent-purple); box-shadow: 0 0 10px rgba(139, 92, 246, 0.3); }
+        .graph-option.correct { border-color: var(--accent-green); }
+        .graph-option.incorrect { border-color: var(--accent-red); }
+
+        .badges-container { margin-top: auto; padding-top: 1rem; text-align: center; }
+        .badge { display: inline-block; padding: 4px 10px; background-color: #e5e7eb; color: #6b7280; border-radius: 12px; font-size: 0.9rem; font-weight: 500; margin: 0 4px; }
+        .badge.unlocked { background-color: #fef08a; color: #854d0e; }
+    </style>
+</head>
+<body class="page-container">
+    
+    <header class="header">
+        <div class="header-section">Physics - Kinematics</div>
+        <div id="header-title" class="header-section center">Information</div>
+        <div class="header-section right">
+            <button id="back-btn" class="button" style="background-color: var(--secondary-gray);">Back</button>
+            <button id="toggle-view-btn" class="button" style="background-color: var(--primary-blue);">Activity</button>
+            <button id="difficulty-btn" class="button" style="background-color: var(--accent-purple);">Mode: Easy</button>
+        </div>
+    </header>
+
+    <main class="main-content" id="main-content">
+        <section id="info-panel" class="panel">
+            <h1 class="text-3xl font-bold mb-4" style="color: var(--accent-purple);">Introduction to Kinematics</h1>
+            <div style="display:flex; flex-direction:column; gap:1.5rem;">
+                <div>
+                    <h2 class="text-xl font-semibold">1D Motion</h2>
+                    <p class="mt-2 text-gray-600">Kinematics is the study of motion. In one-dimensional (1D) motion, we look at objects moving in a straight line. The key equation is: <b>s = ut + ½at²</b>, where 's' is displacement, 'u' is initial velocity, 'a' is acceleration, and 't' is time.</p>
+                </div>
+                <div>
+                    <h2 class="text-xl font-semibold">2D Motion (Projectiles)</h2>
+                    <p class="mt-2 text-gray-600">Objects moving in two dimensions, like a ball thrown through the air, follow a curved path called a parabola. We analyze their horizontal (x) and vertical (y) motion separately.</p>
+                </div>
+                <div>
+                    <h2 class="text-xl font-semibold">Motion Graphs</h2>
+                    <p class="mt-2 text-gray-600">We can represent motion visually using graphs:</p>
+                    <ul class="list-disc list-inside mt-3 space-y-2 text-gray-600">
+                        <li><b>Position-Time (s-t):</b> A straight line means constant velocity. A curve means acceleration.</li>
+                        <li><b>Velocity-Time (v-t):</b> A horizontal line means constant velocity. A sloped line means constant acceleration. The area under the graph gives the displacement.</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="activity-panel" class="panel">
+            <div class="activity-area" id="activity-area">
+                </div>
+            <footer class="bottom-control-bar">
+                <div id="status-bar" class="status-bar">Score: 0</div>
+                <button id="reset-btn" class="reset-button">Reset</button>
+            </footer>
+        </section>
+    </main>
+
+    <script src="./neutralino.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            try { Neutralino.init(); } catch (e) { console.error("Neutralino not found."); }
+            
+            const difficulties = ['Easy', 'Medium', 'Hard'];
+            let showActivity = false, score = 0, difficultyIdx = 0;
+            let badges = { speedster: false, sharpShooter: false, graphMaster: false };
+
+            const mainContent = document.getElementById('main-content');
+            const infoPanel = document.getElementById('info-panel');
+            const activityArea = document.getElementById('activity-area');
+            const headerTitle = document.getElementById('header-title');
+            const toggleViewBtn = document.getElementById('toggle-view-btn');
+            const difficultyBtn = document.getElementById('difficulty-btn');
+            const backBtn = document.getElementById('back-btn');
+            const resetBtn = document.getElementById('reset-btn');
+            const statusBar = document.getElementById('status-bar');
+
+            function updateLayout() {
+                if (showActivity) mainContent.classList.add('activity-visible');
+                else mainContent.classList.remove('activity-visible');
+                infoPanel.style.width = showActivity ? '340px' : `${Math.min(700, window.innerWidth - 48)}px`;
+                headerTitle.textContent = showActivity ? 'Activity' : 'Information';
+                toggleViewBtn.textContent = showActivity ? 'Information' : 'Activity';
+                statusBar.textContent = `Score: ${score}`;
+            }
+
+            function renderActivity() {
+                const difficulty = difficulties[difficultyIdx].toLowerCase();
+                if (difficulty === 'easy') renderEasyMode();
+                else if (difficulty === 'medium') renderMediumMode();
+                else if (difficulty === 'hard') renderHardMode();
+                renderBadges();
+            }
+
+            function renderBadges() {
+                let badgesHTML = `<div class="badges-container"><b>Badges:</b> `;
+                if(badges.speedster) badgesHTML += `<span class="badge unlocked">🏁 Speedster</span>`;
+                if(badges.sharpShooter) badgesHTML += `<span class="badge unlocked">🎯 Sharp Shooter</span>`;
+                if(badges.graphMaster) badgesHTML += `<span class="badge unlocked">📊 Graph Master</span>`;
+                if(!badges.speedster && !badges.sharpShooter && !badges.graphMaster) badgesHTML += `<span class="badge">None yet</span>`;
+                badgesHTML += `</div>`;
+                activityArea.insertAdjacentHTML('beforeend', badgesHTML);
+            }
+
+            function renderEasyMode() {
+                activityArea.innerHTML = `
+                    <h3>🚗 Velocity Racer (1D Motion)</h3>
+                    <div class="game-controls">
+                        <label>u (m/s): <input id="u_in" type="number" value="0" style="width: 60px;"></label>
+                        <label>a (m/s²): <input id="a_in" type="number" value="2" style="width: 60px;"></label>
+                        <label>t (s): <input id="t_in" type="number" value="5" style="width: 60px;"></label>
+                        <button id="start-race-btn">Start</button>
+                    </div>
+                    <div class="track-container"><div id="car" class="car" style="left: 0;">🏎️</div><div id="flag" class="flag">🏁</div></div>
+                    <p id="easy-feedback" class="font-semibold"></p>`;
+                document.getElementById('flag').style.left = `${Math.random() * 70 + 20}%`;
+                document.getElementById('start-race-btn').onclick = handleVelocityRacerStart;
+            }
+
+            function handleVelocityRacerStart() {
+                const u = parseFloat(document.getElementById('u_in').value);
+                const a = parseFloat(document.getElementById('a_in').value);
+                const t = parseFloat(document.getElementById('t_in').value);
+                const s = u * t + 0.5 * a * t * t;
+                const track = document.querySelector('.track-container');
+                const car = document.getElementById('car');
+                const flag = document.getElementById('flag');
+                const feedback = document.getElementById('easy-feedback');
+                const trackWidth = track.clientWidth;
+                const carWidth = car.offsetWidth;
+                const finalPos = Math.min(s * 4, trackWidth - carWidth); 
+                car.style.left = `${finalPos}px`;
+                car.addEventListener('transitionend', () => {
+                    const error = Math.abs(finalPos - flag.offsetLeft);
+                    if (error < 25) { score += 10; badges.speedster = true; feedback.textContent = "Target Hit! +10 Points!"; feedback.style.color = 'var(--accent-green)'; } 
+                    else if (error < trackWidth * 0.1) { score += 5; feedback.textContent = "So close! +5 Points."; feedback.style.color = '#eab308'; }
+                    else { feedback.textContent = "Missed! Try adjusting your values."; feedback.style.color = 'var(--accent-red)'; }
+                    updateLayout();
+                    renderBadges();
+                }, { once: true });
+            }
+
+            function renderMediumMode() {
+                activityArea.innerHTML = `
+                    <h3>🎯 Projectile Shooter (2D Motion)</h3>
+                    <div class="game-controls">
+                        <label>Angle: <span id="angle-display" class="value-display">45°</span><input id="angle_in" type="range" min="15" max="75" value="45"></label>
+                        <label>Velocity: <span id="vel-display" class="value-display">60</span><input id="vel_in" type="range" min="20" max="100" value="60"></label>
+                        <button id="fire-btn">Fire!</button>
+                    </div>
+                    <canvas id="game-canvas" width="600" height="300"></canvas>`;
+                
+                const canvas = document.getElementById('game-canvas');
+                const ctx = canvas.getContext('2d');
+                const angleSlider = document.getElementById('angle_in');
+                const velSlider = document.getElementById('vel_in');
+                const angleDisplay = document.getElementById('angle-display');
+                const velDisplay = document.getElementById('vel-display');
+                let target = { x: Math.random() * 200 + 300, y: Math.random() * 100 + 50, r: 10 };
+
+                angleSlider.addEventListener('input', (e) => { angleDisplay.textContent = `${e.target.value}°`; drawScene(); });
+                velSlider.addEventListener('input', (e) => { velDisplay.textContent = e.target.value; });
+
+                function drawScene() {
+                    ctx.clearRect(0,0,canvas.width,canvas.height);
+                    ctx.fillStyle = '#a7f3d0';
+                    ctx.fillRect(0, canvas.height - 20, canvas.width, 20);
+                    
+                    // MODIFIED: Draw cannon, ball preview, and angle arrow
+                    ctx.save();
+                    ctx.translate(20, canvas.height - 20); // Cannon position
+                    const angleRad = -angleSlider.value * Math.PI / 180;
+                    ctx.rotate(angleRad);
+                    // Cannon Barrel
+                    ctx.fillStyle = '#555';
+                    ctx.fillRect(0, -5, 40, 10);
+                    // Angle arrow
+                    ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(40, 0);
+                    ctx.lineTo(80, 0);
+                    ctx.lineTo(75, -5);
+                    ctx.moveTo(80, 0);
+                    ctx.lineTo(75, 5);
+                    ctx.stroke();
+                    ctx.restore();
+
+                    // Ball preview
+                    ctx.fillStyle = 'rgba(0,0,0,0.8)';
+                    ctx.beginPath();
+                    ctx.arc(20, canvas.height - 20 - 20, 5, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Target
+                    ctx.fillStyle = 'red';
+                    ctx.beginPath();
+                    ctx.arc(target.x, canvas.height - target.y, target.r, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                drawScene();
+
+                document.getElementById('fire-btn').onclick = () => {
+                    const u = parseFloat(velSlider.value);
+                    const angleRad = parseFloat(angleSlider.value) * Math.PI / 180;
+                    const g = 9.8;
+                    let t = 0;
+                    function animate() {
+                        const x = u * Math.cos(angleRad) * t;
+                        const y = u * Math.sin(angleRad) * t - 0.5 * g * t * t;
+                        drawScene();
+                        ctx.fillStyle = 'black';
+                        ctx.beginPath();
+                        ctx.arc(x, canvas.height - 20 - y, 5, 0, Math.PI * 2);
+                        ctx.fill();
+                        t += 0.1;
+                        if(Math.hypot(x - target.x, (canvas.height - 20 - y) - (canvas.height - target.y)) < target.r + 5) {
+                            score += 20;
+                            badges.sharpShooter = true;
+                            updateLayout();
+                            target = { x: Math.random() * 200 + 300, y: Math.random() * 100 + 50, r: 10 };
+                            drawScene(); // Redraw with new target
+                            return;
+                        }
+                        if (y > -20 && x < canvas.width) requestAnimationFrame(animate);
+                    }
+                    animate();
+                };
+            }
+
+            function renderHardMode() {
+                // MODIFIED: Expanded question pool
+                const problems = [ 
+                    { q: "Car starts from rest and accelerates uniformly.", correct: 'accel' }, 
+                    { q: "Car moves with constant positive velocity.", correct: 'const' }, 
+                    { q: "Car is moving fast and brakes to a stop.", correct: 'decel' },
+                    { q: "Car is moving, stops for a moment, then returns.", correct: 'return' },
+                    { q: "Car accelerates, then moves at a constant speed.", correct: 'accel_const' }
+                ];
+                // MODIFIED: Randomly select one question
+                const problem = problems[Math.floor(Math.random() * problems.length)];
+                
+                activityArea.innerHTML = `
+                    <h3>📊 Graph Racer</h3>
+                    <p class="font-semibold">${problem.q}</p>
+                    <div class="graph-options">
+                        <canvas class="graph-option" data-type="const" width="150" height="100"></canvas>
+                        <canvas class="graph-option" data-type="accel" width="150" height="100"></canvas>
+                        <canvas class="graph-option" data-type="decel" width="150" height="100"></canvas>
+                        <canvas class="graph-option" data-type="return" width="150" height="100"></canvas>
+                        <canvas class="graph-option" data-type="accel_const" width="150" height="100"></canvas>
+                    </div>`;
+
+                function drawGraph(canvas, type) {
+                    const ctx = canvas.getContext('2d');
+                    ctx.strokeStyle = 'var(--text-dark)'; ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    if(type === 'const') { ctx.moveTo(10, 20); ctx.lineTo(140, 20); }
+                    if(type === 'accel') { ctx.moveTo(10, 90); ctx.lineTo(140, 10); }
+                    if(type === 'decel') { ctx.moveTo(10, 10); ctx.lineTo(140, 90); }
+                    if(type === 'return') { ctx.moveTo(10, 20); ctx.lineTo(75, 20); ctx.lineTo(75, 80); ctx.lineTo(140, 80);}
+                    if(type === 'accel_const') { ctx.moveTo(10, 90); ctx.lineTo(75, 20); ctx.lineTo(140, 20); }
+                    ctx.stroke();
+                    ctx.font = '10px Poppins'; ctx.fillStyle = 'var(--text-light)';
+                    ctx.fillText('v', 5, 10); ctx.fillText('t', 140, 98);
+                }
+                document.querySelectorAll('.graph-option').forEach(canvas => {
+                    drawGraph(canvas, canvas.dataset.type);
+                    canvas.onclick = (e) => {
+                        const isCorrect = e.currentTarget.dataset.type === problem.correct;
+                        e.currentTarget.classList.add(isCorrect ? 'correct' : 'incorrect');
+                        if(isCorrect) {
+                            score += 30;
+                            badges.graphMaster = true;
+                        } else {
+                            score -= 10;
+                        }
+                        updateLayout();
+                        setTimeout(renderHardMode, 1500);
+                    };
+                });
+            }
+            
+            backBtn.addEventListener('click', () => { window.history.back(); });
+            toggleViewBtn.addEventListener('click', () => {
+                showActivity = !showActivity;
+                if (showActivity) renderActivity();
+                updateLayout();
+            });
+            difficultyBtn.addEventListener('click', () => {
+                difficultyIdx = (difficultyIdx + 1) % difficulties.length;
+                difficultyBtn.textContent = `Mode: ${difficulties[difficultyIdx]}`;
+                if (showActivity) renderActivity();
+            });
+            resetBtn.addEventListener('click', () => {
+                score = 0;
+                if(showActivity) renderActivity();
+                updateLayout();
+            });
+            window.addEventListener('resize', updateLayout);
+
+            updateLayout();
+        });
+    </script>
+</body>
+</html>

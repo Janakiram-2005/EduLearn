@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fractions to Decimals Game</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --header-bg: #ffffff; --page-bg: #f4f7f9; --panel-bg: #ffffff;
+            --border-color: #e0e0e0; --text-dark: #1e293b; --text-light: #475569;
+            --accent-teal: #14b8a6; --accent-green: #10b981; --accent-red: #ef4444;
+            --primary-blue: #007bff; --secondary-gray: #6c757d;
+        }
+        body {
+            font-family: 'Poppins', sans-serif; background-color: var(--page-bg);
+            color: var(--text-dark); margin: 0; height: 100vh; overflow: hidden;
+        }
+        .page-container { display: flex; flex-direction: column; height: 100vh; }
+        .header {
+            position: fixed; top: 0; left: 0; width: 100%; height: 60px;
+            background-color: var(--header-bg); display: flex; align-items: center; justify-content: space-between;
+            padding: 0 24px; border-bottom: 1px solid var(--border-color);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05); z-index: 1000;
+        }
+        .header-section { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .header-section.center { text-align: center; font-size: 1.2em; font-weight: bold; }
+        .header-section.right { display: flex; justify-content: flex-end; }
+        .button {
+            padding: 8px 16px; margin-left: 10px; cursor: pointer;
+            border: none; border-radius: 6px; font-weight: 600; color: white;
+            transition: transform 0.1s;
+        }
+        .button:active { transform: scale(0.95); }
+        .main-content { margin-top: 60px; padding: 24px; display: flex; gap: 24px; flex-grow: 1; overflow: hidden; justify-content: center; }
+        .panel {
+            background-color: var(--panel-bg); border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: 1px solid var(--border-color);
+            overflow-y: auto; padding: 32px 48px; height: calc(100vh - 108px);
+            transition: width 400ms ease-in-out;
+        }
+        #info-panel { flex-shrink: 0; }
+        #activity-panel { display: none; flex-grow: 1; padding: 0; flex-direction: column; }
+        .main-content.activity-visible { justify-content: flex-start; }
+        .main-content.activity-visible #info-panel { width: 340px; min-width: 340px; padding: 24px 32px;}
+        .main-content.activity-visible #activity-panel { display: flex; }
+        
+        .activity-area {
+            flex-grow: 1; position: relative; display: flex; flex-direction: column;
+            align-items: center; padding: 1rem; background-color: #e2e8f0;
+        }
+        #question-display {
+            width: 100%; max-width: 800px; background-color: white; color: var(--text-dark);
+            padding: 1rem; text-align: center; font-size: 1.5rem; font-weight: 600;
+            border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 1rem;
+        }
+        #question-display span { color: var(--accent-teal); }
+        #gameCanvas {
+            border-radius: 1rem; cursor: pointer; background-color: #ffffff;
+            border: 2px solid var(--border-color); width: 100%; height: auto;
+        }
+        .bottom-control-bar {
+            height: 60px; display: flex; justify-content: space-between; align-items: center;
+            padding: 0 20px; background-color: var(--page-bg); border-top: 1px solid var(--border-color);
+        }
+        .status-bar { font-size: 1.2rem; font-weight: bold; }
+        .reset-button { background-color: var(--accent-red); }
+        #game-overlay {
+            position: absolute; top: 1rem; left: 1rem; right: 1rem; bottom: 76px;
+            background-color: rgba(15, 23, 42, 0.8);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            border-radius: 1rem; color: white; text-align: center; z-index: 50;
+        }
+        #start-game-btn {
+            background-color: var(--accent-teal); color: white; font-weight: bold;
+            padding: 0.75rem 2rem; border-radius: 8px; font-size: 1.25rem;
+            transition: transform 0.2s; border: none; cursor: pointer;
+        }
+    </style>
+</head>
+<body class="page-container">
+    <header class="header">
+        <div class="header-section font-bold" style="color: var(--accent-teal);">Class 6 - Fractions & Decimals</div>
+        <div id="header-title" class="header-section center">Information</div>
+        <div class="header-section right">
+            <button id="back-btn" class="button" style="background-color: var(--secondary-gray);">Back</button>
+            <button id="activity-info-btn" class="button" style="background-color: var(--primary-blue);">Activity</button>
+            <button id="difficulty-btn" class="button" style="background-color: var(--accent-green);">Difficulty: Easy</button>
+        </div>
+    </header>
+
+    <main id="main-content" class="main-content">
+        <section id="info-panel" class="panel">
+            <h1 class="text-3xl font-bold mb-4" style="color: var(--accent-teal);">Understanding Fractions & Decimals</h1>
+            <p class="mb-6 text-gray-700">Fractions and decimals are two different ways of representing parts of a whole.</p>
+            
+            <div style="font-size: 1.1rem;" class="space-y-6">
+                <div>
+                    <h2 class="text-xl font-semibold">What is a Fraction? 🍰</h2>
+                    <p class="mt-2 text-gray-600">A fraction has a <b>Numerator</b> (top) and a <b>Denominator</b> (bottom).</p>
+                </div>
+                <div>
+                    <h2 class="text-xl font-semibold">Converting to Decimals ⚙️</h2>
+                    <p class="mt-2 text-gray-600">To convert a fraction to a decimal, you **divide the numerator by the denominator**.</p>
+                    <p class="mt-2 font-semibold">Example: <sup>3</sup>&frasl;<sub>4</sub> becomes $3 \div 4 = 0.75$</p>
+                </div>
+                 <div>
+                    <h2 class="text-xl font-semibold">How to Play</h2>
+                    <p class="mt-2 text-gray-600">A decimal will be shown at the top. Use the <b>Left and Right Arrow Keys</b> to move your paddle and catch the falling bubble with the matching fraction!</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="activity-panel" class="panel">
+            <div class="activity-area">
+                <div id="question-display">Catch the fraction for: <span>0.5</span></div>
+                <canvas id="gameCanvas"></canvas>
+                <div id="game-overlay">
+                    <h2 id="game-status-text" class="text-5xl font-bold text-teal-400 mb-4">Ready?</h2>
+                    <p id="final-score-text" class="text-2xl mb-6"></p>
+                    <button id="start-game-btn">Start Game</button>
+                </div>
+            </div>
+            <footer class="bottom-control-bar">
+                <div id="status-bar" class="status-bar">Score: 0 | Lives: ❤️❤️❤️</div>
+                <button id="reset-btn" class="button reset-button">Reset</button>
+            </footer>
+        </section>
+    </main>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const fractionsData = [ { text: '1/2', value: 0.5 }, { text: '1/4', value: 0.25 }, { text: '3/4', value: 0.75 }, { text: '1/5', value: 0.2 }, { text: '2/5', value: 0.4 }, { text: '3/5', value: 0.6 }, { text: '4/5', value: 0.8 }, { text: '1/8', value: 0.125 }, { text: '1/3', value: 0.33 }, { text: '2/3', value: 0.67 }];
+        const difficultySettings = { easy: { speed: 1, choices: 3 }, medium: { speed: 1.8, choices: 4 }, hard: { speed: 2.5, choices: 5 } };
+        const difficulties = ['easy', 'medium', 'hard'];
+        
+        let showActivity = false, score, lives, gameLoopId, player, fallingItems, currentQuestion, gameActive = false, difficultyIdx = 0;
+
+        const mainContent = document.getElementById('main-content'), infoPanel = document.getElementById('info-panel'), activityPanel = document.getElementById('activity-panel'), headerTitle = document.getElementById('header-title'), toggleViewBtn = document.getElementById('activity-info-btn'), difficultyBtn = document.getElementById('difficulty-btn'), backBtn = document.getElementById('back-btn'), canvas = document.getElementById('gameCanvas'), ctx = canvas.getContext('2d'), statusBar = document.getElementById('status-bar'), gameOverlay = document.getElementById('game-overlay'), gameStatusText = document.getElementById('game-status-text'), finalScoreText = document.getElementById('final-score-text'), startGameBtn = document.getElementById('start-game-btn'), resetBtn = document.getElementById('reset-btn'), questionDisplay = document.getElementById('question-display');
+        
+        function resizeCanvas() {
+            const container = canvas.parentElement;
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight - questionDisplay.offsetHeight - 16; // Adjust for question display and margin
+        }
+        
+        function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+        player = { x: 100, y: 100, width: 100, height: 20, speed: 25 };
+
+        function updateLayout() {
+            mainContent.classList.toggle('activity-visible', showActivity);
+            infoPanel.style.width = showActivity ? '340px' : `${Math.min(700, window.innerWidth - 48)}px`;
+            headerTitle.textContent = showActivity ? 'Fraction Catcher' : 'Information';
+            toggleViewBtn.textContent = showActivity ? 'Information' : 'Activity';
+            if(showActivity) resizeCanvas();
+        }
+
+        function startGame() {
+            score = 0; lives = 3; fallingItems = []; gameActive = true;
+            player.x = canvas.width / 2 - player.width / 2;
+            player.y = canvas.height - 40;
+            gameOverlay.style.display = 'none';
+            loadNextQuestion();
+            if (gameLoopId) cancelAnimationFrame(gameLoopId);
+            gameLoop();
+        }
+
+        function endGame() {
+            gameActive = false;
+            cancelAnimationFrame(gameLoopId);
+            gameStatusText.textContent = "Game Over!";
+            finalScoreText.textContent = `Your Final Score: ${score}`;
+            startGameBtn.textContent = 'Play Again';
+            gameOverlay.style.display = 'flex';
+        }
+        
+        function loadNextQuestion() {
+            fallingItems = [];
+            const shuffledFractions = [...fractionsData].sort(() => 0.5 - Math.random());
+            currentQuestion = shuffledFractions[0];
+            questionDisplay.innerHTML = `Catch the fraction for: <span>${currentQuestion.value}</span>`;
+            
+            const distractors = shuffledFractions.slice(1, difficultySettings[difficulties[difficultyIdx]].choices);
+            const choices = [...distractors, currentQuestion].sort(() => 0.5 - Math.random());
+
+            choices.forEach((item, index) => {
+                const speed = difficultySettings[difficulties[difficultyIdx]].speed;
+                fallingItems.push({
+                    x: (canvas.width / (choices.length + 1)) * (index + 1) - 35,
+                    y: -50 - (Math.random() * 200), radius: 35, speed: speed + (Math.random() * 0.5 - 0.25),
+                    ...item
+                });
+            });
+            updateStatus();
+        }
+
+        function gameLoop() {
+            if (!gameActive) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawPlayer();
+            updateAndDrawItems();
+            gameLoopId = requestAnimationFrame(gameLoop);
+        }
+        
+        function drawPlayer() {
+            ctx.fillStyle = 'var(--accent-teal)';
+            ctx.fillRect(player.x, player.y, player.width, player.height);
+        }
+
+        function updateAndDrawItems() {
+            let missedCorrect = false;
+            for (let i = fallingItems.length - 1; i >= 0; i--) {
+                const item = fallingItems[i];
+                item.y += item.speed;
+
+                if (item.x < player.x + player.width && item.x + (item.radius * 2) > player.x &&
+                    item.y < player.y + player.height && item.y + (item.radius * 2) > player.y) {
+                    if (Math.abs(item.value - currentQuestion.value) < 0.01) {
+                        score += 10;
+                        setTimeout(loadNextQuestion, 100);
+                    } else {
+                        lives--;
+                        if (lives <= 0) endGame();
+                    }
+                    updateStatus();
+                    fallingItems.splice(i, 1);
+                    continue;
+                }
+                
+                if (item.y < canvas.height) {
+                    ctx.beginPath();
+                    ctx.arc(item.x + item.radius, item.y + item.radius, item.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = '#475569';
+                    ctx.fill();
+                    ctx.fillStyle = 'white';
+                    ctx.font = 'bold 22px Poppins';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(item.text, item.x + item.radius, item.y + item.radius);
+                } else {
+                    if (Math.abs(item.value - currentQuestion.value) < 0.01) {
+                       missedCorrect = true;
+                    }
+                    fallingItems.splice(i, 1);
+                }
+            }
+            if (missedCorrect) {
+                lives--;
+                updateStatus();
+                if (lives <= 0) {
+                    endGame();
+                } else {
+                    loadNextQuestion();
+                }
+            }
+        }
+        
+        function updateStatus() {
+            statusBar.textContent = `Score: ${score} | Lives: ${'❤️'.repeat(lives)}`;
+        }
+
+        document.addEventListener('keydown', e => {
+            if (!gameActive) return;
+            if (e.key === 'ArrowLeft' && player.x > 0) player.x -= player.speed;
+            if (e.key === 'ArrowRight' && player.x < canvas.width - player.width) player.x += player.speed;
+        });
+
+        startGameBtn.addEventListener('click', startGame);
+        resetBtn.addEventListener('click', () => { if (showActivity) startGame(); });
+        backBtn.addEventListener('click', () => {
+            if (showActivity) { showActivity = false; endGame(); updateLayout(); } 
+            else { window.history.back(); }
+        });
+        toggleViewBtn.addEventListener('click', () => {
+            showActivity = !showActivity;
+            if (showActivity) {
+                resizeCanvas();
+                gameOverlay.style.display = 'flex';
+                gameStatusText.textContent = "Ready?";
+                finalScoreText.textContent = "";
+                startGameBtn.textContent = 'Start Game';
+            } else if (gameActive) {
+                endGame();
+            }
+            updateLayout();
+        });
+        
+        difficultyBtn.addEventListener('click', () => {
+            difficultyIdx = (difficultyIdx + 1) % difficulties.length;
+            const newDifficulty = difficulties[difficultyIdx];
+            difficultyBtn.textContent = `Difficulty: ${capitalize(newDifficulty)}`;
+            if (gameActive) startGame();
+        });
+        
+        updateLayout();
+        window.addEventListener('resize', () => { if(showActivity) resizeCanvas(); });
+    });
+    </script>
+</body>
+</html>

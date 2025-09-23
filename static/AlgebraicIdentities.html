@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Algebraic Identities</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --header-bg: #ffffff;
+            --page-bg: #f0f2f5;
+            --panel-bg: #ffffff;
+            --border-color: #e5e7eb;
+            --text-dark: #111827;
+            --text-light: #475569;
+            --accent-green: #16a34a;
+            --accent-green-dark: #15803d;
+            --accent-red: #ef4444;
+            --primary-blue: #007bff;
+            --secondary-gray: #6c757d;
+        }
+        body { font-family: 'Poppins', sans-serif; background-color: var(--page-bg); color: var(--text-dark); margin: 0; height: 100vh; overflow: hidden; }
+        .page-container { display: flex; flex-direction: column; height: 100vh; }
+        .header {
+            position: fixed; top: 0; left: 0; width: 100%; height: 60px;
+            background-color: var(--header-bg); display: flex; align-items: center; justify-content: space-between;
+            padding: 0 24px; border-bottom: 1px solid var(--border-color); box-shadow: 0 2px 4px rgba(0,0,0,0.05); z-index: 1000; box-sizing: border-box;
+        }
+        .header-section { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .header-section.center { text-align: center; font-size: 1.2em; font-weight: bold; }
+        .header-section.right { display: flex; justify-content: flex-end; }
+        .button {
+            padding: 8px 16px; margin-left: 10px; cursor: pointer;
+            border: none; border-radius: 6px; font-weight: 600; color: white;
+            transition: transform 0.1s, background-color 0.2s;
+        }
+        .button:active { transform: scale(0.95); }
+        .main-content {
+            margin-top: 60px; padding: 24px; display: flex;
+            flex-grow: 1; overflow: hidden; box-sizing: border-box;
+            gap: 24px; justify-content: center;
+        }
+        .panel {
+            background-color: var(--panel-bg); border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: 1px solid var(--border-color);
+            box-sizing: border-box; overflow-y: auto;
+            height: calc(100vh - 108px);
+            transition: width 400ms ease-in-out, min-width 400ms ease-in-out, margin 400ms ease-in-out;
+        }
+        #info-panel {
+            padding: 24px 32px;
+            width: 100%;
+            max-width: 700px;
+            margin: 0 auto;
+            flex-shrink: 0;
+        }
+        #activity-panel { display: none; flex-grow: 1; min-width: 400px; }
+        
+        /* Layout when activity is visible */
+        .main-content.activity-visible { justify-content: flex-start; }
+        .main-content.activity-visible #info-panel { width: 340px; min-width: 340px; margin: 0; }
+        .main-content.activity-visible #activity-panel { display: block; }
+
+        /* Game Specific Styles */
+        .game-panel { padding: 2rem; width: 100%; max-width: 800px; margin: auto; }
+        #question-text { font-size: 1.5rem; font-weight: 600; color: #111827; }
+        #options-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; margin-top: 2.5rem; }
+        .option-btn { background-color: #f3f4f6; color: #1f2937; padding: 1.5rem; font-size: 1.25rem; font-weight: 600; border-radius: 0.75rem; transition: transform 0.2s, box-shadow 0.2s, background-color 0.2s; border: 2px solid #e5e7eb; cursor: pointer; text-align: left; }
+        .option-btn:hover:not(:disabled) { transform: scale(1.05); box-shadow: 0 0 15px rgba(22, 163, 74, 0.2); }
+        .option-btn.correct { background-color: #22c55e; border-color: #16a34a; color: white; }
+        .option-btn.incorrect { background-color: #ef4444; border-color: #dc2626; color: white; }
+        .info-panel-content { background-color: #ffffff; padding: 1.5rem; border-radius: 0.75rem; border: 1px solid #e5e7eb; box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1); }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+    <header class="header">
+        <div class="header-section">Class 9 - Algebraic Identities</div>
+        <div id="header-title" class="header-section center">Information</div>
+        <div class="header-section right">
+            <button id="back-btn" class="button" style="background-color: var(--secondary-gray);">Back</button>
+            <button id="toggle-view-btn" class="button" style="background-color: var(--primary-blue);">Activity</button>
+            <button id="difficulty-btn" class="button" style="background-color: var(--accent-green);">Mode: Easy</button>
+        </div>
+    </header>
+
+    <main class="main-content" id="main-content">
+        <section id="info-panel" class="panel">
+            <h2 class="text-3xl font-bold mb-6 text-center text-gray-800">Algebraic Identities</h2>
+            <div class="space-y-4">
+                <div class="info-panel-content">
+                    <h3 class="text-xl font-semibold text-gray-900">What are Identities?</h3>
+                    <p class="mt-2 text-gray-600">An algebraic identity is an equation that is true for all values of its variables. They are useful shortcuts for multiplying polynomials.</p>
+                </div>
+                <div class="info-panel-content">
+                    <h3 class="text-xl font-semibold text-gray-900">Standard Identities</h3>
+                    <p class="mt-2 text-gray-600">Here are some of the most common identities you should know:</p>
+                    <ul class="list-disc list-inside mt-3 space-y-2 text-gray-600">
+                        <li><b>(a + b)² = a² + 2ab + b²</b></li>
+                        <li><b>(a - b)² = a² - 2ab + b²</b></li>
+                        <li><b>a² - b² = (a - b)(a + b)</b></li>
+                        <li><b>(x + a)(x + b) = x² + (a + b)x + ab</b></li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="activity-panel" class="panel">
+            <div class="game-panel">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h2 id="level-title" class="text-2xl font-bold text-gray-900 text-left">Easy Challenge</h2>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-xs text-gray-500">SCORE</p>
+                        <p id="score" class="text-2xl font-bold text-gray-900">0</p>
+                    </div>
+                </div>
+                <div id="game-body">
+                    <p id="question-text" class="my-8">What is the expanded form of (x + 2)²?</p>
+                    <div id="options-container"></div>
+                    <p id="feedback-text" class="mt-4 font-semibold text-lg h-6"></p>
+                    <div id="level-complete-container" class="hidden text-center py-8">
+                        <h3 id="level-complete-title" class="text-3xl font-bold text-green-600">Level Complete!</h3>
+                        <p id="level-complete-score" class="text-xl mt-2 text-gray-700">Your score was 0.</p>
+                        <button id="next-level-btn" class="button primary-btn mt-6 text-lg py-3 px-8">Next Level</button>
+                        <button id="play-again-btn" class="button danger-btn mt-6 text-lg py-3 px-8 hidden" style="background-color: #f59e0b;">Play Again</button>
+                    </div>
+                </div>
+                <div class="mt-6 text-center">
+                    <button id="reset-game-btn" class="button" style="background-color: #e5e7eb; color: #374151;">Reset Game</button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const mainContent = document.getElementById('main-content'),
+                  infoPanel = document.getElementById('info-panel'),
+                  activityPanel = document.getElementById('activity-panel'),
+                  headerTitle = document.getElementById('header-title'),
+                  toggleViewBtn = document.getElementById('toggle-view-btn'),
+                  difficultyBtn = document.getElementById('difficulty-btn'),
+                  backBtn = document.getElementById('back-btn'),
+                  levelTitle = document.getElementById('level-title'),
+                  scoreDisplay = document.getElementById('score'),
+                  questionText = document.getElementById('question-text'),
+                  optionsContainer = document.getElementById('options-container'),
+                  feedbackText = document.getElementById('feedback-text'),
+                  levelCompleteContainer = document.getElementById('level-complete-container'),
+                  levelCompleteTitle = document.getElementById('level-complete-title'),
+                  levelCompleteScore = document.getElementById('level-complete-score'),
+                  nextLevelBtn = document.getElementById('next-level-btn'),
+                  playAgainBtn = document.getElementById('play-again-btn'),
+                  resetGameBtn = document.getElementById('reset-game-btn');
+
+            const problems = {
+                easy: [{ q: "Expand (x + 2)²", a: "x² + 4x + 4" }, { q: "Expand (y - 3)²", a: "y² - 6y + 9" }, { q: "Factor x² - 16", a: "(x - 4)(x + 4)" }, { q: "Expand (a + 5)²", a: "a² + 10a + 25" }],
+                medium: [{ q: "Expand (2x + 1)²", a: "4x² + 4x + 1" }, { q: "Expand (3y - 2)²", a: "9y² - 12y + 4" }, { q: "Factor 4x² - 25", a: "(2x - 5)(2x + 5)" }, { q: "Expand (x + 2)(x + 5)", a: "x² + 7x + 10" }],
+                hard: [{ q: "Calculate 102² using an identity.", a: "10404" }, { q: "Expand (x + y + 2)²", a: "x²+y²+4+2xy+4y+4x" }, { q: "Factor 81a⁴ - 16b⁴", a: "(9a²-4b²)(9a²+4b²)" }, { q: "Expand (a + 2b)³", a: "a³+8b³+6a²b+12ab²" }]
+            };
+
+            const levelOrder = ['easy', 'medium', 'hard'];
+            let currentLevel, score, isAnswered, currentQuestion, currentLevelProblems, showActivity = false;
+            
+            function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+            
+            function generateOptions(correctAnswer) {
+                let options = new Set([correctAnswer]);
+                const baseOptions = ["x² + 4", "x² + 2x + 4", "y² + 9", "y² - 6y - 9", "(x-4)(x-4)", "(x+16)(x-16)", "4x²+1", "4x²+2x+1", "(2x-5)(2x-5)", "x²+10", "10204", "10400", "x²+y²+4", "a³+8b³"];
+                while (options.size < 4) {
+                    let rand = baseOptions[Math.floor(Math.random() * baseOptions.length)];
+                    if (!options.has(rand)) options.add(rand);
+                }
+                return [...options].sort(() => Math.random() - 0.5);
+            }
+            
+            function initializeGame() { currentLevel = 'easy'; resetGame(); }
+            
+            function resetGame() { score = 0; resetLevel(); }
+            
+            function resetLevel() {
+                const originalProblems = problems[currentLevel];
+                currentLevelProblems = [...originalProblems].sort(() => Math.random() - 0.5);
+                updateScoreDisplay();
+                loadQuestion();
+            }
+            
+            function loadQuestion() {
+                if (currentLevelProblems.length === 0) {
+                    showLevelComplete();
+                    return;
+                }
+                currentQuestion = currentLevelProblems.pop();
+                isAnswered = false;
+                levelCompleteContainer.classList.add('hidden');
+                optionsContainer.classList.remove('hidden');
+                feedbackText.textContent = "";
+                questionText.style.display = 'block';
+                levelTitle.textContent = `${capitalize(currentLevel)} Challenge`;
+                questionText.textContent = `${currentQuestion.q}`;
+                optionsContainer.innerHTML = '';
+                generateOptions(currentQuestion.a).forEach(opt => {
+                    const optionBtn = document.createElement('button');
+                    optionBtn.className = 'option-btn';
+                    optionBtn.dataset.value = opt;
+                    optionBtn.textContent = opt;
+                    optionBtn.addEventListener('click', handleAnswerClick);
+                    optionsContainer.appendChild(optionBtn);
+                });
+            }
+            
+            function handleAnswerClick(e) {
+                if (isAnswered) return;
+                isAnswered = true;
+                document.querySelectorAll('.option-btn').forEach(btn => btn.disabled = true);
+                const clickedBtn = e.currentTarget;
+                const clickedValue = clickedBtn.dataset.value;
+                const correctValue = currentQuestion.a;
+                if (clickedValue === correctValue) {
+                    score += 10;
+                    updateScoreDisplay();
+                    clickedBtn.classList.add('correct');
+                    feedbackText.textContent = "Correct!";
+                    feedbackText.style.color = 'var(--accent-green)';
+                } else {
+                    clickedBtn.classList.add('incorrect');
+                    feedbackText.textContent = `Sorry! The answer was ${correctValue}.`;
+                    feedbackText.style.color = 'var(--accent-red)';
+                    const correctBtn = document.querySelector(`[data-value="${correctValue}"]`);
+                    if (correctBtn) correctBtn.classList.add('correct');
+                }
+                setTimeout(() => loadQuestion(), 2000);
+            }
+            
+            function showLevelComplete() {
+                optionsContainer.classList.add('hidden');
+                questionText.style.display = 'none';
+                feedbackText.textContent = '';
+                levelCompleteContainer.classList.remove('hidden');
+                levelCompleteTitle.textContent = `Level ${capitalize(currentLevel)} Complete!`;
+                levelCompleteScore.textContent = `Your score: ${score}.`;
+                const currentLevelIdx = levelOrder.indexOf(currentLevel);
+                if (currentLevelIdx < levelOrder.length - 1) {
+                    nextLevelBtn.classList.remove('hidden');
+                    playAgainBtn.classList.add('hidden');
+                } else {
+                    levelCompleteTitle.textContent = "Congratulations!";
+                    levelCompleteScore.textContent = `You've completed all challenges! Final score: ${score}`;
+                    nextLevelBtn.classList.add('hidden');
+                    playAgainBtn.classList.remove('hidden');
+                }
+            }
+            
+            function handleNextLevel() {
+                const currentLevelIdx = levelOrder.indexOf(currentLevel);
+                currentLevel = levelOrder[currentLevelIdx + 1];
+                difficultyBtn.textContent = `Mode: ${capitalize(currentLevel)}`;
+                resetLevel();
+            }
+            
+            function updateScoreDisplay() { scoreDisplay.textContent = score; }
+
+            function updateLayout() {
+                mainContent.classList.toggle('activity-visible', showActivity);
+                headerTitle.textContent = showActivity ? 'Activity' : 'Information';
+                toggleViewBtn.textContent = showActivity ? 'Information' : 'Activity';
+            }
+            
+            toggleViewBtn.addEventListener('click', () => {
+                showActivity = !showActivity;
+                updateLayout();
+            });
+            
+            difficultyBtn.addEventListener('click', () => {
+                const currentLevelIdx = levelOrder.indexOf(currentLevel);
+                currentLevel = levelOrder[(currentLevelIdx + 1) % levelOrder.length];
+                difficultyBtn.textContent = `Mode: ${capitalize(currentLevel)}`;
+                resetGame();
+            });
+
+            resetGameBtn.addEventListener('click', resetGame);
+            nextLevelBtn.addEventListener('click', handleNextLevel);
+            playAgainBtn.addEventListener('click', () => {
+                currentLevel = 'easy';
+                difficultyBtn.textContent = `Mode: Easy`;
+                resetGame();
+            });
+            
+            backBtn.addEventListener('click', () => {
+                window.history.back();
+            });
+            
+            initializeGame();
+            updateLayout();
+        });
+    </script>
+</body>
+</html>

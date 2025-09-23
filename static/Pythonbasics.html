@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Basics: Code Detective</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --header-bg: #ffffff;
+            --page-bg: #f0f2f5;
+            --panel-bg: #ffffff;
+            --border-color: #e5e7eb;
+            --text-dark: #111827;
+            --text-light: #475569;
+            --accent-blue: #3b82f6;
+            --accent-green: #22c55e;
+            --accent-red: #ef4444;
+            --primary-blue: #007bff;
+            --secondary-gray: #6c757d;
+        }
+        body { font-family: 'Poppins', sans-serif; background-color: var(--page-bg); color: var(--text-dark); margin: 0; height: 100vh; overflow: hidden; }
+        .page-container { display: flex; flex-direction: column; height: 100vh; }
+        .header {
+            position: fixed; top: 0; left: 0; width: 100%; height: 60px;
+            background-color: var(--header-bg); display: flex; align-items: center; justify-content: space-between;
+            padding: 0 24px; border-bottom: 1px solid var(--border-color); box-shadow: 0 2px 4px rgba(0,0,0,0.05); z-index: 1000; box-sizing: border-box;
+        }
+        .header-section { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .header-section.center { text-align: center; font-size: 1.2em; font-weight: bold; }
+        .header-section.right { display: flex; justify-content: flex-end; }
+        .button {
+            padding: 8px 16px; margin-left: 10px; cursor: pointer;
+            border: none; border-radius: 6px; font-weight: 600; color: white;
+            transition: transform 0.1s, background-color 0.2s;
+        }
+        .button:active { transform: scale(0.95); }
+        .main-content {
+            margin-top: 60px; padding: 24px; display: flex;
+            flex-grow: 1; overflow: hidden; box-sizing: border-box;
+            gap: 24px; justify-content: center;
+        }
+        .panel {
+            background-color: var(--panel-bg); border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: 1px solid var(--border-color);
+            box-sizing: border-box; overflow-y: auto;
+            height: calc(100vh - 108px);
+            transition: width 400ms ease-in-out, min-width 400ms ease-in-out, margin 400ms ease-in-out;
+        }
+        #info-panel {
+            padding: 24px 32px;
+            width: 100%;
+            max-width: 700px;
+            margin: 0 auto;
+            flex-shrink: 0;
+        }
+        #activity-panel { display: none; flex-grow: 1; min-width: 400px; padding: 0; flex-direction: column; }
+        
+        .main-content.activity-visible { justify-content: flex-start; }
+        .main-content.activity-visible #info-panel { width: 340px; min-width: 340px; margin: 0; }
+        .main-content.activity-visible #activity-panel { display: flex; }
+
+        /* Game Specific Styles */
+        .info-panel-content { background-color: #ffffff; padding: 1.5rem; border-radius: 0.75rem; border: 1px solid var(--border-color); }
+        .info-panel-content h2 { color: var(--accent-blue); border-bottom: 2px solid #e9ecef; padding-bottom: 5px; margin-top: 0; }
+        .info-panel-content table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        .info-panel-content th, .info-panel-content td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        .info-panel-content th { background-color: #f2f2f2; font-weight: bold; }
+        .info-panel-content pre { background-color: #f8f9fa; border: 1px solid #e9ecef; padding: 15px; border-radius: 5px; overflow-x: auto; }
+
+        .activity-area { display: flex; flex-direction: column; gap: 1rem; padding: 1.5rem; flex-grow: 1; align-items: center; justify-content: center; }
+        .code-container { font-family: 'Courier New', Courier, monospace; background-color: #282c34; color: #abb2bf; padding: 20px; border-radius: 8px; white-space: pre; line-height: 1.6; cursor: pointer; width: 100%; max-width: 600px; }
+        .code-container .line { display: block; padding: 2px 8px; border-radius: 4px; transition: background-color 0.2s; }
+        .code-container .line:hover { background-color: #3e4451; }
+        .code-container .correct { background-color: var(--accent-green); color: white; }
+        .code-container .incorrect { background-color: var(--accent-red); color: white; }
+        .feedback { font-size: 1.1rem; font-weight: 600; text-align: center; min-height: 28px; }
+        .bottom-control-bar { height: 60px; display: flex; justify-content: flex-end; align-items: center; padding: 0 20px; background-color: #f8f9fa; border-top: 1px solid var(--border-color); flex-shrink: 0; }
+        .reset-button { background-color: var(--accent-red); }
+    </style>
+</head>
+<body class="page-container">
+    <header class="header">
+        <div class="header-section">Python Basics</div>
+        <div id="header-title" class="header-section center">Information</div>
+        <div class="header-section right">
+            <button id="back-btn" class="button" style="background-color: var(--secondary-gray);">Back</button>
+            <button id="toggle-view-btn" class="button" style="background-color: var(--primary-blue);">Activity</button>
+            <button id="difficulty-btn" class="button" style="background-color: var(--accent-blue);">Mode: Easy</button>
+        </div>
+    </header>
+
+    <main class="main-content" id="main-content">
+        <section id="info-panel" class="panel">
+            <div class="info-panel-content">
+                <h2>1. Variables and Data Types</h2>
+                <p><b>Variables</b> are like named containers that hold different types of data. Think of them as labels for values.</p>
+                <table>
+                    <thead><tr><th>Data Type</th><th>Description</th><th>Example</th></tr></thead>
+                    <tbody>
+                        <tr><td><b>Integers (<code>int</code>)</b></td><td>Whole numbers</td><td><code>age = 25</code></td></tr>
+                        <tr><td><b>Floats (<code>float</code>)</b></td><td>Decimal numbers</td><td><code>price = 19.99</code></td></tr>
+                        <tr><td><b>Strings (<code>str</code>)</b></td><td>Text</td><td><code>name = "Alice"</code></td></tr>
+                        <tr><td><b>Booleans (<code>bool</code>)</b></td><td>True or False</td><td><code>is_active = True</code></td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="info-panel-content mt-4">
+                <h2>2. Control Flow</h2>
+                <p><b>Control flow</b> is the order in which statements are executed. It allows you to make decisions (if/else) and repeat actions (loops).</p>
+                <pre><code># An if-else statement
+if age >= 18:
+    print("Adult")
+else:
+    print("Minor")
+
+# A for loop
+for i in range(3):
+    print(i) # Prints 0, 1, 2
+</code></pre>
+            </div>
+        </section>
+
+        <section id="activity-panel" class="panel">
+            <div id="game-area" class="activity-area"></div>
+            <footer class="bottom-control-bar">
+                <button id="reset-btn" class="button reset-button">Reset</button>
+            </footer>
+        </section>
+    </main>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const mainContent = document.getElementById('main-content');
+            const infoPanel = document.getElementById('info-panel');
+            const activityPanel = document.getElementById('activity-panel');
+            const headerTitle = document.getElementById('header-title');
+            const toggleViewBtn = document.getElementById('toggle-view-btn');
+            const difficultyBtn = document.getElementById('difficulty-btn');
+            const backBtn = document.getElementById('back-btn');
+            const resetBtn = document.getElementById('reset-btn');
+            const gameArea = document.getElementById('game-area');
+
+            let showActivity = false;
+            let difficultyIdx = 0;
+            const difficulties = ['easy', 'medium', 'hard'];
+            let isAnswered = false;
+
+            const gameData = {
+                easy: [
+                    { instruction: "Find the indentation error. Python is picky about spacing!", codeLines: [{ line: 1, text: 'def greet():' }, { line: 2, text: '    message = "Hello!"' }, { line: 3, text: '  print(message)' }, { line: 4, text: 'greet()' }], bugLine: 3 },
+                    { instruction: "Find the typo in the function name.", codeLines: [{ line: 1, text: 'name = "World"' }, { line: 2, text: 'prnt("Hello, " + name)' }], bugLine: 2 },
+                    { instruction: "A function definition is missing its colon. Find the error.", codeLines: [{ line: 1, text: 'def my_function()' }, { line: 2, text: '    # code goes here' }, { line: 3, text: '    pass' }], bugLine: 1 }
+                ],
+                medium: [
+                    { instruction: "This should print 1, 2, 3. Find the loop's logical error.", codeLines: [{ line: 1, text: '# Print numbers from 1 to 3' }, { line: 2, text: 'for i in range(3):' }, { line: 3, text: '    print(i)' }], bugLine: 3 },
+                    { instruction: "Find the incorrect comparison operator.", codeLines: [{ line: 1, text: 'x = 10' }, { line: 2, text: 'if x = 10:' }, { line: 3, text: '    print("x is 10")' }], bugLine: 2 },
+                    { instruction: "You can't add a string and a number. Find the error.", codeLines: [{ line: 1, text: 'age = 25' }, { line: 2, text: 'message = "I am " + age' }, { line: 3, text: 'print(message)' }], bugLine: 2 }
+                ],
+                hard: [
+                    { instruction: "Find the 'off-by-one' error trying to get the last item.", codeLines: [{ line: 1, text: 'fruits = ["apple", "banana", "cherry"]' }, { line: 2, text: 'last_fruit = fruits[3]' }, { line: 3, text: 'print(last_fruit)' }], bugLine: 2 },
+                    { instruction: "A variable is used outside its scope. Find the error.", codeLines: [{ line: 1, text: 'def set_message():' }, { line: 2, text: '    local_var = "Can you see me?"' }, { line: 3, text: 'set_message()' }, { line: 4, text: 'print(local_var)' }], bugLine: 4 },
+                    { instruction: "This loop modifies a list while iterating over it, causing unexpected behavior. Find the problematic loop.", codeLines: [{ line: 1, text: 'numbers = [1, 2, 3, 4]' }, { line: 2, text: 'for num in numbers:' }, { line: 3, text: '    if num % 2 == 0:' }, { line: 4, text: '        numbers.remove(num)' }], bugLine: 2 }
+                ]
+            };
+
+            function updateLayout() {
+                mainContent.classList.toggle('activity-visible', showActivity);
+                headerTitle.textContent = showActivity ? 'Activity' : 'Information';
+                toggleViewBtn.textContent = showActivity ? 'Information' : 'Activity';
+            }
+
+            function startGame() {
+                isAnswered = false;
+                const difficulty = difficulties[difficultyIdx];
+                const problemsForLevel = gameData[difficulty];
+                const levelData = problemsForLevel[Math.floor(Math.random() * problemsForLevel.length)]; // Randomly select one problem
+
+                gameArea.innerHTML = `
+                    <h2 class="text-xl font-bold text-center">Code Detective: ${capitalize(difficulty)}</h2>
+                    <p class="text-center text-gray-500">${levelData.instruction}</p>
+                    <div class="code-container" id="code-container"></div>
+                    <div id="feedback" class="feedback"></div>
+                `;
+
+                const codeContainer = document.getElementById('code-container');
+                levelData.codeLines.forEach(item => {
+                    const lineEl = document.createElement('span');
+                    lineEl.className = 'line';
+                    lineEl.dataset.line = item.line;
+                    lineEl.textContent = `${item.line}  ${item.text}`;
+                    codeContainer.appendChild(lineEl);
+                });
+
+                codeContainer.addEventListener('click', (e) => handleLineClick(e, levelData));
+            }
+
+            function handleLineClick(e, levelData) {
+                if (isAnswered || !e.target.classList.contains('line')) return;
+
+                isAnswered = true;
+                const selectedLine = parseInt(e.target.dataset.line);
+                const feedbackEl = document.getElementById('feedback');
+                
+                document.querySelectorAll('.line').forEach(line => line.style.pointerEvents = 'none');
+
+                if (selectedLine === levelData.bugLine) {
+                    e.target.classList.add('correct');
+                    feedbackEl.textContent = "Correct! You found the bug.";
+                    feedbackEl.style.color = 'var(--accent-green)';
+                } else {
+                    e.target.classList.add('incorrect');
+                    document.querySelector(`[data-line="${levelData.bugLine}"]`).classList.add('correct');
+                    feedbackEl.textContent = "Not quite! The correct line is highlighted in green.";
+                    feedbackEl.style.color = 'var(--accent-red)';
+                }
+            }
+
+            function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+            // --- Event Listeners ---
+            toggleViewBtn.addEventListener('click', () => {
+                showActivity = !showActivity;
+                updateLayout();
+                if (showActivity) {
+                    startGame();
+                }
+            });
+
+            difficultyBtn.addEventListener('click', () => {
+                difficultyIdx = (difficultyIdx + 1) % difficulties.length;
+                const newDifficulty = difficulties[difficultyIdx];
+                difficultyBtn.textContent = `Mode: ${capitalize(newDifficulty)}`;
+                if (showActivity) {
+                    startGame();
+                }
+            });
+            
+            resetBtn.addEventListener('click', () => {
+                if (showActivity) {
+                    startGame();
+                }
+            });
+            
+            backBtn.addEventListener('click', () => {
+                window.history.back();
+            });
+            
+            updateLayout();
+        });
+    </script>
+</body>
+</html>

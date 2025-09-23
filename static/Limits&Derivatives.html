@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Limits & Derivatives: Calculus Challenger</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --header-bg: #ffffff;
+            --page-bg: #f3f4f6;
+            --panel-bg: #ffffff;
+            --border-color: #e5e7eb;
+            --text-dark: #1f2937;
+            --text-light: #4b5563;
+            --accent-gray: #4b5563;
+            --accent-gray-dark: #374151;
+            --secondary-gray: #6b7280;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--page-bg);
+            color: var(--text-dark);
+            margin: 0;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .page-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 60px;
+            background-color: var(--header-bg);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            border-bottom: 1px solid var(--border-color);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            z-index: 1000;
+            box-sizing: border-box;
+        }
+
+        .header-section {
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .header-section.center {
+            text-align: center;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        .header-section.right {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            margin-left: 10px;
+            cursor: pointer;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            color: white;
+            transition: transform 0.1s, background-color 0.2s;
+        }
+        .btn:active:not(:disabled) { transform: scale(0.95); }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        .main-content {
+            margin-top: 60px;
+            padding: 24px;
+            display: flex;
+            gap: 24px;
+            flex-grow: 1;
+            overflow: hidden;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        .panel {
+            background-color: var(--panel-bg);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            overflow-y: auto;
+            height: calc(100vh - 108px);
+            transition: width 400ms ease-in-out, min-width 400ms ease-in-out;
+        }
+
+        #info-panel {
+            flex-shrink: 0;
+            width: 100%;
+            max-width: 700px;
+            padding: 32px 48px;
+        }
+
+        #activity-panel {
+            display: none;
+            flex-grow: 1;
+            padding: 0;
+            flex-direction: column;
+        }
+
+        .main-content.activity-visible {
+            justify-content: flex-start;
+        }
+
+        .main-content.activity-visible #info-panel {
+            width: 340px;
+            min-width: 340px;
+            padding: 24px 32px;
+        }
+
+        .main-content.activity-visible #activity-panel {
+            display: flex;
+        }
+
+        /* Activity-specific styles */
+        .activity-area {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            text-align: center;
+        }
+        .bottom-control-bar {
+            height: 60px;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            padding: 0 20px;
+            background-color: #f9fafb;
+            border-top: 1px solid var(--border-color);
+            flex-shrink: 0;
+        }
+    </style>
+</head>
+<body class="page-container">
+    <header class="header">
+        <div class="header-section font-bold" style="color: var(--accent-gray);">Class 11 - Limits & Derivatives</div>
+        <div id="header-title" class="header-section center">Information</div>
+        <div class="header-section right">
+            <button id="back-btn" class="btn" style="background-color: var(--secondary-gray);">Back</button>
+            <button id="activity-info-btn" class="btn" style="background-color: var(--accent-gray);">Start Activity</button>
+            <button id="difficulty-btn" class="btn" style="background-color: #ef4444;">Difficulty: Easy</button>
+        </div>
+    </header>
+
+    <main id="main-content" class="main-content">
+        <section id="info-panel" class="panel">
+            <h2 class="text-3xl font-bold mb-4" style="color:var(--accent-gray);">Calculus: Limits & Derivatives</h2>
+            <p class="mb-6 text-gray-600">Prepare for the calculus challenge by reviewing these fundamental concepts and rules.</p>
+            <div class="space-y-4">
+                <div class="bg-gray-50 p-4 rounded-lg border">
+                    <h3 class="text-xl font-semibold text-gray-800">Key Concepts</h3>
+                    <ul class="list-disc list-inside mt-2 space-y-2 text-gray-600">
+                        <li><b>Limit:</b> The value that a function approaches as the input gets closer to a certain point. It's about the journey, not the destination itself. Denoted as $ \lim_{x \to c} f(x) $.</li>
+                        <li><b>Derivative:</b> Measures the instantaneous rate of change or the slope of a function at a specific point. Denoted as $f'(x)$ or $\frac{d}{dx}f(x)$.</li>
+                    </ul>
+                </div>
+                <div class="bg-gray-50 p-4 rounded-lg border">
+                    <h3 class="text-xl font-semibold text-gray-800">Fundamental Rules</h3>
+                    <ul class="list-disc list-inside mt-2 space-y-2 text-gray-600">
+                        <li><b>Power Rule:</b> $\frac{d}{dx}(x^n) = nx^{n-1}$</li>
+                        <li><b>Product Rule:</b> $\frac{d}{dx}(uv) = u'v + uv'$</li>
+                        <li><b>Quotient Rule:</b> $\frac{d}{dx}\left(\frac{u}{v}\right) = \frac{u'v - uv'}{v^2}$</li>
+                        <li><b>Chain Rule:</b> $\frac{d}{dx}(f(g(x))) = f'(g(x)) \cdot g'(x)$</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="activity-panel" class="panel">
+            <div id="game-body" class="activity-area">
+                <div class="w-full max-w-lg">
+                    <h2 id="level-title" class="text-2xl font-bold text-gray-800 text-left mb-2"></h2>
+                    <p id="question-text" class="text-2xl my-6 font-mono font-bold min-h-[64px]"></p>
+
+                    <div id="game-active-container">
+                        <form id="answer-form" class="flex justify-center items-center gap-2 sm:gap-4 mt-6">
+                            <input type="text" id="answer-input" class="text-center text-xl font-bold w-60 p-3 rounded-lg border-2 border-gray-300 focus:border-gray-500 focus:ring-gray-500" placeholder="Enter Answer" required autocomplete="off">
+                            <button type="submit" class="btn text-lg px-6 py-3" style="background-color: var(--accent-gray);">Check</button>
+                        </form>
+                        <p id="feedback-text" class="mt-4 font-semibold text-lg h-7"></p>
+                    </div>
+
+                    <div id="level-complete-container" class="hidden text-center py-8">
+                        <h3 class="text-3xl font-bold" style="color: var(--accent-gray);">Challenge Complete!</h3>
+                        <p id="level-complete-score" class="text-xl mt-2 text-gray-700"></p>
+                        <button id="next-level-btn" class="btn mt-6 text-lg py-3 px-8" style="background-color: var(--accent-gray);">Next Challenge</button>
+                    </div>
+                </div>
+            </div>
+            <footer class="bottom-control-bar">
+                <div class="text-center mr-4"><p class="text-xs text-gray-500">SCORE</p><p id="score" class="text-2xl font-bold text-gray-900">0</p></div>
+                <button id="reset-game-btn" class="btn" style="background-color: var(--secondary-gray);">Reset Game</button>
+            </footer>
+        </section>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- DOM Elements ---
+            const mainContent = document.getElementById('main-content');
+            const infoSection = document.getElementById('info-section');
+            const activitySection = document.getElementById('activity-panel');
+            const activityInfoBtn = document.getElementById('activity-info-btn');
+            const difficultyBtn = document.getElementById('difficulty-btn');
+            const backBtn = document.getElementById('back-btn');
+            const headerTitle = document.getElementById('header-title');
+
+            // --- Game Elements ---
+            const levelTitle = document.getElementById('level-title');
+            const scoreDisplay = document.getElementById('score');
+            const questionText = document.getElementById('question-text');
+            const answerForm = document.getElementById('answer-form');
+            const answerInput = document.getElementById('answer-input');
+            const feedbackText = document.getElementById('feedback-text');
+            const levelCompleteContainer = document.getElementById('level-complete-container');
+            const levelCompleteScore = document.getElementById('level-complete-score');
+            const nextLevelBtn = document.getElementById('next-level-btn');
+            const resetGameBtn = document.getElementById('reset-game-btn');
+            const gameActiveContainer = document.getElementById('game-active-container');
+
+            // --- Game Data & State ---
+            const problems = {
+                easy: [
+                    { q: "lim x→2 (x + 5)", a: "7" }, { q: "lim x→3 (x² - 4)", a: "5" }, { q: "lim x→0 (5)", a: "5" }, { q: "lim x→-1 (3x + 2)", a: "-1" }, { q: "d/dx (x³)", a: "3x^2" }, { q: "d/dx (5x)", a: "5" }, { q: "d/dx (x² + 3x)", a: "2x+3" }, { q: "d/dx (10)", a: "0" }, { q: "d/dx (4x³ - 2x)", a: "12x^2-2" }, { q: "d/dx (x)", a: "1" }, { q: "lim x→1 (x² + x + 1)", a: "3" }, { q: "d/dx (x⁵)", a: "5x^4" },
+                ],
+                medium: [
+                    { q: "lim x→1 (x²-1)/(x-1)", a: "2" }, { q: "d/dx (sin(x))", a: "cos(x)" }, { q: "d/dx (cos(x))", a: "-sin(x)" }, { q: "d/dx (x * sin(x))", a: "sin(x)+x*cos(x)" }, { q: "d/dx (x² * cos(x))", a: "2x*cos(x)-x^2*sin(x)" }, { q: "d/dx (sin(x)/x)", a: "(x*cos(x)-sin(x))/x^2" }, { q: "lim x→2 (x³-8)/(x-2)", a: "12" }, { q: "d/dx (eˣ)", a: "e^x" }, { q: "d/dx (ln(x))", a: "1/x" }, { q: "d/dx (x*eˣ)", a: "e^x+x*e^x" }, { q: "lim x→∞ (3x+2)/(x-1)", a: "3" },
+                ],
+                hard: [
+                    { q: "lim x→0 sin(x)/x", a: "1" }, { q: "d/dx (sin(2x))", a: "2cos(2x)" }, { q: "d/dx (cos(x²))", a: "-2x*sin(x^2)" }, { q: "d/dx (tan(x))", a: "sec^2(x)" }, { q: "d/dx (ln(sin(x)))", a: "cot(x)" }, { q: "d/dx ((x+1)/(x-1))", a: "-2/(x-1)^2" }, { q: "d/dx (√(x²+1))", a: "x/sqrt(x^2+1)" }, { q: "lim x→0 (1-cos(x))/x", a: "0" }, { q: "d/dx (sin²(x))", a: "2sin(x)cos(x)" }, { q: "d/dx (x ln(x))", a: "ln(x)+1" }, { q: "lim h→0 (sin(x+h)-sin(x))/h", a: "cos(x)" }, { q: "d/dx (e^(x²))", a: "2x*e^(x^2)" }
+                ]
+            };
+            
+            const levelOrder = ['easy', 'medium', 'hard'];
+            let currentLevelIndex = 0;
+            let score = 0;
+            let isAnswered = false;
+            let currentQuestion = null;
+            let shuffledProblems = [];
+
+            // --- UI & Game Logic Functions ---
+            function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+            function updateLayout(isActivityVisible) {
+                mainContent.classList.toggle('activity-visible', isActivityVisible);
+                headerTitle.textContent = isActivityVisible ? 'Activity: Calculus Challenger' : 'Information';
+                activityInfoBtn.textContent = isActivityVisible ? 'Information' : 'Start Activity';
+            }
+            
+            function formatQuestion(q) {
+                return q.replace(/\^(\d+|\w)/g, '<sup>$1</sup>').replace(/√/g, '&radic;').replace(/∞/g, '&infin;').replace(/→/g, '&rarr;').replace(/lim/g, '<i>lim</i>');
+            }
+            
+            function normalizeAnswer(ans) {
+                return ans.toLowerCase().replace(/\s/g, '').replace(/\*/g, '').replace('sqrt','√');
+            }
+
+            function initializeGame() {
+                resetGame();
+            }
+
+            function resetGame() {
+                score = 0;
+                scoreDisplay.textContent = score;
+                resetLevel();
+            }
+
+            function resetLevel() {
+                const currentLevel = levelOrder[currentLevelIndex];
+                const originalProblems = problems[currentLevel];
+                shuffledProblems = [...originalProblems].sort(() => Math.random() - 0.5);
+                loadQuestion();
+            }
+            
+            function loadQuestion() {
+                if (shuffledProblems.length === 0) {
+                    showLevelComplete();
+                    return;
+                }
+                
+                currentQuestion = shuffledProblems.pop();
+                isAnswered = false;
+                levelCompleteContainer.classList.add('hidden');
+                gameActiveContainer.style.display = 'block';
+                feedbackText.textContent = "";
+                
+                const currentLevelName = capitalize(levelOrder[currentLevelIndex]);
+                levelTitle.textContent = `${currentLevelName} Challenge`;
+                questionText.innerHTML = formatQuestion(currentQuestion.q);
+                answerInput.value = "";
+                answerInput.disabled = false;
+                answerForm.querySelector('button').disabled = false;
+                answerInput.focus();
+            }
+            
+            function handleAnswerSubmit(e) {
+                e.preventDefault();
+                if (isAnswered) return;
+                
+                isAnswered = true;
+                answerInput.disabled = true;
+                answerForm.querySelector('button').disabled = true;
+                
+                const userAnswer = normalizeAnswer(answerInput.value);
+                const correctValue = normalizeAnswer(currentQuestion.a);
+                
+                if (userAnswer === correctValue) {
+                    score += 10;
+                    scoreDisplay.textContent = score;
+                    feedbackText.textContent = "Correct! 🚀";
+                    feedbackText.style.color = '#22c55e';
+                } else {
+                    feedbackText.textContent = `Incorrect. The answer is ${currentQuestion.a}.`;
+                    feedbackText.style.color = '#ef4444';
+                }
+                setTimeout(loadQuestion, 2000);
+            }
+            
+            function showLevelComplete() {
+                gameActiveContainer.style.display = 'none';
+                questionText.textContent = "";
+                levelCompleteContainer.classList.remove('hidden');
+                levelCompleteScore.textContent = `Your score for this challenge: ${score}.`;
+                
+                if (currentLevelIndex >= levelOrder.length - 1) {
+                    nextLevelBtn.textContent = "Restart Challenges";
+                } else {
+                    nextLevelBtn.textContent = "Next Challenge";
+                }
+            }
+            
+            function handleNextLevel() {
+                if (currentLevelIndex >= levelOrder.length - 1) {
+                    currentLevelIndex = 0; // Loop back to easy
+                } else {
+                    currentLevelIndex++;
+                }
+                difficultyBtn.textContent = `Difficulty: ${capitalize(levelOrder[currentLevelIndex])}`;
+                resetGame();
+            }
+
+            // --- Event Listeners ---
+            activityInfoBtn.addEventListener('click', () => {
+                const isActivityVisible = !mainContent.classList.contains('activity-visible');
+                updateLayout(isActivityVisible);
+                if (isActivityVisible) {
+                    initializeGame();
+                }
+            });
+            
+            difficultyBtn.addEventListener('click', () => {
+                currentLevelIndex = (currentLevelIndex + 1) % levelOrder.length;
+                const newDifficulty = capitalize(levelOrder[currentLevelIndex]);
+                difficultyBtn.textContent = `Difficulty: ${newDifficulty}`;
+                if (mainContent.classList.contains('activity-visible')) {
+                    resetGame();
+                }
+            });
+            
+            resetGameBtn.addEventListener('click', resetGame);
+            nextLevelBtn.addEventListener('click', handleNextLevel);
+            answerForm.addEventListener('submit', handleAnswerSubmit);
+            backBtn.addEventListener('click', () => {
+                window.history.back();
+            });
+        });
+    </script>
+</body>
+</html>

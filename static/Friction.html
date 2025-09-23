@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Friction Educational Module</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --header-bg: #ffffff; --page-bg: #f0f2f5; --panel-bg: #ffffff;
+            --border-color: #e5e7eb; --text-dark: #1f2937; --accent-brown: #795548;
+            --secondary-gray: #6c757d; --primary-blue-btn: #007bff; --accent-red: #ef4444;
+        }
+        body { font-family: 'Poppins', sans-serif; background-color: var(--page-bg); color: var(--text-dark); margin: 0; height: 100vh; overflow: hidden; }
+        .page-container { display: flex; flex-direction: column; height: 100vh; }
+        .header {
+            position: fixed; top: 0; left: 0; width: 100%; height: 60px;
+            background-color: var(--header-bg); display: flex; align-items: center; justify-content: space-between;
+            padding: 0 24px; border-bottom: 1px solid var(--border-color);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05); z-index: 1000;
+        }
+        .header-section { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .header-section.center { text-align: center; font-size: 1.2em; font-weight: bold; }
+        .header-section.right { display: flex; justify-content: flex-end; }
+        .button {
+            padding: 8px 16px; margin-left: 10px; cursor: pointer;
+            border: none; border-radius: 6px; font-weight: 600; color: white;
+            white-space: nowrap; transition: transform 0.1s;
+        }
+        .button:active:not(:disabled) { transform: scale(0.95); }
+        .button:disabled { opacity: 0.6; cursor: not-allowed; }
+        .main-content { margin-top: 60px; padding: 24px; display: flex; gap: 24px; flex-grow: 1; overflow: hidden; justify-content: center; }
+        .panel {
+            background-color: var(--panel-bg); border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: 1px solid var(--border-color);
+            overflow-y: auto; padding: 32px 48px; height: calc(100vh - 108px);
+            transition: width 400ms ease-in-out;
+        }
+        #info-panel { flex-shrink: 0; }
+        #activity-panel { display: none; flex-grow: 1; padding: 0; flex-direction: column; }
+        .main-content.activity-visible { justify-content: flex-start; }
+        .main-content.activity-visible #info-panel { width: 340px; min-width: 340px; padding: 24px 32px; }
+        .main-content.activity-visible #activity-panel { display: flex; }
+        
+        .activity-area { flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; }
+        .bottom-control-bar { height: 60px; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; background-color: var(--page-bg); border-top: 1px solid var(--border-color); flex-shrink: 0; border-radius: 0 0 12px 12px;}
+        .status-bar { font-weight: bold; color: var(--text-dark); font-size: 1.2rem;}
+        .reset-button { padding: 8px 16px; cursor: pointer; background-color: var(--accent-red); color: white; border: none; border-radius: 6px; font-weight: 600; }
+        .info-panel-content { background-color: #ffffff; padding: 1.5rem; border-radius: 0.75rem; border: 1px solid #e5e7eb; }
+
+        /* Game Styles */
+        .game-container { text-align: center; width:100%; max-width: 700px; animation: 0.5s fadeIn ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .sentence-container { background-color: #efebe9; padding: 20px; border-radius: 8px; margin: 1.5rem 0; line-height: 1.8; font-size: 1.1rem; }
+        .blank { display: inline-block; min-width: 120px; border-bottom: 2px dashed #8D6E63; margin: 0 5px; text-align: center; padding: 2px 5px; font-weight: bold; color: var(--accent-brown); }
+        .blank.correct { border-color: #4caf50; background-color: #e8f5e9;}
+        .blank.incorrect { border-color: #f44336; background-color: #ffebee;}
+        .options-container { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-bottom: 1.5rem; }
+        .option { padding: 10px 15px; background-color: #8D6E63; color: white; border: none; border-radius: 20px; cursor: pointer; transition: all 0.3s; }
+        .option.used { opacity: 0.4; cursor: not-allowed; }
+    </style>
+</head>
+<body class="page-container">
+    <header class="header">
+        <div class="header-section font-bold text-lg" style="color: var(--accent-brown);">Physics: Friction</div>
+        <div id="header-title" class="header-section center">Information</div>
+        <div class="header-section right">
+            <button id="back-btn" class="button" style="background-color: var(--secondary-gray);">Back</button>
+            <button id="activity-info-btn" class="button" style="background-color: var(--primary-blue-btn);">Activity</button>
+            <button id="difficulty-btn" class="button" style="background-color: var(--accent-brown);">Difficulty: Easy</button>
+        </div>
+    </header>
+
+    <main id="main-content" class="main-content">
+        <section id="info-panel" class="panel">
+            <h1 class="text-3xl font-bold mb-4" style="color: var(--accent-brown);">Friction: The Force That Opposes Motion</h1>
+            <p class="mt-2 text-gray-600">Friction is a force that resists the relative motion between surfaces in contact. It's the "grip" that allows us to walk, for cars to drive, and for brakes to work. It is caused by microscopic imperfections on surfaces that interlock with each other.</p>
+            
+            <div class="info-panel-content mt-4">
+                <h3 class="text-xl font-semibold text-gray-900">Types of Friction</h3>
+                <ul class="list-disc list-inside mt-2 text-gray-600">
+                    <li><b>Static Friction:</b> The force that prevents an object from starting to move. It's the strongest type of friction.</li>
+                    <li><b>Kinetic (Sliding) Friction:</b> The force that acts on an object once it is already moving. It is weaker than static friction.</li>
+                    <li><b>Rolling Friction:</b> The resistance that occurs when a round object (like a ball or wheel) rolls on a surface. It is much weaker than sliding friction.</li>
+                    <li><b>Fluid Friction (Drag):</b> The friction that occurs in liquids or gases (like air resistance). It opposes the motion of objects moving through them.</li>
+                </ul>
+            </div>
+
+            <div class="info-panel-content mt-4">
+                <h3 class="text-xl font-semibold text-gray-900">Factors Affecting Friction</h3>
+                 <ul class="list-disc list-inside mt-2 text-gray-600">
+                    <li><b>Nature of Surfaces:</b> Rough surfaces (like sandpaper) have much higher friction than smooth surfaces (like ice).</li>
+                    <li><b>Normal Force:</b> The harder the surfaces are pressed together (i.e., the heavier the object), the greater the friction.</li>
+                </ul>
+            </div>
+
+            <div class="info-panel-content mt-4">
+                <h3 class="text-xl font-semibold text-gray-900">Advantages & Disadvantages</h3>
+                 <ul class="list-disc list-inside mt-2 text-gray-600">
+                    <li><b>Advantages (Good Friction):</b> Helps us walk without slipping, allows car brakes to work, lets us write with a pencil.</li>
+                    <li><b>Disadvantages (Bad Friction):</b> Causes wear and tear on machine parts, produces unwanted heat, makes it harder to move heavy objects.</li>
+                </ul>
+            </div>
+
+            <div class="info-panel-content mt-4">
+                <h3 class="text-xl font-semibold text-gray-900">How to Play</h3>
+                <ul class="list-disc list-inside mt-2 text-gray-600">
+                    <li>Choose a difficulty. Each level has sentences with blanks.</li>
+                    <li>Click the word options to fill in the blanks in order.</li>
+                    <li>Once all blanks are filled, check your answer!</li>
+                </ul>
+            </div>
+        </section>
+
+        <section id="activity-panel" class="panel">
+            <div id="activity-area" class="activity-area"></div>
+            <footer class="bottom-control-bar">
+                <div id="status-bar" class="status-bar">Score: 0</div>
+                <button id="reset-btn" class="reset-button">Reset</button>
+            </footer>
+        </section>
+    </main>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const gameData = {
+                easy: [
+                    { sentence: "Friction is a force that _______ motion between surfaces.", correctAnswer: "opposes", options: ["opposes", "creates", "helps"] },
+                    { sentence: "Rougher surfaces generally have _______ friction.", correctAnswer: "more", options: ["more", "less", "no"] },
+                    { sentence: "Friction produces _______ as a byproduct.", correctAnswer: "heat", options: ["heat", "light", "sound"] },
+                ],
+                medium: [
+                    { sentence: "_______ friction is typically less than static friction.", correctAnswer: "Kinetic", options: ["Kinetic", "Rolling", "Fluid"] },
+                    { sentence: "Ball bearings reduce friction by using _______ friction.", correctAnswer: "rolling", options: ["rolling", "sliding", "static"] },
+                    { sentence: "Air resistance is a form of _______ friction.", correctAnswer: "fluid", options: ["fluid", "solid", "dry"] },
+                ],
+                hard: [
+                    { sentence: "The force of kinetic friction is mostly _______ of the relative speed.", correctAnswer: "independent", options: ["independent", "dependent", "proportional"] },
+                    { sentence: "The maximum static friction force is called _______ friction.", correctAnswer: "limiting", options: ["limiting", "kinetic", "normal"] },
+                    { sentence: "The study of friction, wear, and lubrication is called _______.", correctAnswer: "tribology", options: ["tribology", "kinematics", "dynamics"] },
+                ]
+            };
+            
+            const difficulties = ['easy', 'medium', 'hard'];
+            let difficultyIdx = 0, score = 0, showActivity = false, currentQuestionIndex = 0, selectedOptions = [];
+
+            const mainContent = document.getElementById('main-content'), infoPanel = document.getElementById('info-panel'), activityPanel = document.getElementById('activity-panel'), activityInfoBtn = document.getElementById('activity-info-btn'), backBtn = document.getElementById('back-btn'), headerTitle = document.getElementById('header-title'), difficultyBtn = document.getElementById('difficulty-btn'), activityArea = document.getElementById('activity-area'), statusBar = document.getElementById('status-bar'), resetBtn = document.getElementById('reset-btn');
+
+            function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+            
+            function updateLayout() {
+                mainContent.classList.toggle('activity-visible', showActivity);
+                infoPanel.style.width = showActivity ? '340px' : `${Math.min(800, window.innerWidth - 48)}px`;
+                headerTitle.textContent = showActivity ? 'Friction Challenge' : 'Information';
+                activityInfoBtn.textContent = showActivity ? 'Information' : 'Activity';
+                updateScoreDisplay();
+            }
+
+            function startGame() {
+                score = 0; currentQuestionIndex = 0;
+                const difficulty = difficulties[difficultyIdx];
+                gameData[difficulty].sort(() => .5 - Math.random());
+                loadGame();
+            }
+
+            function loadGame() {
+                const difficulty = difficulties[difficultyIdx];
+                const questions = gameData[difficulty];
+                if (currentQuestionIndex >= questions.length) {
+                    showCompletionScreen();
+                    return;
+                }
+                const question = questions[currentQuestionIndex];
+                selectedOptions = [];
+                
+                activityArea.innerHTML = `
+                    <div class="game-container">
+                        <h2 class="text-2xl font-bold">${capitalize(difficulty)} Challenge</h2>
+                        <div id="sentence-container" class="sentence-container"></div>
+                        <div id="options-container" class="options-container"></div>
+                        <button id="check-btn" class="button mt-4" style="background-color: #5D4037; width: 100%; padding: 1rem;" disabled>Check Answer</button>
+                        <div id="feedback" class="mt-4 font-bold"></div>
+                    </div>`;
+
+                const sentenceContainer = activityArea.querySelector('#sentence-container');
+                const optionsContainer = activityArea.querySelector('#options-container');
+                
+                const parts = question.sentence.split('_______');
+                sentenceContainer.innerHTML = `${parts[0]}<span class="blank">?</span>${parts[1] || ''}`;
+
+                question.options.sort(() => .5 - Math.random()).forEach(opt => {
+                    const optBtn = document.createElement('button');
+                    optBtn.className = 'option button';
+                    optBtn.textContent = opt;
+                    optBtn.onclick = () => selectOption(opt);
+                    optionsContainer.appendChild(optBtn);
+                });
+                
+                activityArea.querySelector('#check-btn').onclick = () => checkAnswer(question);
+                updateScoreDisplay();
+            }
+
+            function selectOption(option) {
+                const blank = activityArea.querySelector('.blank');
+                const options = activityArea.querySelectorAll('.option');
+                
+                blank.textContent = option;
+                selectedOptions[0] = option;
+                
+                options.forEach(opt => opt.classList.toggle('used', opt.textContent === option));
+                activityArea.querySelector('#check-btn').disabled = false;
+            }
+
+            function checkAnswer(question) {
+                const isCorrect = selectedOptions[0] === question.correctAnswer;
+                const blank = activityArea.querySelector('.blank');
+                const feedback = activityArea.querySelector('#feedback');
+                
+                blank.classList.add(isCorrect ? 'correct' : 'incorrect');
+                feedback.textContent = isCorrect ? "Correct!" : `Incorrect. The answer was "${question.correctAnswer}".`;
+                feedback.style.color = isCorrect ? '#2e7d32' : '#c62828';
+                
+                if(isCorrect) score += 10;
+                updateScoreDisplay();
+
+                activityArea.querySelector('#check-btn').disabled = true;
+                activityArea.querySelectorAll('.option').forEach(opt => opt.disabled = true);
+
+                setTimeout(() => {
+                    currentQuestionIndex++;
+                    loadGame();
+                }, 2000);
+            }
+
+            function showCompletionScreen() {
+                activityArea.innerHTML = `<div class="text-center"><h2 class="text-3xl font-bold" style="color:var(--accent-brown)">${capitalize(difficulties[difficultyIdx])} Mode Complete!</h2><p class="text-xl mt-4">Final Score: ${score}</p></div>`;
+            }
+
+            function updateScoreDisplay() { statusBar.textContent = `Score: ${score}`; }
+            
+            activityInfoBtn.addEventListener('click', () => { showActivity = !showActivity; if(showActivity) startGame(); updateLayout(); });
+            backBtn.addEventListener('click', () => { if (showActivity) { showActivity = false; updateLayout(); } else { window.history.back(); } });
+            difficultyBtn.addEventListener('click', () => {
+                difficultyIdx = (difficultyIdx + 1) % difficulties.length;
+                difficultyBtn.textContent = `Difficulty: ${capitalize(difficulties[difficultyIdx])}`;
+                if (showActivity) startGame();
+            });
+            resetBtn.addEventListener('click', () => { if(showActivity) startGame(); });
+            
+            updateLayout();
+        });
+    </script>
+</body>
+</html>

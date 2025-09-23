@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chemistry Hub - Coal & Petroleum</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* --- CORE TEMPLATE & GLOBAL STYLES (Light Theme) --- */
+        :root {
+            --header-bg: #ffffff;
+            --page-bg: #f4f7f9;
+            --panel-bg: #ffffff;
+            --border-color: #e0e0e0;
+            --text-dark: #1e293b;
+            --text-light: #475569;
+            --accent-amber: #f59e0b;
+            --accent-green: #34d399;
+            --accent-red: #f87171;
+            --accent-blue: #60a5fa;
+            --primary-blue: #007bff;
+            --secondary-gray: #6c757d;
+        }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--page-bg);
+            color: var(--text-dark);
+            margin: 0;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .page-container { display: flex; flex-direction: column; height: 100vh; }
+        .header {
+            position: fixed; top: 0; left: 0; width: 100%; height: 60px;
+            background-color: var(--header-bg);
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 24px;
+            border-bottom: 1px solid var(--border-color);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            z-index: 1000;
+            box-sizing: border-box;
+        }
+        .header-section { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .header-section.center { text-align: center; font-size: 1.2em; font-weight: bold; }
+        .header-section.right { display: flex; justify-content: flex-end; }
+        .button {
+            padding: 8px 16px; margin-left: 10px; cursor: pointer;
+            border: none; border-radius: 6px; font-weight: 600; color: white;
+            transition: transform 0.1s;
+        }
+        .button:active { transform: scale(0.95); }
+        .main-content {
+            margin-top: 60px; padding: 24px; display: flex;
+            flex-grow: 1; overflow: hidden; box-sizing: border-box;
+            gap: 24px; justify-content: center;
+        }
+        .panel {
+            background-color: var(--panel-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            border: 1px solid var(--border-color);
+            box-sizing: border-box;
+            overflow-y: auto; padding: 24px 32px;
+            height: calc(100vh - 108px);
+        }
+        #info-panel { flex-shrink: 0; transition: width 400ms ease-in-out, margin 400ms ease-in-out; }
+        #activity-panel { display: none; flex-grow: 1; padding: 0; flex-direction: column; }
+        .main-content.activity-visible { justify-content: flex-start; }
+        .main-content.activity-visible #info-panel { width: 340px; min-width: 340px; }
+        .main-content.activity-visible #activity-panel { display: flex; }
+
+        /* --- ACTIVITY-SPECIFIC STYLES --- */
+        .activity-area { flex-grow: 1; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; padding: 1.5rem; }
+        .bottom-control-bar { height: 60px; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; background-color: var(--page-bg); border-top: 1px solid var(--border-color); flex-shrink: 0; }
+        .status-bar { font-weight: bold; color: var(--text-dark); }
+        .reset-button { padding: 8px 16px; cursor: pointer; background-color: var(--accent-red); color: white; border: none; border-radius: 6px; font-weight: 600; }
+        .game-header { display: flex; justify-content: space-between; align-items: center; width: 100%; max-width: 600px; margin: 0 auto 1rem; }
+        .feedback { min-height: 30px; margin-top: 1rem; font-weight: 600; font-size: 1.1rem; }
+        .correct { color: var(--accent-green); }
+        .incorrect { color: var(--accent-red); }
+        .shake { animation: shake 0.5s ease-in-out; }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 20%, 60% { transform: translateX(-8px); } 40%, 80% { transform: translateX(8px); } }
+
+        /* Game 1: Sorter */
+        .card-pool { display: flex; justify-content: center; flex-wrap: wrap; gap: 15px; background: #e2e8f0; padding: 15px; border-radius: 12px; min-height: 80px; }
+        .sorter-card { padding: 10px 20px; background: var(--panel-bg); border: 1px solid var(--border-color); border-radius: 8px; font-weight: 600; cursor: grab; user-select: none; display: flex; align-items: center; gap: 8px; }
+        .sorter-card:active { cursor: grabbing; }
+        .bins-container { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; width: 100%; margin-top: 1.5rem; }
+        .bin { min-height: 200px; background-color: #f1f5f9; border: 3px dashed #cbd5e1; border-radius: 15px; padding: 1rem; }
+        .bin h3 { margin-top: 0; }
+        .bin.drag-over { border-color: var(--accent-yellow); border-style: solid; }
+        .bin .sorter-card { margin: 5px auto; cursor: default; background-color: var(--accent-green); color: white; }
+        .bin#renewable-bin h3 { color: var(--accent-green); }
+        .bin#non-renewable-bin h3 { color: var(--accent-red); }
+
+        /* Game 2: Distillation Tower */
+        .distillation-game { display: flex; gap: 2rem; align-items: center; justify-content: center; flex-wrap: wrap; }
+        .fraction-pool { display: flex; flex-direction: column; gap: 1rem; background: var(--page-bg); padding: 1rem; border-radius: 12px; }
+        .fraction { padding: 10px 20px; background: var(--panel-bg); border: 1px solid var(--border-color); border-radius: 8px; font-weight: 600; cursor: grab; user-select: none; }
+        .distillation-tower { display: flex; flex-direction: column-reverse; gap: 5px; width: 250px; }
+        .tray { height: 60px; border: 3px solid #9ca3af; background: #e2e8f0; display: flex; align-items: center; justify-content: center; font-weight: 600; transition: all 0.3s; }
+        .tray.drag-over { border-color: var(--accent-yellow); border-style: solid; }
+        .tray.glow { background: var(--accent-green); color: white; border-color: #166534; }
+
+        /* Game 3: Pollution Simulator */
+        .pollution-simulator { display: flex; flex-direction: column; align-items: center; gap: 1.5rem; }
+        .fuel-options { display: flex; gap: 1rem; }
+        .fuel-btn { font-size: 1.2rem; font-weight: 600; padding: 1rem 2rem; border-radius: 8px; border: none; cursor: pointer; }
+        .animation-display { width: 200px; height: 200px; background: #cbd5e1; border-radius: 12px; position: relative; overflow: hidden; border: 2px solid var(--border-color); }
+        .smoke-particle { position: absolute; bottom: -20px; left: 50%; width: 20px; height: 20px; background: #475569; border-radius: 50%; animation: smoke-rise 4s linear forwards; }
+        @keyframes smoke-rise { 0% { transform: translate(-50%, 0) scale(1); opacity: 1; } 100% { transform: translate(-50%, -200px) scale(3); opacity: 0; } }
+        .clean-chime { position: absolute; top: 50%; left: 50%; width: 50px; height: 50px; border: 5px solid var(--accent-green); border-radius: 50%; opacity: 0; animation: chime-expand 1s ease-out; }
+        @keyframes chime-expand { 0% { transform: translate(-50%, -50%) scale(0); opacity: 1; } 100% { transform: translate(-50%, -50%) scale(2); opacity: 0; } }
+        
+        /* Modal & Confetti */
+        .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); justify-content: center; align-items: center; }
+        .modal.active { display: flex; }
+        .modal-content { background: var(--panel-bg); padding: 40px 50px; border-radius: 20px; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.2); position: relative; }
+    </style>
+</head>
+<body class="page-container">
+    
+    <header class="header">
+        <div class="header-section">Grade 8 - Chemistry</div>
+        <div id="header-title" class="header-section center">Information</div>
+        <div class="header-section right">
+            <button id="back-btn" class="button" style="background-color: var(--secondary-gray);">Back</button>
+            <button id="toggle-view-btn" class="button" style="background-color: var(--primary-blue);">Activity</button>
+            <button id="difficulty-btn" class="button" style="background-color: var(--accent-amber);">Difficulty: Easy</button>
+        </div>
+    </header>
+
+    <main class="main-content" id="main-content">
+        <section id="info-panel" class="panel">
+            <h1 class="text-3xl font-bold mb-4" style="color: var(--accent-amber);">Coal & Petroleum</h1>
+            <div style="display:flex; flex-direction:column; gap:1.5rem;">
+                <div>
+                    <h2 class="text-xl font-semibold">Fossil Fuels ⛽</h2>
+                    <p class="mt-2 text-gray-600">Coal, petroleum, and natural gas are fossil fuels. They were formed from the dead remains of living organisms millions of years ago. They are non-renewable, meaning they will run out one day.</p>
+                </div>
+                <div>
+                    <h2 class="text-xl font-semibold">Renewable vs. Non-Renewable</h2>
+                    <p class="mt-2 text-gray-600">Energy sources can be classified into two groups:</p>
+                    <ul class="list-disc list-inside mt-2 space-y-2 text-gray-600">
+                        <li><b>Renewable 🌱:</b> These sources can be replenished naturally. Examples include solar, wind, and hydropower.</li>
+                        <li><b>Non-Renewable ⛽:</b> These sources are finite and will be exhausted. Examples include coal, petroleum, and natural gas.</li>
+                    </ul>
+                </div>
+                 <div>
+                    <h2 class="text-xl font-semibold">How to Play the Games</h2>
+                     <ul class="list-disc list-inside mt-2 text-gray-600">
+                        <li><b>Easy (Sorter):</b> Drag resources into 'Renewable' or 'Non-Renewable' bins.</li>
+                        <li><b>Medium (Distillation Tower):</b> Drag petroleum fractions to their correct tray in the tower.</li>
+                        <li><b>Hard (Pollution Simulator):</b> Burn different fuels and observe their impact on the environment.</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="activity-panel" class="panel">
+            <div class="activity-area" id="activity-area"></div>
+            <footer class="bottom-control-bar">
+                <div id="status-bar" class="status-bar">Good luck!</div>
+                <button id="reset-btn" class="reset-button">Reset</button>
+            </footer>
+        </section>
+    </main>
+
+    <div class="modal" id="end-game-modal">
+        <div class="modal-content"><h2 id="modal-title"></h2><p id="modal-score"></p><button class="button" id="modal-close-btn" style="background-color: var(--primary-blue);">Play Again</button></div>
+    </div>
+
+    <script src="./neutralino.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            try { Neutralino.init(); } catch (e) { console.error("Neutralino not found."); }
+            
+            const difficulties = ['Easy', 'Medium', 'Hard'];
+            let showActivity = false, difficultyIdx = 0;
+
+            const mainContent = document.getElementById('main-content');
+            const infoPanel = document.getElementById('info-panel');
+            const activityArea = document.getElementById('activity-area');
+            const headerTitle = document.getElementById('header-title');
+            const toggleViewBtn = document.getElementById('toggle-view-btn');
+            const difficultyBtn = document.getElementById('difficulty-btn');
+            const backBtn = document.getElementById('back-btn');
+            const resetBtn = document.getElementById('reset-btn');
+            const modal = document.getElementById('end-game-modal');
+            const modalCloseBtn = document.getElementById('modal-close-btn');
+            
+            function updateLayout() {
+                if (showActivity) mainContent.classList.add('activity-visible');
+                else mainContent.classList.remove('activity-visible');
+                infoPanel.style.width = showActivity ? '340px' : `${Math.min(700, window.innerWidth - 48)}px`;
+                headerTitle.textContent = showActivity ? `Activity (${difficulties[difficultyIdx]})` : 'Information';
+                toggleViewBtn.textContent = showActivity ? 'Information' : 'Activity';
+            }
+
+            function startGame() {
+                const difficulty = difficulties[difficultyIdx];
+                if (difficulty === 'Easy') initSorterGame();
+                else if (difficulty === 'Medium') initDistillationGame();
+                else if (difficulty === 'Hard') initPollutionGame();
+            }
+            
+            function showEndModal(title, scoreText) {
+                document.getElementById('modal-title').textContent = title;
+                document.getElementById('modal-score').textContent = scoreText;
+                modal.classList.add('active');
+            }
+            
+            let initSorterGame = () => {}, initDistillationGame = () => {}, initPollutionGame = () => {};
+
+            // --- Game 1: Sorter (Easy) ---
+            (() => {
+                const allResources = [{ n: "Coal ⚫", t: "Non-Renewable" }, { n: "Petroleum 🛢️", t: "Non-Renewable" }, { n: "Natural Gas 🔥", t: "Non-Renewable" }, { n: "Solar ☀️", t: "Renewable" }, { n: "Wind 🌬️", t: "Renewable" }, { n: "Hydropower 💧", t: "Renewable" }, { n: "Biomass 🌿", t: "Renewable" }, { n: "Geothermal ♨️", t: "Renewable" }, { n: "Uranium ☢️", t: "Non-Renewable" }];
+                let sorterScore, currentResources;
+
+                initSorterGame = () => {
+                    sorterScore = 0;
+                    currentResources = [...allResources].sort(() => 0.5 - Math.random()).slice(0, 6);
+                    activityArea.innerHTML = `
+                        <div class="game-header w-full max-w-lg"><h2>Renewable Sorter</h2><div class="stat-display">Score: <span id="sorter-score">${sorterScore}</span></div></div>
+                        <h3>Drag each resource to the correct bin!</h3>
+                        <div class="card-pool" id="card-pool"></div>
+                        <div class="bins-container">
+                            <div class="bin" id="renewable-bin" data-type="Renewable"><h3>Renewable 🌱</h3></div>
+                            <div class="bin" id="non-renewable-bin" data-type="Non-Renewable"><h3>Non-Renewable ⛽</h3></div>
+                        </div>`;
+                    
+                    const cardPool = document.getElementById('card-pool');
+                    currentResources.forEach(res => {
+                        const card = document.createElement('div');
+                        card.className = 'sorter-card'; card.innerHTML = res.n; card.draggable = true; card.dataset.type = res.t;
+                        card.addEventListener('dragstart', e => e.dataTransfer.setData('text/plain', res.t));
+                        cardPool.appendChild(card);
+                    });
+                    document.querySelectorAll('.bin').forEach(bin => {
+                        bin.addEventListener('dragover', e => { e.preventDefault(); bin.classList.add('drag-over'); });
+                        bin.addEventListener('dragleave', e => e.currentTarget.classList.remove('drag-over'));
+                        bin.addEventListener('drop', handleSorterDrop);
+                    });
+                };
+
+                function handleSorterDrop(e) {
+                    const bin = e.currentTarget;
+                    bin.classList.remove('drag-over');
+                    const droppedType = e.dataTransfer.getData('text/plain');
+                    const draggedCard = document.querySelector('.sorter-card:hover');
+
+                    if (bin.dataset.type === droppedType) {
+                        bin.appendChild(draggedCard);
+                        draggedCard.draggable = false;
+                        sorterScore += 10;
+                        document.getElementById('sorter-score').textContent = sorterScore;
+                        if (document.getElementById('card-pool').children.length === 0) {
+                            showEndModal("Energy Expert ⚡", `Final Score: ${sorterScore}`);
+                        }
+                    } else {
+                        bin.classList.add('shake');
+                        setTimeout(() => bin.classList.remove('shake'), 500);
+                    }
+                }
+            })();
+
+            // --- Game 2: Distillation Tower (Medium) ---
+            (() => {
+                const fractions = [{ name: "LPG", order: 5 }, { name: "Petrol", order: 4 }, { name: "Kerosene", order: 3 }, { name: "Diesel", order: 2 }, { name: "Bitumen", order: 1 }];
+                let placedFractions;
+                initDistillationGame = () => {
+                    placedFractions = 0;
+                     activityArea.innerHTML = `
+                        <div class="game-header w-full max-w-lg"><h2>Distillation Tower</h2></div>
+                        <p>Drag fractions to the correct tray (Hottest at bottom).</p>
+                        <div class="distillation-game">
+                            <div class="fraction-pool" id="fraction-pool"></div>
+                            <div class="distillation-tower" id="distillation-tower"></div>
+                        </div>`;
+                    
+                    const pool = document.getElementById('fraction-pool');
+                    fractions.sort(() => 0.5 - Math.random()).forEach(f => {
+                        const el = document.createElement('div');
+                        el.className = 'fraction'; el.textContent = f.name; el.draggable = true;
+                        el.addEventListener('dragstart', e => e.dataTransfer.setData('application/json', JSON.stringify(f)));
+                        pool.appendChild(el);
+                    });
+                    const tower = document.getElementById('distillation-tower');
+                    fractions.sort((a, b) => a.order - b.order).forEach(f => {
+                        const tray = document.createElement('div');
+                        tray.className = 'tray'; tray.textContent = `Tray ${f.order}`; tray.dataset.order = f.order;
+                        tray.addEventListener('dragover', e => { e.preventDefault(); tray.classList.add('drag-over'); });
+                        tray.addEventListener('dragleave', e => e.currentTarget.classList.remove('drag-over'));
+                        tray.addEventListener('drop', handleFractionDrop);
+                        tower.appendChild(tray);
+                    });
+                };
+                function handleFractionDrop(e) {
+                    const tray = e.currentTarget;
+                    tray.classList.remove('drag-over');
+                    const fraction = JSON.parse(e.dataTransfer.getData('application/json'));
+                    if (parseInt(tray.dataset.order) === fraction.order) {
+                        tray.textContent = fraction.name;
+                        tray.classList.add('glow');
+                        // Find and remove the correct dragged element from the pool.
+                        const draggedEl = Array.from(document.querySelectorAll('.fraction')).find(el => el.textContent === fraction.name);
+                        if (draggedEl) draggedEl.remove();
+
+                        placedFractions++;
+                        if (placedFractions === fractions.length) {
+                            showEndModal("Fuel Finder ⛽", "You've successfully distilled the petroleum!");
+                        }
+                    } else {
+                        tray.classList.add('shake'); setTimeout(() => tray.classList.remove('shake'), 500);
+                    }
+                }
+            })();
+
+            // --- Game 3: Pollution Simulator (Hard) ---
+            (() => {
+                const fuels = [{ name: "Coal", clean: false, icon: '⚫' }, { name: "Petrol", clean: false, icon: '⛽' }, { name: "CNG", clean: true, icon: '💨' }];
+                let ecoPoints, experimentsRun;
+                initPollutionGame = () => {
+                    ecoPoints = 100;
+                    experimentsRun = 0;
+                    loadPollutionProblem();
+                };
+                function loadPollutionProblem() {
+                    if(experimentsRun >= 5){
+                        showEndModal("Eco-Friendly Hero 🌱", `Final Eco Score: ${ecoPoints}`);
+                        return;
+                    }
+                     activityArea.innerHTML = `
+                        <div class="game-header w-full max-w-lg"><h2>Pollution Simulator</h2><div class="stat-display">Eco Points: <span>${ecoPoints}</span></div></div>
+                        <h3>Choose a fuel to burn...</h3>
+                        <div class="fuel-options" id="fuel-options"></div>
+                        <div class="animation-display" id="animation-display"></div>
+                        <p id="pollution-feedback" class="feedback"></p>
+                    `;
+                    const options = document.getElementById('fuel-options');
+                    fuels.sort(() => 0.5 - Math.random()).forEach(fuel => {
+                        const btn = document.createElement('button');
+                        btn.className = 'fuel-btn button';
+                        btn.textContent = `${fuel.icon} ${fuel.name}`;
+                        btn.onclick = () => runPollutionSim(fuel);
+                        options.appendChild(btn);
+                    });
+                }
+                function runPollutionSim(fuel) {
+                    experimentsRun++;
+                    const feedback = document.getElementById('pollution-feedback');
+                    const animDisplay = document.getElementById('animation-display');
+                    animDisplay.innerHTML = '';
+                    if (fuel.clean) {
+                        ecoPoints += 10;
+                        feedback.textContent = "Clean burn! CNG is an environment-friendly fuel. ✅";
+                        animDisplay.innerHTML = '<div class="clean-chime"></div>';
+                    } else {
+                        ecoPoints -= 10;
+                        feedback.textContent = `This causes air pollution (CO₂, SO₂). 🌫️`;
+                        for (let i = 0; i < 10; i++) {
+                            const p = document.createElement('div');
+                            p.className = 'smoke-particle';
+                            p.style.animationDelay = `${Math.random() * 2}s`;
+                            p.style.left = `${Math.random() * 80 + 10}%`;
+                            animDisplay.appendChild(p);
+                        }
+                    }
+                    document.querySelector('.stat-display span').textContent = ecoPoints;
+                    setTimeout(loadPollutionProblem, 3000);
+                }
+            })();
+            
+            // --- Main Event Listeners ---
+            backBtn.addEventListener('click', () => {  window.history.back();  });
+            toggleViewBtn.addEventListener('click', () => {
+                showActivity = !showActivity;
+                if (showActivity) startGame();
+                updateLayout();
+            });
+            difficultyBtn.addEventListener('click', () => {
+                difficultyIdx = (difficultyIdx + 1) % difficulties.length;
+                const newDifficulty = difficulties[difficultyIdx];
+                difficultyBtn.textContent = `Difficulty: ${newDifficulty}`;
+                if (showActivity) {
+                    startGame();
+                    updateLayout();
+                }
+            });
+            resetBtn.addEventListener('click', startGame);
+            modalCloseBtn.addEventListener('click', () => {
+                modal.classList.remove('active');
+                startGame();
+            });
+            
+            updateLayout();
+        });
+    </script>
+</body>
+</html>
+

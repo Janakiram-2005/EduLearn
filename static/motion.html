@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Motion: The Grand Race</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --header-bg: #ffffff; 
+            --page-bg: #f4f7f9;
+            --panel-bg: #ffffff;
+            --border-color: #e0e0e0;
+            --text-dark: #2c3e50;
+            --text-light: #475569;
+            
+            --accent-blue: #3498db; 
+            --accent-green: #2ecc71; 
+            --accent-red: #e74c3c;
+            --accent-yellow: #f1c40f;
+
+            --primary-blue: #007bff; 
+            --secondary-gray: #6c757d;
+        }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes shake { 0%, 100% {transform:translateX(0)} 20%, 60% {transform:translateX(-5px)} 40%, 80% {transform:translateX(5px)} }
+
+        body { font-family: 'Inter', sans-serif; background-color: var(--page-bg); color: var(--text-dark); margin: 0; height: 100vh; overflow: hidden; }
+        .page-container { display: flex; flex-direction: column; height: 100vh; }
+        .header {
+            background-color: var(--header-bg); display: flex; align-items: center; justify-content: space-between;
+            padding: 0 24px; border-bottom: 1px solid var(--border-color); box-shadow: 0 2px 4px rgba(0,0,0,0.05); z-index: 1000; box-sizing: border-box;
+            position: fixed; top: 0; left: 0; width: 100%; height: 60px;
+        }
+        .header-section { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-dark); }
+        .header-section.center { text-align: center; font-size: 1.2em; font-weight: bold; }
+        .header-section.right { display: flex; justify-content: flex-end; }
+        .button {
+            padding: 8px 16px; margin-left: 10px; cursor: pointer;
+            border: none; border-radius: 6px; font-weight: 600; color: white;
+            transition: all 0.2s;
+        }
+        .button:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .button:active { transform: translateY(-2px) scale(0.95); }
+        
+        .main-content { margin-top: 60px; padding: 24px; display: flex; flex-grow: 1; overflow: hidden; box-sizing: border-box; gap: 24px; justify-content: center; }
+        .panel { background-color: var(--panel-bg); border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: 1px solid var(--border-color); box-sizing: border-box; overflow-y: auto; padding: 24px 32px; height: calc(100vh - 108px); }
+        #info-panel { flex-shrink: 0; transition: width 400ms ease-in-out, margin 400ms ease-in-out; }
+        #info-panel h1, #info-panel h2, #info-panel h3 { color: var(--primary-blue); }
+        .formula-box { background-color: #eef2ff; border: 1px solid #c7d2fe; padding: 1rem; border-radius: 8px; }
+
+        #activity-panel { display: none; flex-grow: 1; padding: 0; flex-direction: column; }
+        .main-content.activity-visible { justify-content: flex-start; }
+        .main-content.activity-visible #info-panel { width: 340px; min-width: 340px; }
+        .main-content.activity-visible #activity-panel { display: flex; }
+
+        .activity-area { flex-grow: 1; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; padding: 24px; }
+        .bottom-control-bar { height: 60px; display: flex; justify-content: flex-end; align-items: center; padding: 0 20px; background-color: var(--page-bg); border-top: 1px solid var(--border-color); flex-shrink: 0; }
+        .reset-button { background-color: var(--accent-red); }
+        .game-header { display: flex; justify-content: space-between; align-items: flex-start; width: 100%; }
+        
+        .stat-box { padding: 0.5rem 1.25rem; border-radius: 8px; text-align: center; border: 1px solid var(--border-color); }
+        .stat-box-label { font-size: 0.75rem; font-weight: 500; opacity: 0.8; }
+        .stat-box-value { font-size: 1.5rem; font-weight: 700; }
+        #score-box { background-color: #dbeafe; color: #1e40af; }
+        #timer-box { background-color: #fee2e2; color: #991b1b; }
+        #lives-box { background-color: #e0f2fe; color: #075985; }
+
+        #question-text { font-size: 1.5rem; font-weight: 600; color: var(--text-dark); margin: 1.5rem 0; animation: fadeIn 0.5s; }
+        #options-container { display: grid; grid-template-columns: 1fr; gap: 1rem; width: 100%; max-width: 600px; }
+        .option-btn { background-color: #eef2ff; color: var(--text-dark); padding: 1.25rem; font-size: 1.1rem; font-weight: 600; border-radius: 0.75rem; transition: all 0.2s ease; border: 2px solid #c7d2fe; cursor: pointer; text-align: left; }
+        .option-btn:hover:not(:disabled) { transform: scale(1.02); border-color: var(--primary-blue); box-shadow: 0 0 15px rgba(0, 123, 255, 0.2); }
+        .option-btn:disabled { cursor: not-allowed; opacity: 0.7; }
+        .option-btn.correct { background-color: var(--accent-green); color: white; border-color: var(--accent-green); font-weight: 700;}
+        .option-btn.incorrect { background-color: var(--accent-red); color: white; border-color: var(--accent-red); font-weight: 700;}
+        
+        .feedback-text { margin-top: 1rem; font-weight: 600; font-size: 1.1rem; min-height: 24px; }
+        .level-complete-container { text-align: center; animation: fadeIn 0.5s; }
+        .level-complete-container h3 { font-size: 1.875rem; font-weight: bold; color: var(--accent-green); }
+        .level-complete-container .stars { font-size: 2.5rem; margin-top: 1rem; color: var(--accent-yellow); }
+        
+        .progress-track { width: 100%; background-color: #e0e0e0; border-radius: 15px; height: 30px; position: relative; overflow: hidden; border: 2px solid #ccc; }
+        .progress-track::after { content:''; position: absolute; right: 0; top:0; height: 100%; width: 20px; background-image: linear-gradient(45deg, #000 25%, transparent 25%, transparent 50%, #000 50%, #000 75%, transparent 75%, transparent), linear-gradient(-45deg, #000 25%, transparent 25%, transparent 50%, #000 50%, #000 75%, transparent 75%, transparent); background-size: 10px 10px; opacity: 0.5;}
+        .progress-bar { width: 0%; height: 100%; background: linear-gradient(90deg, #56ab2f, #a8e063); transition: width 0.5s ease-in-out; }
+        .car-icon { position: absolute; top: 50%; transform: translateY(-50%); font-size: 1.8rem; transition: left 0.5s ease-in-out; left: 0%; }
+    </style>
+</head>
+<body class="page-container">
+    
+    <header class="header">
+        <div class="header-section">Class 8 - Motion</div>
+        <div id="header-title" class="header-section center">Information</div>
+        <div class="header-section right">
+            <button id="back-btn" class="button" style="background-color: var(--secondary-gray);">Back</button>
+            <button id="toggle-view-btn" class="button" style="background-color: var(--primary-blue);">Start Race</button>
+            <button id="difficulty-btn" class="button" style="background-color: var(--accent-blue);">Difficulty: Easy</button>
+        </div>
+    </header>
+
+    <main class="main-content" id="main-content">
+        <section id="info-panel" class="panel">
+            <h1>Motion: The Grand Race 🏎️</h1>
+            <p>Welcome to the Grand Race! Test your knowledge of speed, distance, and time to win.</p>
+            <h2 class="text-xl font-semibold mt-6">The Core Formulas</h2>
+            <div class="formula-box" style="color: var(--primary-blue); font-weight: 600;">Speed = Distance &divide; Time</div>
+            <p>This can be rearranged to find the other two values:</p>
+            <ul class="list-disc list-inside mt-2">
+                <li><strong>Distance = Speed &times; Time</strong></li>
+                <li><strong>Time = Distance &divide; Speed</strong></li>
+            </ul>
+             <h2 class="text-xl font-semibold mt-6">Race Rules</h2>
+             <ul>
+                <li>🏁 Each correct answer moves your car along the track.</li>
+                <li>⏱️ Answering faster earns you bonus points!</li>
+                <li>❤️ You have 3 lives. A wrong answer or running out of time costs a life.</li>
+                <li>⭐ Finish the race to earn a star rating!</li>
+             </ul>
+        </section>
+
+        <section id="activity-panel" class="panel">
+            <div class="activity-area" id="activity-area"></div>
+            <footer class="bottom-control-bar">
+                <button id="restart-btn" class="button reset-button">Restart Race</button>
+            </footer>
+        </section>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const problems = { /* Game Data is unchanged */ };
+            Object.assign(problems, {easy:[{q:"A car travels 120 km in 2 hours. What is its speed?",o:["40 km/h","60 km/h","80 km/h","100 km/h"],a:"60 km/h"},{q:"If a bicycle moves at 15 km/h for 3 hours, how far does it travel?",o:["30 km","45 km","60 km","75 km"],a:"45 km"},{q:"A train covers 300 km at a speed of 60 km/h. How long does the journey take?",o:["3 hours","4 hours","5 hours","6 hours"],a:"5 hours"}],medium:[{q:"A runner completes a 10 km race in 45 minutes (0.75 hours). What is their average speed in km/h?",o:["12 km/h","13.3 km/h","15 km/h","16.5 km/h"],a:"13.3 km/h"},{q:"A plane flies 1800 km in 3 hours. What is its speed in m/s? (Hint: 1 km/h = 5/18 m/s)",o:["150 m/s","166.7 m/s","200 m/s","600 m/s"],a:"166.7 m/s"},{q:"You walk for 30 minutes at 4 km/h, then run for 15 minutes at 8 km/h. What is the total distance you covered?",o:["3 km","4 km","5 km","6 km"],a:"4 km"}],hard:[{q:"A train 150m long passes a pole in 5 seconds. What is its speed in km/h?",o:["90 km/h","108 km/h","120 km/h","135 km/h"],a:"108 km/h"},{q:"A car travels the first half of a 120km journey at 40 km/h and the second half at 60 km/h. What is its average speed for the entire journey?",o:["48 km/h","50 km/h","52 km/h","55 km/h"],a:"48 km/h"},{q:"Two cars start from the same point and travel in opposite directions. One travels at 50 km/h and the other at 70 km/h. After how many hours will they be 480 km apart?",o:["3 hours","4 hours","5 hours","6 hours"],a:"4 hours"}]});
+            
+            const difficulties = ['easy', 'medium', 'hard'], raceNames = { easy: 'City Sprint', medium: 'Highway Challenge', hard: 'Cross-Country Rally' };
+            let showActivity = false, score = 0, lives = 3, currentProblemSet = [], difficultyIdx = 0, isAnswered, timer, timerInterval;
+
+            const mainContent = document.getElementById('main-content'), activityArea = document.getElementById('activity-area'), headerTitle = document.getElementById('header-title'), toggleViewBtn = document.getElementById('toggle-view-btn'), difficultyBtn = document.getElementById('difficulty-btn'), backBtn = document.getElementById('back-btn'), restartBtn = document.getElementById('restart-btn'), infoPanel = document.getElementById('info-panel');
+            
+            function updateLayout() {
+                mainContent.classList.toggle('activity-visible', showActivity);
+                infoPanel.style.width = showActivity ? '340px' : `${Math.min(700, window.innerWidth - 48)}px`;
+                headerTitle.textContent = showActivity ? 'Grand Race' : 'Information';
+                toggleViewBtn.textContent = showActivity ? 'Instructions' : 'Start Race';
+            }
+
+            function startGame() {
+                score = 0; lives = 3;
+                currentProblemSet = [...problems[difficulties[difficultyIdx]]].sort(() => 0.5 - Math.random());
+                loadProblem(0);
+            }
+
+            function loadProblem(problemIndex) {
+                if (problemIndex >= currentProblemSet.length) { showLevelComplete(); return; }
+                isAnswered = false;
+                const problem = currentProblemSet[problemIndex];
+                
+                activityArea.innerHTML = `
+                    <div style="width:100%; max-width:700px;" class="text-center">
+                        <div class="progress-track"><div class="car-icon">🏎️</div><div class="progress-bar"></div></div>
+                        <div class="game-header" style="margin-top:1rem;">
+                            <h2 style="font-size: 1.5rem; font-weight: 700; text-align: left;">${raceNames[difficulties[difficultyIdx]]}</h2>
+                            <div style="display:flex; gap:0.75rem;">
+                                <div id="lives-box" class="stat-box"><div class="stat-box-label">LIVES</div><div id="lives" class="stat-box-value">${'❤️'.repeat(lives)}</div></div>
+                                <div id="timer-box" class="stat-box"><div class="stat-box-label">TIME</div><div id="timer" class="stat-box-value">30</div></div>
+                                <div id="score-box" class="stat-box"><div class="stat-box-label">SCORE</div><div id="score" class="stat-box-value">${score}</div></div>
+                            </div>
+                        </div>
+                        <p id="question-text">${problem.q}</p>
+                        <div id="options-container"></div>
+                        <p id="feedback-text" class="feedback-text"></p>
+                    </div>`;
+                
+                updateProgress(problemIndex);
+
+                const optionsContainer = document.getElementById('options-container');
+                problem.o.forEach(opt => {
+                    const btn = document.createElement('button');
+                    btn.className = 'option-btn'; btn.textContent = opt;
+                    btn.onclick = (e) => handleAnswerClick(e, problem, problemIndex);
+                    optionsContainer.appendChild(btn);
+                });
+                startTimer(problem, problemIndex);
+            }
+            
+            function handleAnswerClick(e, problem, problemIndex) {
+                if (isAnswered) return;
+                isAnswered = true; clearInterval(timerInterval);
+                const clickedBtn = e.currentTarget;
+                document.querySelectorAll('.option-btn').forEach(btn => btn.disabled = true);
+
+                if (clickedBtn.textContent === problem.a) {
+                    const bonus = timer > 0 ? timer : 0;
+                    score += 10 + bonus;
+                    clickedBtn.classList.add('correct');
+                    document.getElementById('feedback-text').textContent = `Correct! +${10 + bonus} points! ✨`;
+                    document.getElementById('feedback-text').style.color = 'var(--accent-green)';
+                } else {
+                    lives--;
+                    clickedBtn.classList.add('incorrect');
+                    activityArea.parentElement.style.animation = 'shake 0.4s';
+                    setTimeout(()=> activityArea.parentElement.style.animation = '', 400);
+                    document.getElementById('feedback-text').textContent = `The correct answer was ${problem.a}.`;
+                    document.getElementById('feedback-text').style.color = 'var(--accent-red)';
+                    const correctBtn = Array.from(document.querySelectorAll('.option-btn')).find(b => b.textContent === problem.a);
+                    if (correctBtn) correctBtn.classList.add('correct');
+                    if (lives <= 0) { setTimeout(showGameOver, 2000); return; }
+                }
+                if (problemIndex + 1 === currentProblemSet.length && clickedBtn.textContent === problem.a) {
+                     setTimeout(() => updateProgress(problemIndex + 1), 500);
+                }
+                setTimeout(() => loadProblem(problemIndex + 1), 2000);
+            }
+            
+            function updateProgress(problemIndex) {const p = (problemIndex / currentProblemSet.length) * 100; document.querySelector('.progress-bar').style.width = `${p}%`; document.querySelector('.car-icon').style.left = `calc(${p}% - 12px)`;}
+            function startTimer(problem, problemIndex) {clearInterval(timerInterval); timer = 30; const d = document.getElementById('timer'); if(!d) return; d.textContent = timer; timerInterval = setInterval(() => { timer--; d.textContent = timer; if (timer < 0) { clearInterval(timerInterval); if (!isAnswered) handleTimeUp(problem, problemIndex);}}, 1000);}
+            function handleTimeUp(problem, problemIndex) {isAnswered = true; lives--; if (lives <= 0) { showGameOver(); return; } document.getElementById('lives').textContent = '❤️'.repeat(lives); document.getElementById('feedback-text').textContent = "Time's up! You lost a life."; document.getElementById('feedback-text').style.color = 'var(--accent-red)'; const correctBtn = Array.from(document.querySelectorAll('.option-btn')).find(b => b.textContent === problem.a); if (correctBtn) correctBtn.classList.add('correct'); document.querySelectorAll('.option-btn').forEach(btn => btn.disabled = true); setTimeout(() => loadProblem(problemIndex + 1), 2000);}
+            function showGameOver() {clearInterval(timerInterval); activityArea.innerHTML = `<div class="level-complete-container"><h3 style="color:var(--accent-red)">Race Over!</h3><p>You ran out of lives. Your final score is ${score}.</p></div>`;}
+            function showLevelComplete() {clearInterval(timerInterval); const maxScore = currentProblemSet.length * (10 + 29); let stars = '⭐'; if (score > maxScore * 0.75) stars = '⭐⭐⭐'; else if (score > maxScore * 0.5) stars = '⭐⭐'; activityArea.innerHTML = `<div class="level-complete-container"><h3>Race Finished!</h3><div class="stars">${stars}</div><p>Your final score is ${score}.</p></div>`;}
+            
+            backBtn.addEventListener('click', () => { if(showActivity) { showActivity = false; clearInterval(timerInterval); updateLayout(); } else { window.history.back(); }});
+            toggleViewBtn.addEventListener('click', () => { showActivity = !showActivity; if (showActivity) startGame(); else clearInterval(timerInterval); updateLayout(); });
+            difficultyBtn.addEventListener('click', () => { difficultyIdx = (difficultyIdx + 1) % difficulties.length; difficultyBtn.textContent = `Difficulty: ${difficulties[difficultyIdx].charAt(0).toUpperCase() + difficulties[difficultyIdx].slice(1)}`; if (showActivity) startGame(); });
+            restartBtn.addEventListener('click', startGame);
+            
+            updateLayout();
+        });
+    </script>
+</body>
+</html>

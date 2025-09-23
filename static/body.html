@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Human Body Explorer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --header-bg: #ffffff; --page-bg: #f4f7f9; --panel-bg: #ffffff;
+            --border-color: #e0e0e0; --text-dark: #1e293b; --text-light: #475569;
+            --accent-blue: #2563eb; --accent-green: #10b981; --accent-red: #ef4444;
+            --primary-blue: #007bff; --secondary-gray: #6c757d;
+        }
+        body { font-family: 'Inter', sans-serif; background-color: var(--page-bg); color: var(--text-dark); margin: 0; height: 100vh; overflow: hidden; }
+        .page-container { display: flex; flex-direction: column; height: 100vh; }
+        .header {
+            position: fixed; top: 0; left: 0; width: 100%; height: 60px;
+            background-color: var(--header-bg); display: flex; align-items: center; justify-content: space-between;
+            padding: 0 24px; border-bottom: 1px solid var(--border-color); box-shadow: 0 2px 4px rgba(0,0,0,0.05); z-index: 1000; box-sizing: border-box;
+        }
+        .header-section { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .header-section.center { text-align: center; font-size: 1.2em; font-weight: bold; }
+        .header-section.right { display: flex; justify-content: flex-end; }
+        .button {
+            padding: 8px 16px; margin-left: 10px; cursor: pointer;
+            border: none; border-radius: 6px; font-weight: 600; color: white;
+            transition: transform 0.1s;
+        }
+        .button:disabled { opacity: 0.6; cursor: not-allowed; }
+        .button:active:not(:disabled) { transform: scale(0.95); }
+        .main-content { margin-top: 60px; padding: 24px; display: flex; flex-grow: 1; overflow: hidden; box-sizing: border-box; gap: 24px; justify-content: center; }
+        .panel { background-color: var(--panel-bg); border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: 1px solid var(--border-color); box-sizing: border-box; overflow-y: auto; padding: 24px 32px; height: calc(100vh - 108px); }
+        #info-panel { flex-shrink: 0; transition: width 400ms ease-in-out, margin 400ms ease-in-out; }
+        #activity-panel { display: none; flex-grow: 1; padding: 0; flex-direction: column; }
+        .main-content.activity-visible { justify-content: flex-start; }
+        .main-content.activity-visible #info-panel { width: 340px; min-width: 340px; }
+        .main-content.activity-visible #activity-panel { display: flex; }
+        .activity-area { flex-grow: 1; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 1rem; padding: 24px; overflow-y: auto; }
+        .bottom-control-bar { height: 60px; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; background-color: var(--page-bg); border-top: 1px solid var(--border-color); flex-shrink: 0; }
+        .status-bar { font-weight: bold; color: var(--text-dark); }
+        .reset-button { padding: 8px 16px; cursor: pointer; background-color: var(--accent-red); color: white; border: none; border-radius: 6px; font-weight: 600; }
+        
+        /* Game Styles */
+        .game-header { text-align: center; margin-bottom: 1rem; }
+        .ipo-box{min-height:96px;border-radius:10px;padding:12px;border:2px dashed #cbd5e1;background:#f8fafc;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:8px; flex: 1; width: 100%;}
+        .ipo-container { display:flex; gap:10px; align-items:center; justify-content:center; margin-top:12px; width:100%;}
+        .components{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;width:100%;max-width:760px;margin-top:12px}
+        .component-button{background:#eef2ff;border-radius:12px;padding:10px;cursor:pointer;border:0;font-weight:700;display:flex;flex-direction:column;align-items:center;gap:6px;transition:all .2s}
+        .component-button:active{transform:translateY(2px)} .component-button.correct{background:var(--accent-green);color:#fff;cursor:default; opacity:0.7}
+        .component-button.incorrect{animation:shake .45s}
+        .sort-container{display:grid;grid-template-columns:1fr 1fr;gap:16px;width:100%;max-width:960px}
+        .sort-box{min-height:220px;border-radius:10px;padding:12px;background:#eef2ff;display:flex;flex-direction:column;align-items:flex-start;gap:8px}
+        .system-slot{background:#fff;padding:8px;border-radius:8px;margin-bottom:6px;width:100%;font-weight:700; transition: all .2s}
+        .system-slot.drag-over{background-color:#dbeafe; transform:scale(1.02)}
+        .sort-items-container{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-top:12px}
+        .organ-item{cursor:grab}.organ-item:active{cursor:grabbing}
+        .placed-organ{background:#fff;padding:6px 10px;border-radius:6px;margin-top:6px;font-weight:400;font-size:13px}
+        @keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
+    </style>
+</head>
+<body class="page-container">
+    
+    <header class="header">
+        <div class="header-section">Grade 6 — Human Body Explorer</div>
+        <div id="header-title" class="header-section center">Information</div>
+        <div class="header-section right">
+            <button id="back-btn" class="button" style="background-color: var(--secondary-gray);">Back</button>
+            <button id="toggle-view-btn" class="button" style="background-color: var(--primary-blue);">Activity</button>
+            <button id="difficulty-btn" class="button" style="background-color: var(--accent-blue);">Mode: Easy</button>
+        </div>
+    </header>
+
+    <main class="main-content" id="main-content">
+        <section id="info-panel" class="panel">
+            <h1 style="color:var(--accent-blue);">Human Body Systems</h1>
+            <p style="color:var(--text-light)">The human body has many organ systems that work together. This activity covers some of the most important ones.</p>
+            <ul style="margin-top:12px;line-height:1.6;color:var(--text-light)">
+                <li><strong>Skeletal System</strong> — bones and support</li>
+                <li><strong>Circulatory System</strong> — heart and blood</li>
+                <li><strong>Respiratory System</strong> — lungs and breathing</li>
+                <li><strong>Digestive System</strong> — breaks down food</li>
+                <li><strong>Nervous System</strong> — brain & nerves</li>
+            </ul>
+            <h2 style="margin-top:18px">How to play</h2>
+            <ol style="color:var(--text-light)">
+                <li>Click <strong>Activity</strong> to start.</li>
+                <li>Use the <strong>Mode</strong> button to select a difficulty.</li>
+                <li>Complete the two tasks for each difficulty.</li>
+                <li>Press <strong>Next Task</strong> to move forward.</li>
+            </ol>
+        </section>
+
+        <section id="activity-panel" class="panel">
+            <div class="activity-area" id="activity-area"></div>
+            <footer class="bottom-control-bar">
+                <div id="status-bar" class="status-bar">Score: 0</div>
+                <div style="display:flex;gap:8px">
+                    <button id="reset-btn" class="reset-button">Reset</button>
+                    <button id="next-task-btn" class="button" style="background-color:var(--accent-green)">Next Task</button>
+                </div>
+            </footer>
+        </section>
+    </main>
+
+    <script src="./neutralino.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            try { Neutralino.init(); } catch (e) { console.error("Neutralino not found."); }
+            
+            const gameData = {
+                easy: [{ id: 'journey-food-easy', type: 'ipo', title: 'Journey of Food', instruction: 'Place the parts in order.', sequence: ['mouth', 'stomach', 'cell'], components: [{ n: 'Mouth', e: '👄', t: 'mouth' }, { n: 'Stomach', e: '🍽️', t: 'stomach' }, { n: 'Body Cell', e: '🔋', t: 'cell' }] }, { id: 'sort-organs-easy', type: 'sort', title: 'Sort the Organs', instruction: 'Drag each organ to its system.', items: [{ n: 'Heart', e: '❤️', s: 'Circulatory' }, { n: 'Lungs', e: '🫁', s: 'Respiratory' }, { n: 'Brain', e: '🧠', s: 'Nervous' }, { n: 'Bones', e: '🦴', s: 'Skeletal' }], systems: ['Circulatory', 'Respiratory', 'Nervous', 'Skeletal'] }],
+                medium: [{ id: 'journey-food-medium', type: 'ipo', title: 'Digestive Path', instruction: 'Place the parts in order.', sequence: ['mouth', 'stomach', 'small-intestine', 'cell'], components: [{ n: 'Mouth', e: '👄', t: 'mouth' }, { n: 'Stomach', e: '🍽️', t: 'stomach' }, { n: 'Small Intestine', e: '🌀', t: 'small-intestine' }, { n: 'Body Cell', e: '🔋', t: 'cell' }, { n: 'Lungs', e: '🫁', t: 'distractor' }] }, { id: 'sort-organs-medium', type: 'sort', title: 'Sort the Organs', instruction: 'Drag each organ to its system.', items: [{ n: 'Heart', e: '❤️', s: 'Circulatory' }, { n: 'Lungs', e: '🫁', s: 'Respiratory' }, { n: 'Brain', e: '🧠', s: 'Nervous' }, { n: 'Muscles', e: '💪', s: 'Muscular' }, { n: 'Stomach', e: '🍽️', s: 'Digestive' }], systems: ['Circulatory', 'Respiratory', 'Nervous', 'Muscular', 'Digestive'] }],
+                hard: [{ id: 'journey-food-hard', type: 'ipo', title: 'Complete Digestion', instruction: 'Place the parts in order.', sequence: ['mouth', 'stomach', 'small-intestine', 'large-intestine', 'kidneys'], components: [{ n: 'Mouth', e: '👄', t: 'mouth' }, { n: 'Stomach', e: '🍽️', t: 'stomach' }, { n: 'Small Intestine', e: '🌀', t: 'small-intestine' }, { n: 'Large Intestine', e: '🔄', t: 'large-intestine' }, { n: 'Kidneys', e: '💧', t: 'kidneys' }, { n: 'Brain', e: '🧠', t: 'distractor' }] }, { id: 'sort-organs-hard', type: 'sort', title: 'Sort the Organs', instruction: 'Drag each organ to its system.', items: [{ n: 'Heart', e: '❤️', s: 'Circulatory' }, { n: 'Lungs', e: '🫁', s: 'Respiratory' }, { n: 'Brain', e: '🧠', s: 'Nervous' }, { n: 'Spinal Cord', e: '⚡', s: 'Nervous' }, { n: 'Stomach', e: '🍽️', s: 'Digestive' }, { n: 'Kidneys', e: '💧', s: 'Excretory' }], systems: ['Circulatory', 'Respiratory', 'Nervous', 'Digestive', 'Excretory'] }]
+            };
+            const difficulties = ['easy', 'medium', 'hard'];
+            let showActivity = false, score = 0, difficultyIdx = 0, currentTaskIndex = 0, currentStep = 0;
+            
+            const mainContent = document.getElementById('main-content');
+            const infoPanel = document.getElementById('info-panel');
+            const activityArea = document.getElementById('activity-area');
+            const headerTitle = document.getElementById('header-title');
+            const toggleViewBtn = document.getElementById('toggle-view-btn');
+            const difficultyBtn = document.getElementById('difficulty-btn');
+            const backBtn = document.getElementById('back-btn');
+            const resetBtn = document.getElementById('reset-btn');
+            const statusBar = document.getElementById('status-bar');
+            const nextTaskBtn = document.getElementById('next-task-btn');
+            
+            function updateLayout() {
+                if (showActivity) mainContent.classList.add('activity-visible');
+                else mainContent.classList.remove('activity-visible');
+                infoPanel.style.width = showActivity ? '340px' : `${Math.min(700, window.innerWidth - 48)}px`;
+                headerTitle.textContent = showActivity ? 'Activity' : 'Information';
+                toggleViewBtn.textContent = showActivity ? 'Information' : 'Activity';
+                statusBar.textContent = `Score: ${score}`;
+            }
+
+            function startGame() {
+                score = 0;
+                currentTaskIndex = 0;
+                renderActivity();
+            }
+
+            function renderActivity() {
+                updateLayout();
+                const difficulty = difficulties[difficultyIdx];
+                const tasks = gameData[difficulty];
+
+                if (currentTaskIndex >= tasks.length) {
+                    activityArea.innerHTML = `<div class="text-center"><h3>Congratulations!</h3><p>You completed all tasks for ${difficulty} mode! Final score: ${score}.</p></div>`;
+                    nextTaskBtn.style.display = 'none';
+                    return;
+                }
+                nextTaskBtn.style.display = 'inline-flex';
+
+                const task = tasks[currentTaskIndex];
+                currentStep = 0;
+                if (task.type === 'ipo') renderIPO(task);
+                else if (task.type === 'sort') renderSort(task);
+            }
+
+            function renderIPO(task) {
+                activityArea.innerHTML = `
+                    <div class="game-header"><h2>${task.title}</h2><p>${task.instruction}</p></div>
+                    <div class="ipo-container">
+                        <div class="ipo-box"><div id="input-box" class="ipo-box"></div></div>
+                        <div style="font-size:22px;color:var(--text-light);">➡️</div>
+                        <div class="ipo-box"><div id="process-box" class="ipo-box"></div></div>
+                        <div style="font-size:22px;color:var(--text-light);">➡️</div>
+                        <div class="ipo-box"><div id="output-box" class="ipo-box"></div></div>
+                    </div>
+                    <div class="components"></div>`;
+                const container = activityArea.querySelector('.components');
+                task.components.sort(() => 0.5 - Math.random()).forEach(c => {
+                    const btn = document.createElement('button');
+                    btn.className = 'component-button';
+                    btn.innerHTML = `<div style="font-size:28px">${c.e}</div><div style="font-size:13px">${c.n}</div>`;
+                    btn.dataset.type = c.t;
+                    btn.onclick = () => handleIPOClick(btn, task);
+                    container.appendChild(btn);
+                });
+            }
+
+            function renderSort(task) {
+                activityArea.innerHTML = `
+                    <div class="game-header"><h2>${task.title}</h2><p>${task.instruction}</p></div>
+                    <div class="sort-container">
+                        <div class="sort-box" id="systems-area">${task.systems.map(s => `<div class="system-slot" data-system="${s}">${s}</div>`).join('')}</div>
+                        <div class="sort-box" style="background:#fff"><h4>Organs (Drag these)</h4><div id="sort-items" class="sort-items-container"></div></div>
+                    </div>`;
+                document.getElementById('sort-items').innerHTML = task.items.sort(() => 0.5-Math.random()).map(item => `<button class="component-button organ-item" draggable="true" data-system="${item.s}"><div style="font-size:20px">${item.e}</div><div style="font-size:13px">${item.n}</div></button>`).join('');
+                addDragDropListeners(task);
+            }
+
+            function addDragDropListeners(task) {
+                document.querySelectorAll('.organ-item').forEach(item => {
+                    item.addEventListener('dragstart', e => { e.dataTransfer.setData('text/plain', item.querySelector('div:last-child').textContent); });
+                });
+                document.querySelectorAll('.system-slot').forEach(slot => {
+                    slot.addEventListener('dragover', e => { e.preventDefault(); slot.classList.add('drag-over'); });
+                    slot.addEventListener('dragleave', () => slot.classList.remove('drag-over'));
+                    slot.addEventListener('drop', e => {
+                        e.preventDefault(); slot.classList.remove('drag-over');
+                        const organName = e.dataTransfer.getData('text/plain');
+                        const organEl = Array.from(document.querySelectorAll('.organ-item')).find(el => el.querySelector('div:last-child').textContent === organName);
+                        const organData = task.items.find(i => i.n === organName);
+                        if (organData && organData.s === slot.dataset.system) {
+                            organEl.style.display = 'none'; // Hide original
+                            const placedItem = document.createElement('div');
+                            placedItem.className = 'placed-organ';
+                            placedItem.innerHTML = organEl.innerHTML;
+                            slot.appendChild(placedItem);
+                            score += 15;
+                            updateLayout();
+                        }
+                    });
+                });
+            }
+
+            function handleIPOClick(btn, task) {
+                if (btn.disabled) return;
+                const expectedType = task.sequence[currentStep];
+                if (btn.dataset.type === expectedType) {
+                    score += 10;
+                    btn.classList.add('correct'); btn.disabled = true;
+                    const boxIndex = Math.floor(currentStep / (task.sequence.length / 3));
+                    const box = document.querySelectorAll('.ipo-box')[boxIndex];
+                    if(box) box.appendChild(btn.cloneNode(true));
+                    currentStep++;
+                } else {
+                    btn.classList.add('incorrect');
+                    setTimeout(() => btn.classList.remove('incorrect'), 500);
+                }
+                updateLayout();
+            }
+            
+            backBtn.addEventListener('click', () => { window.history.back(); });
+            toggleViewBtn.addEventListener('click', () => {
+                showActivity = !showActivity;
+                if (showActivity) startGame();
+                updateLayout();
+            });
+            difficultyBtn.addEventListener('click', () => {
+                difficultyIdx = (difficultyIdx + 1) % difficulties.length;
+                difficultyBtn.textContent = `Mode: ${difficulties[difficultyIdx].charAt(0).toUpperCase() + difficulties[difficultyIdx].slice(1)}`;
+                if (showActivity) startGame();
+            });
+            resetBtn.addEventListener('click', startGame);
+            nextTaskBtn.addEventListener('click', () => {
+                currentTaskIndex++;
+                renderActivity();
+            });
+            window.addEventListener('resize', updateLayout);
+
+            updateLayout();
+        });
+    </script>
+</body>
+</html> modify this code like previous ones and give me full code !

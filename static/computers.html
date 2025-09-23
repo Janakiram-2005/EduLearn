@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Basics of Computers Adventure</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* --- Core Template Styles --- */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f4f7f9;
+            margin: 0;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .page-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 60px;
+            background-color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            border-bottom: 1px solid #e0e0e0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            z-index: 1000;
+            box-sizing: border-box;
+        }
+        .header-section { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .header-section.center { text-align: center; font-size: 1.2em; font-weight: bold; }
+        .header-section.right { display: flex; justify-content: flex-end; }
+
+        .button {
+            padding: 8px 16px;
+            margin-left: 10px;
+            cursor: pointer;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            color: white;
+            transition: background-color 0.2s;
+        }
+        .main-content {
+            margin-top: 60px;
+            padding: 24px;
+            display: flex;
+            flex-grow: 1;
+            overflow: hidden;
+            box-sizing: border-box;
+            gap: 24px;
+            justify-content: center;
+        }
+        #info-panel {
+            flex-shrink: 0;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            box-sizing: border-box;
+            overflow-y: auto;
+            padding: 24px 32px;
+            height: calc(100vh - 108px);
+            transition: width 400ms ease-in-out, margin 400ms ease-in-out;
+        }
+        #activity-panel {
+            display: none; /* Hidden by default */
+            flex-grow: 1;
+            padding: 0;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            height: calc(100vh - 108px);
+            flex-direction: column;
+        }
+        /* Class to trigger the view change */
+        .main-content.activity-visible {
+            justify-content: flex-start;
+        }
+        .main-content.activity-visible #activity-panel {
+            display: flex;
+        }
+
+        /* --- Activity Specific Styles (from your file) --- */
+        .activity-area {
+            flex-grow: 1;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            padding: 24px;
+            overflow-y: auto;
+        }
+        .bottom-control-bar {
+            height: 60px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            background-color: #f8f9fa;
+            border-top: 1px solid #dfe4ea;
+            flex-shrink: 0;
+        }
+        .status-bar { font-weight: bold; color: #495057; }
+        .reset-button { padding: 8px 16px; cursor: pointer; background-color: #dc3545; color: white; border: none; border-radius: 6px; font-weight: 600; }
+        .game-over-screen { font-size: 1.6rem; font-weight: 700; color: #15803d; text-align: center; }
+        .component-button { transition: transform 0.2s ease, box-shadow 0.2s ease; cursor: pointer; }
+        .component-button:hover:not(:disabled) { transform: translateY(-4px); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); }
+        .component-button.correct { background-color: #10b981; color: white; animation: pulse-correct 0.5s; }
+        .component-button.incorrect { animation: shake 0.5s; }
+        .ipo-box { min-height: 100px; border: 2px dashed #9ca3af; }
+        .sort-container { display: grid; gap: 1rem; justify-items: center; grid-template-columns: 1fr 1fr; width: 100%; max-width: 600px; }
+        .sort-box { min-height: 200px; background-color: #e2e8f0; border: 2px solid #94a3b8; border-radius: 12px; padding: 1rem; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; width: 100%; }
+        .memory-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; width: 100%; max-width: 500px; }
+        .memory-card { background-color: #4a5568; color: white; border-radius: 8px; height: 100px; width: 100%; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; text-align: center; cursor: pointer; transition: transform 0.3s, background-color 0.3s; transform-style: preserve-3d; position: relative; }
+        .memory-card.flipped { transform: rotateY(180deg); background-color: #cbd5e1; color: #1a202c; }
+        .card-front, .card-back { backface-visibility: hidden; position: absolute; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; padding: 0.5rem; }
+        .card-back { transform: rotateY(180deg); }
+        .memory-card.matched { background-color: #10b981; cursor: default; }
+        .memory-card.mismatched { animation: shake 0.5s; }
+
+        @keyframes pulse-correct { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 20%, 60% { transform: translateX(-5px); } 40%, 80% { transform: translateX(5px); } }
+    </style>
+</head>
+<body class="page-container">
+    
+    <header class="header">
+        <div class="header-section">Class 5 - Chapter 1 (Basics of Computers)</div>
+        <div id="header-title" class="header-section center">Information</div>
+        <div class="header-section right">
+            <button id="back-btn" class="button" style="background-color: #6c757d;">Back</button>
+            <button id="toggle-view-btn" class="button" style="background-color: #007bff;">Activity</button>
+            <button id="next-task-btn" class="button" style="background-color: #28a745;">Next Task</button>
+        </div>
+    </header>
+
+    <main class="main-content" id="main-content">
+        <section id="info-panel">
+             <h1 class="text-3xl font-bold text-gray-800">1. Introduction to Computers</h1>
+            <p class="mt-2">A <strong>computer</strong> is an electronic machine that takes in information (input), processes it, and gives a result (output). It's a powerful tool with abilities like <strong>speed</strong>, <strong>accuracy</strong>, and massive <strong>storage</strong>.</p>
+            
+            <h1 class="text-3xl font-bold text-gray-800 mt-6">2. Parts of a Computer</h1>
+            <h2 class="text-2xl mt-4 font-semibold text-gray-700">Hardware vs. Software</h2>
+            <p class="mt-2">A computer has two main parts:</p>
+            <ul class="list-disc list-inside mt-2">
+                <li><strong>Hardware:</strong> The physical parts you can touch, like the monitor, CPU, keyboard, and mouse.</li>
+                <li><strong>Software:</strong> The set of instructions and programs that tell the hardware what to do, like Windows or a game.</li>
+            </ul>
+
+            <h1 class="text-3xl font-bold text-gray-800 mt-6">3. Input–Processing–Output (IPO) Cycle</h1>
+            <p class="mt-2">Every computer task follows this simple cycle:</p>
+            <ol class="list-decimal list-inside mt-2">
+                <li><strong>Input:</strong> Giving the computer information (e.g., typing on a keyboard).</li>
+                <li><strong>Processing:</strong> The CPU (the computer's brain) works on the information.</li>
+                <li><strong>Output:</strong> The computer gives you the result (e.g., showing text on the monitor).</li>
+            </ol>
+            
+            <h1 class="text-3xl font-bold text-gray-800 mt-6">4. Memory and Storage</h1>
+            <p class="mt-2">This is where a computer holds its data.</p>
+            <ul class="list-disc list-inside mt-2">
+                <li><strong>Primary Memory (RAM):</strong> Temporary memory for active tasks. It's fast but data is lost when the power is off.</li>
+                <li><strong>Secondary Storage (Hard Disk):</strong> For long-term storage of files and programs.</li>
+            </ul>
+        </section>
+
+        <section id="activity-panel">
+            <div class="activity-area" id="game-content">
+                </div>
+            <footer class="bottom-control-bar">
+                <div id="status-bar" class="status-bar">Score: 0</div>
+                <button id="reset-btn" class="reset-button">Reset</button>
+            </footer>
+        </section>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            // --- DATA ---
+            const levels = [
+                { id: 'ipo-music', type: 'ipo-task', title: 'Task 1: Play a Song!', task: 'You want to play your favorite song. Choose the correct parts in order.', sequence: ['keyboard', 'cpu', 'speakers'], components: [ { name: 'Keyboard', emoji: '⌨️', type: 'keyboard' }, { name: 'Mouse', emoji: '🖱️', type: 'mouse' }, { name: 'CPU', emoji: '🧠', type: 'cpu' }, { name: 'Monitor', emoji: '🖥️', type: 'monitor' }, { name: 'Speakers', emoji: '🔊', type: 'speakers' }, { name: 'Printer', emoji: '🖨️', type: 'printer' }] },
+                { id: 'ipo-drawing', type: 'ipo-task', title: 'Task 2: Draw a Picture!', task: 'You want to draw a picture. Choose the correct parts in order.', sequence: ['mouse', 'cpu', 'monitor'], components: [ { name: 'Keyboard', emoji: '⌨️', type: 'keyboard' }, { name: 'Mouse', emoji: '🖱️', type: 'mouse' }, { name: 'CPU', emoji: '🧠', type: 'cpu' }, { name: 'Monitor', emoji: '🖥️', type: 'monitor' }, { name: 'Speakers', emoji: '🔊', type: 'speakers' }, { name: 'Microphone', emoji: '🎤', type: 'microphone' }] },
+                { id: 'hw-sw-sort', type: 'sort', title: 'Task 3: Hardware or Software?', task: 'Click on the items below to sort them into the correct box.', items: [ { name: 'Keyboard', type: 'Hardware' }, { name: 'Windows 11', type: 'Software' }, { name: 'Monitor', type: 'Hardware' }, { name: 'Mouse', type: 'Hardware' }, { name: 'MS Word', type: 'Software' }, { name: 'Speakers', type: 'Hardware' }, { name: 'Google Chrome', type: 'Software' }] },
+                { id: 'memory-match', type: 'memory', title: 'Task 4: Memory Match!', task: 'Find the matching pairs of storage devices and their descriptions.', pairs: [ { name: 'RAM', description: 'Temporary memory' }, { name: 'Hard Disk', description: 'Long-term storage' }, { name: 'Pen Drive', description: 'Portable storage' }, { name: 'Cloud Storage', description: 'Online storage' }] }
+            ];
+
+            // --- STATE ---
+            let showActivity = false;
+            let score = 0;
+            let currentLevel = 0;
+            let currentStep = 0;
+            let gameOver = false;
+            let flippedCards = [];
+            let matchedCards = [];
+
+            // --- DOM ELEMENTS ---
+            const mainContent = document.getElementById('main-content');
+            const infoPanel = document.getElementById('info-panel');
+            const activityPanel = document.getElementById('activity-panel');
+            const headerTitle = document.getElementById('header-title');
+            const toggleViewBtn = document.getElementById('toggle-view-btn');
+            const nextTaskBtn = document.getElementById('next-task-btn');
+            const gameContent = document.getElementById('game-content');
+            const statusBar = document.getElementById('status-bar');
+            const resetBtn = document.getElementById('reset-btn');
+            const backBtn = document.getElementById('back-btn');
+
+            // --- LAYOUT FUNCTIONS ---
+            function updateLayout() {
+                if (showActivity) {
+                    mainContent.classList.add('activity-visible');
+                    infoPanel.style.width = '320px';
+                    infoPanel.style.margin = '0';
+                } else {
+                    mainContent.classList.remove('activity-visible');
+                    infoPanel.style.width = `${Math.min(700, window.innerWidth - 48)}px`;
+                    infoPanel.style.margin = '0 auto';
+                }
+                headerTitle.textContent = showActivity ? 'Activity' : 'Information';
+                toggleViewBtn.textContent = showActivity ? 'Information' : 'Activity';
+                nextTaskBtn.style.display = showActivity ? 'inline-block' : 'none';
+            }
+
+            // --- GAME RENDER FUNCTIONS ---
+            function renderGame() {
+                const level = levels[currentLevel];
+                if (gameOver) {
+                    gameContent.innerHTML = `<div class="game-over-screen">🎉 Mission Complete!<br><br><span class="text-2xl text-gray-700">Final Score: ${score}</span></div>`;
+                    nextTaskBtn.style.display = 'none';
+                    return;
+                }
+                if (level.type === 'ipo-task') renderIPOActivity(level);
+                else if (level.type === 'sort') renderSortActivity(level);
+                else if (level.type === 'memory') renderMemoryActivity(level);
+                updateStatusBar();
+            }
+
+            function renderIPOActivity(level) {
+                gameContent.innerHTML = `
+                    <div class="text-center mb-6"><h2 class="text-3xl font-bold text-gray-800">${level.title}</h2><p class="text-gray-600">${level.task}</p></div>
+                    <div class="flex flex-col md:flex-row justify-around items-center mb-8 gap-4 w-full max-w-4xl">
+                        <div id="input-box" class="ipo-box flex-1 w-full rounded-xl p-4 text-center"><h3 class="font-bold text-gray-700">Input</h3></div>
+                        <div class="text-4xl text-gray-400">➡️</div>
+                        <div id="process-box" class="ipo-box flex-1 w-full rounded-xl p-4 text-center"><h3 class="font-bold text-gray-700">Process</h3></div>
+                        <div class="text-4xl text-gray-400">➡️</div>
+                        <div id="output-box" class="ipo-box flex-1 w-full rounded-xl p-4 text-center"><h3 class="font-bold text-gray-700">Output</h3></div>
+                    </div>
+                    <div id="components-container" class="grid grid-cols-2 sm:grid-cols-3 gap-4 w-full max-w-2xl"></div>
+                `;
+                const container = document.getElementById('components-container');
+                level.components.forEach(c => {
+                    const btn = document.createElement('button');
+                    btn.className = 'component-button w-full p-4 rounded-xl shadow-md bg-gray-200 hover:bg-gray-300 text-center flex flex-col items-center';
+                    btn.dataset.type = c.type;
+                    btn.innerHTML = `<span class="text-5xl">${c.emoji}</span><p class="mt-2 font-medium">${c.name}</p>`;
+                    btn.onclick = handleIPOComponentClick;
+                    container.appendChild(btn);
+                });
+            }
+
+            function renderSortActivity(level) {
+                gameContent.innerHTML = `
+                    <div class="text-center mb-6"><h2 class="text-3xl font-bold text-gray-800">${level.title}</h2><p class="text-gray-600">${level.task}</p></div>
+                    <div class="sort-container"><div id="hardware-box" class="sort-box"><h3 class="text-xl font-bold">Hardware</h3></div><div id="software-box" class="sort-box"><h3 class="text-xl font-bold">Software</h3></div></div>
+                    <div id="sort-items" class="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4"></div>`;
+                const container = document.getElementById('sort-items');
+                level.items.forEach(item => {
+                    const btn = document.createElement('button');
+                    btn.className = 'component-button p-4 rounded-xl shadow-md bg-gray-200 hover:bg-gray-300';
+                    btn.dataset.type = item.type;
+                    btn.textContent = item.name;
+                    btn.onclick = handleSortComponentClick;
+                    container.appendChild(btn);
+                });
+            }
+
+            function renderMemoryActivity(level) {
+                gameContent.innerHTML = `
+                    <div class="text-center mb-6"><h2 class="text-3xl font-bold text-gray-800">${level.title}</h2><p class="text-gray-600">${level.task}</p></div>
+                    <div id="memory-grid" class="memory-grid"></div>`;
+                const grid = document.getElementById('memory-grid');
+                flippedCards = [];
+                matchedCards = [];
+                const cards = level.pairs.flatMap(p => [{id:p.name, content:p.name}, {id:p.name, content:p.description}]).sort(() => 0.5 - Math.random());
+                cards.forEach(cardData => {
+                    const card = document.createElement('div');
+                    card.className = 'memory-card';
+                    card.dataset.id = cardData.id;
+                    card.innerHTML = `<div class="card-front bg-gray-700 rounded-lg">❓</div><div class="card-back rounded-lg">${cardData.content}</div>`;
+                    card.onclick = () => handleMemoryCardClick(card);
+                    grid.appendChild(card);
+                });
+            }
+
+            // --- GAME LOGIC HANDLERS ---
+            function handleIPOComponentClick(e) {
+                const btn = e.currentTarget;
+                const clickedType = btn.dataset.type;
+                const level = levels[currentLevel];
+                if (clickedType === level.sequence[currentStep]) {
+                    btn.classList.add('correct');
+                    btn.disabled = true;
+                    score += 10;
+                    const boxId = ['input-box', 'process-box', 'output-box'][currentStep];
+                    document.getElementById(boxId).innerHTML += `<div class="bg-white p-2 rounded-lg mt-2">${btn.innerHTML}</div>`;
+                    currentStep++;
+                    if (currentStep === level.sequence.length) showCompletionModal("Task Complete!");
+                } else {
+                    btn.classList.add('incorrect');
+                    setTimeout(() => btn.classList.remove('incorrect'), 500);
+                }
+                updateStatusBar();
+            }
+
+            function handleSortComponentClick(e) {
+                const btn = e.currentTarget;
+                const itemType = btn.dataset.type;
+                const targetBox = document.getElementById(`${itemType.toLowerCase()}-box`);
+                targetBox.appendChild(btn);
+                btn.classList.add('correct');
+                btn.disabled = true;
+                score += 10;
+                if (document.getElementById('sort-items').children.length === 0) showCompletionModal("Task Complete!");
+                updateStatusBar();
+            }
+
+            function handleMemoryCardClick(card) {
+                if (flippedCards.length >= 2 || card.classList.contains('flipped') || card.classList.contains('matched')) return;
+                
+                card.classList.add('flipped');
+                flippedCards.push(card);
+
+                if (flippedCards.length === 2) {
+                    const [card1, card2] = flippedCards;
+                    if (card1.dataset.id === card2.dataset.id) {
+                        card1.classList.add('matched');
+                        card2.classList.add('matched');
+                        matchedCards.push(card1, card2);
+                        score += 20;
+                        if (matchedCards.length === levels[currentLevel].pairs.length * 2) {
+                            showCompletionModal("Task Complete!");
+                        }
+                    } else {
+                        card1.classList.add('mismatched');
+                        card2.classList.add('mismatched');
+                        setTimeout(() => {
+                            card1.classList.remove('flipped', 'mismatched');
+                            card2.classList.remove('flipped', 'mismatched');
+                        }, 1000);
+                    }
+                    setTimeout(() => flippedCards = [], 1000);
+                }
+                updateStatusBar();
+            }
+
+            // --- GENERAL FUNCTIONS ---
+            function updateStatusBar() {
+                statusBar.textContent = `Score: ${score}`;
+            }
+
+            function handleReset() {
+                score = 0;
+                currentLevel = 0;
+                currentStep = 0;
+                gameOver = false;
+                nextTaskBtn.disabled = false;
+                renderGame();
+            }
+            
+            function showCompletionModal(message) {
+                 setTimeout(() => alert(message), 300); // Simple alert for completion
+            }
+
+            // --- EVENT LISTENERS ---
+            // MODIFIED: This now correctly goes to the previous page in history.
+            backBtn.addEventListener('click', () => window.history.back());
+            
+            resetBtn.addEventListener('click', handleReset);
+            toggleViewBtn.addEventListener('click', () => {
+                showActivity = !showActivity;
+                if (showActivity) handleReset();
+                updateLayout();
+            });
+            nextTaskBtn.addEventListener('click', () => {
+                currentLevel++;
+                currentStep = 0;
+                if (currentLevel < levels.length) {
+                    renderGame();
+                } else {
+                    gameOver = true;
+                    renderGame();
+                }
+            });
+            window.addEventListener('resize', updateLayout);
+
+            // --- INITIALIZATION ---
+            updateLayout();
+        });
+    </script>
+</body>
+</html>

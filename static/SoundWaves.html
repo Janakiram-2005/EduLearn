@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sound Waves - Educational Module</title>
+    <style>
+        :root {
+            --header-bg: #ffffff;
+            --page-bg: #f5f7fa;
+            --panel-bg: #ffffff;
+            --border-color: #e0e0e0;
+            --text-dark: #2c3e50;
+            --text-light: #475569;
+            --accent-purple: #6a11cb;
+            --accent-blue: #2575fc;
+            --primary-blue: #007bff;
+            --secondary-gray: #6c757d;
+            --accent-red: #e74c3c;
+        }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body { background-color: var(--page-bg); color: var(--text-dark); margin: 0; height: 100vh; overflow: hidden; }
+        .page-container { display: flex; flex-direction: column; height: 100vh; }
+        .header {
+            position: fixed; top: 0; left: 0; width: 100%; height: 60px;
+            background-color: var(--header-bg); display: flex; align-items: center; justify-content: space-between;
+            padding: 0 24px; border-bottom: 1px solid var(--border-color); box-shadow: 0 2px 4px rgba(0,0,0,0.05); z-index: 1000; box-sizing: border-box;
+        }
+        .header-section { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .header-section.center { text-align: center; font-size: 1.2em; font-weight: bold; }
+        .header-section.right { display: flex; justify-content: flex-end; }
+        .button {
+            padding: 8px 16px; margin-left: 10px; cursor: pointer;
+            border: none; border-radius: 6px; font-weight: 600; color: white;
+            transition: transform 0.1s, background-color 0.2s;
+        }
+        .button:active { transform: scale(0.95); }
+        .main-content {
+            margin-top: 60px; padding: 24px; display: flex;
+            flex-grow: 1; overflow: hidden; box-sizing: border-box;
+            gap: 24px; justify-content: center;
+        }
+        .panel {
+            background-color: var(--panel-bg); border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: 1px solid var(--border-color);
+            box-sizing: border-box; overflow-y: auto;
+            height: calc(100vh - 108px);
+            transition: width 400ms ease-in-out, min-width 400ms ease-in-out, margin 400ms ease-in-out;
+        }
+        #info-panel {
+            padding: 24px 32px;
+            width: 100%;
+            max-width: 700px;
+            margin: 0 auto;
+            flex-shrink: 0;
+        }
+        #activity-panel { display: none; flex-grow: 1; min-width: 400px; padding: 0; flex-direction: column; background-color: #f0f4f8; }
+        
+        .main-content.activity-visible { justify-content: flex-start; }
+        .main-content.activity-visible #info-panel { width: 340px; min-width: 340px; margin: 0; }
+        .main-content.activity-visible #activity-panel { display: flex; }
+
+        /* Info & Game Styles */
+        #info-panel h1 { color: var(--accent-purple); margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid var(--accent-blue); }
+        #info-panel h2 { color: var(--accent-blue); margin: 20px 0 10px; }
+        #info-panel table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        #info-panel th, #info-panel td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+        #info-panel th { background-color: #f2f6fa; color: var(--accent-purple); }
+        #info-panel ul { list-style-position: inside; }
+
+        .activity-area { flex-grow: 1; padding: 20px; overflow-y: auto; }
+        .game-card { background-color: white; border-radius: 8px; padding: 20px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); }
+        .puzzle-board { display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); width: 300px; height: 300px; margin: 20px auto; border: 2px solid var(--accent-purple); }
+        .puzzle-piece { display: flex; align-items: center; justify-content: center; background-size: 300px 300px; border: 1px solid rgba(255, 255, 255, 0.7); font-size: 1.1em; font-weight: bold; color: white; text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7); cursor: pointer; user-select: none; }
+        .puzzle-piece.empty { background: #f0f4f8; border-color: var(--accent-purple); cursor: default; }
+        .puzzle-controls { display: flex; justify-content: center; gap: 10px; margin-top: 15px; }
+        .puzzle-button { padding: 10px 15px; background-color: var(--accent-purple); color: white; border: none; border-radius: 4px; cursor: pointer; }
+        .puzzle-stats { display: flex; justify-content: space-around; width: 100%; margin-top: 15px; padding: 10px; background-color: #f0f4f8; border-radius: 6px; }
+        .bottom-control-bar { height: 60px; display: flex; justify-content: flex-end; align-items: center; padding: 0 20px; background-color: white; border-top: 1px solid #ddd; }
+        .reset-button { background-color: var(--accent-red); }
+        .feedback { font-size: 1.1rem; font-weight: 600; text-align: center; min-height: 28px; padding: 10px; border-radius: 6px; margin-top: 15px;}
+        .feedback-correct { background-color: #e8f5e9; color: #2e7d32; }
+    </style>
+</head>
+<body class="page-container">
+    <header class="header">
+        <div class="header-section">Class 9 - Sound Waves</div>
+        <div id="header-title" class="header-section center">Information</div>
+        <div class="header-section right">
+            <button id="back-btn" class="button" style="background-color: var(--secondary-gray);">Back</button>
+            <button id="toggle-view-btn" class="button" style="background-color: var(--primary-blue);">Activity</button>
+            <button id="difficulty-btn" class="button" style="background-color: var(--accent-purple);">Mode: Easy</button>
+        </div>
+    </header>
+
+    <main class="main-content" id="main-content">
+        <section id="info-panel" class="panel">
+            <h1>Sound Waves</h1>
+            <p>Sound is a form of energy that travels through matter as waves. These waves are created by vibrating objects and can be heard when they reach our ears.</p>
+            
+            <h2>Properties of Sound Waves</h2>
+            <ul>
+                <li><strong>Frequency:</strong> The number of vibrations per second (determines pitch).</li>
+                <li><strong>Amplitude:</strong> The size of the vibrations (determines loudness).</li>
+                <li><strong>Wavelength:</strong> The distance between waves.</li>
+            </ul>
+
+            <h2>How Sound Travels</h2>
+            <p>Sound waves require a medium (solid, liquid, or gas) to travel through. They travel fastest through solids, slower through liquids, and slowest through gases.</p>
+        </section>
+
+        <section id="activity-panel" class="panel">
+            <div id="game-area" class="activity-area"></div>
+            <footer class="bottom-control-bar">
+                <button id="reset-btn" class="button reset-button">Reset Puzzle</button>
+            </footer>
+        </section>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const mainContent = document.getElementById('main-content');
+            const infoPanel = document.getElementById('info-panel');
+            const activityPanel = document.getElementById('activity-panel');
+            const headerTitle = document.getElementById('header-title');
+            const toggleViewBtn = document.getElementById('toggle-view-btn');
+            const difficultyBtn = document.getElementById('difficulty-btn');
+            const backBtn = document.getElementById('back-btn');
+            const resetBtn = document.getElementById('reset-btn');
+            const gameArea = document.getElementById('game-area');
+
+            let showActivity = false;
+            let difficultyIdx = 0;
+            const difficulties = ['easy', 'medium', 'hard'];
+            let gameInstance = null;
+
+            const gameData = {
+                easy: { title: "Sound Wave Parts", pieces: ["Wave", "Crest", "Trough", "Amp", "Length", "Sound", "Ear", "Hear", ""] },
+                medium: { title: "Sound Travel", pieces: ["Solid", "Liquid", "Gas", "Faster", "Slower", "Medium", "Vibrate", "Energy", ""] },
+                hard: { title: "Advanced Concepts", pieces: ["Doppler", "Effect", "Pitch", "Sonar", "Echo", "Ultra", "Sound", "Hertz", ""] }
+            };
+
+            function updateLayout() {
+                mainContent.classList.toggle('activity-visible', showActivity);
+                headerTitle.textContent = showActivity ? 'Activity' : 'Information';
+                toggleViewBtn.textContent = showActivity ? 'Information' : 'Activity';
+            }
+
+            function startGame() {
+                if (gameInstance) gameInstance.stop();
+                const difficulty = difficulties[difficultyIdx];
+                gameInstance = new Game(difficulty);
+            }
+
+            class Game {
+                constructor(difficulty) {
+                    this.config = gameData[difficulty];
+                    this.board = [];
+                    this.moves = 0;
+                    this.timer = 0;
+                    this.timerInterval = null;
+                    this.isSolved = false;
+                    this.initUI();
+                    this.shuffle();
+                    this.startTimer();
+                }
+
+                initUI() {
+                    gameArea.innerHTML = `
+                        <div class="game-card">
+                            <h2 class="text-xl font-bold text-center mb-4">${this.config.title}</h2>
+                            <div class="puzzle-board" id="puzzle-board"></div>
+                            <div class="puzzle-stats">
+                                <div class="puzzle-moves">Moves: <span id="moves-count">0</span></div>
+                                <div class="puzzle-time">Time: <span id="time-count">0s</span></div>
+                            </div>
+                            <div id="feedback" class="feedback"></div>
+                        </div>`;
+
+                    this.boardEl = document.getElementById('puzzle-board');
+                    this.movesEl = document.getElementById('moves-count');
+                    this.timeEl = document.getElementById('time-count');
+                    this.feedbackEl = document.getElementById('feedback');
+                }
+                
+                shuffle() {
+                    this.board = [...this.config.pieces];
+                    // A simple shuffle - for a real game, a solvable shuffle algorithm is better
+                    for(let i=0; i<100; i++) {
+                       const emptyIndex = this.board.indexOf("");
+                       const neighbors = this.getNeighbors(emptyIndex);
+                       const randNeighbor = neighbors[Math.floor(Math.random() * neighbors.length)];
+                       this.swap(emptyIndex, randNeighbor);
+                    }
+                    this.render();
+                }
+
+                getNeighbors(index) {
+                    const neighbors = [];
+                    const row = Math.floor(index / 3);
+                    const col = index % 3;
+                    if (row > 0) neighbors.push(index - 3); // Up
+                    if (row < 2) neighbors.push(index + 3); // Down
+                    if (col > 0) neighbors.push(index - 1); // Left
+                    if (col < 2) neighbors.push(index + 1); // Right
+                    return neighbors;
+                }
+
+                swap(i1, i2) {
+                    [this.board[i1], this.board[i2]] = [this.board[i2], this.board[i1]];
+                }
+
+                render() {
+                    this.boardEl.innerHTML = '';
+                    this.board.forEach((text, index) => {
+                        const piece = document.createElement('div');
+                        piece.className = text === "" ? 'puzzle-piece empty' : 'puzzle-piece';
+                        piece.textContent = text;
+                        if (text !== "") {
+                            const hue = (index * 40) % 360;
+                            piece.style.backgroundColor = `hsl(${hue}, 70%, 65%)`;
+                        }
+                        piece.onclick = () => this.handleMove(index);
+                        this.boardEl.appendChild(piece);
+                    });
+                }
+                
+                handleMove(index) {
+                    if (this.isSolved) return;
+                    const emptyIndex = this.board.indexOf("");
+                    if (this.getNeighbors(index).includes(emptyIndex)) {
+                        this.swap(index, emptyIndex);
+                        this.moves++;
+                        this.movesEl.textContent = this.moves;
+                        this.render();
+                        this.checkWin();
+                    }
+                }
+
+                checkWin() {
+                    if (JSON.stringify(this.board) === JSON.stringify(this.config.pieces)) {
+                        this.isSolved = true;
+                        this.stopTimer();
+                        this.feedbackEl.textContent = `Solved in ${this.moves} moves and ${this.timer} seconds!`;
+                        this.feedbackEl.style.color = 'var(--accent-green)';
+                    }
+                }
+
+                startTimer() {
+                    this.timerInterval = setInterval(() => {
+                        this.timer++;
+                        this.timeEl.textContent = `${this.timer}s`;
+                    }, 1000);
+                }
+
+                stop() { clearInterval(this.timerInterval); }
+            }
+            
+            // --- Event Listeners ---
+            toggleViewBtn.addEventListener('click', () => {
+                showActivity = !showActivity;
+                updateLayout();
+                if (showActivity) {
+                    startGame();
+                } else if (gameInstance) {
+                    gameInstance.stop();
+                    gameInstance = null;
+                }
+            });
+
+            difficultyBtn.addEventListener('click', () => {
+                difficultyIdx = (difficultyIdx + 1) % difficulties.length;
+                const newDifficulty = difficulties[difficultyIdx];
+                difficultyBtn.textContent = `Mode: ${newDifficulty.charAt(0).toUpperCase() + newDifficulty.slice(1)}`;
+                if (showActivity) {
+                    startGame();
+                }
+            });
+            
+            resetBtn.addEventListener('click', () => {
+                if (showActivity) {
+                    startGame();
+                }
+            });
+            
+            backBtn.addEventListener('click', () => {
+                window.history.back();
+            });
+            
+            updateLayout();
+        });
+    </script>
+</body>
+</html>

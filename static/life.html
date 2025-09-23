@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cell Survivor</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --header-bg: #ffffff;
+            --page-bg: #fee2e2; /* Light Red */
+            --panel-bg: #ffffff;
+            --border-color: #fecaca;
+            --text-dark: #991b1b; /* Dark Red */
+            --text-light: #ef4444; /* Red */
+            --accent-blue: #3b82f6;
+            --accent-green: #22c55e;
+            --health-bar-color: #4ade80; /* Green */
+            --health-bar-danger: #f87171; /* Red */
+        }
+
+        /* --- Base Layout --- */
+        html, body {
+            height: 100%; margin: 0; overflow: hidden;
+            font-family: 'Poppins', sans-serif; background-color: var(--page-bg); color: var(--text-dark);
+        }
+        .page-container { display: flex; flex-direction: column; height: 100%; }
+        .header {
+            height: 60px; background-color: var(--header-bg); display: flex; align-items: center; justify-content: space-between;
+            padding: 0 24px; border-bottom: 2px solid var(--border-color); box-shadow: 0 2px 4px rgba(0,0,0,0.05); 
+            z-index: 1000; box-sizing: border-box; flex-shrink: 0;
+        }
+        .header-section.center { font-size: 1.2em; font-weight: 600; }
+        .button {
+            padding: 8px 16px; margin-left: 10px; cursor: pointer; border: none; border-radius: 6px; 
+            font-weight: 600; color: white; white-space: nowrap; transition: all 0.2s ease;
+        }
+        .button:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        .main-content { display: flex; flex-grow: 1; overflow: hidden; gap: 24px; padding: 24px; }
+        .panel {
+            background-color: var(--panel-bg); border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            border: 1px solid var(--border-color); display: flex; flex-direction: column; overflow: hidden;
+        }
+        
+        #info-panel { flex-shrink: 0; width: 100%; transition: width 400ms ease-in-out; padding: 24px 32px; overflow-y: auto; }
+        #activity-panel { display: none; flex-grow: 1; padding: 12px; min-width: 0; }
+        .main-content.activity-visible #info-panel { width: 380px; min-width: 380px; }
+        .main-content.activity-visible #activity-panel { display: flex; }
+        
+        /* --- GAME STYLES --- */
+        #game-container { width: 100%; height: 100%; display: flex; flex-direction: column; }
+        #scoreboard {
+            display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; gap: 15px;
+            background-color: #fff1f2; padding: 10px 20px; border-radius: 12px;
+        }
+        .score-item { font-size: 1.1em; font-weight: 600; }
+        #health-bar-container { width: 150px; height: 18px; background-color: var(--border-color); border-radius: 9px; }
+        #health-bar { height: 100%; width: 100%; background-color: var(--health-bar-color); border-radius: 9px; transition: width 0.2s, background-color 0.5s; }
+        
+        #game-area {
+            flex-grow: 1; background-color: #ffe4e6; border-radius: 12px;
+            margin-top: 10px; position: relative; overflow: hidden;
+        }
+        #player {
+            position: absolute; width: 40px; height: 40px; bottom: 15px;
+            background-color: #ffffff; border-radius: 50%; border: 4px solid #fca5a5;
+            box-shadow: 0 0 15px white, inset 0 0 10px #fecaca;
+            user-select: none;
+        }
+        
+        /* NEW GRAPHICS FOR GAME OBJECTS */
+        .game-object {
+            position: absolute;
+            user-select: none;
+        }
+        .collectible.glucose {
+             width: 25px; height: 25px; background-color: #fb7185; border-radius: 50%;
+             border: 3px solid white; box-shadow: 0 0 10px #fb7185;
+        }
+        .collectible.oxygen {
+            width: 25px; height: 25px; background-color: #60a5fa; border-radius: 50%;
+            border: 3px solid white; box-shadow: 0 0 10px #60a5fa;
+        }
+        .hazard.virus {
+            width: 30px; height: 30px; background-color: #c084fc;
+            border: 3px solid white; box-shadow: 0 0 10px #c084fc;
+            clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+        }
+        .hazard.bacteria {
+            width: 40px; height: 15px; background-color: #a3e635;
+            border: 3px solid white; border-radius: 10px; box-shadow: 0 0 10px #a3e635;
+        }
+
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.7);
+            display: none; justify-content: center; align-items: center; z-index: 2000;
+        }
+        .modal-content {
+            background-color: white; padding: 40px; border-radius: 12px; text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3); animation: fadeIn 0.5s;
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+    </style>
+</head>
+<body class="page-container">
+    
+    <header class="header">
+        <div class="header-section left">🩸 Biology</div>
+        <div class="header-section center">Cell Survivor</div>
+        <div class="header-section right">
+            <button id="difficulty-btn" class="button" style="background-color: var(--accent-blue);">Difficulty: Easy</button>
+            <button id="toggle-view-btn" class="button" style="background-color: var(--accent-green);">Start Game</button>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <section id="info-panel" class="panel">
+            <h1>🛡️ Cell Survivor</h1>
+            <p>Welcome to the bloodstream! You are a White Blood Cell, the last line of defense against invaders. Survive as long as you can in this hostile environment.</p>
+            <h3>How to Play</h3>
+            <ul>
+                <li>Use the **Left and Right Arrow Keys** to move your cell.</li>
+                <li>Collect good resources to increase your score.</li>
+                <li>Avoid colliding with viruses and bacteria, which will damage your cell.</li>
+                <li>The game ends when your health runs out. Go for a high score!</li>
+            </ul>
+             <h3>Difficulty Levels</h3>
+            <p>Higher difficulties increase the speed of falling items and the number of pathogens you'll face.</p>
+        </section>
+
+        <section id="activity-panel" class="panel">
+            <div id="game-container">
+                <div id="scoreboard">
+                    <div class="score-item">Health:</div>
+                    <div id="health-bar-container"><div id="health-bar"></div></div>
+                    <div class="score-item">Score: <span id="score-value">0</span></div>
+                </div>
+                <div id="game-area">
+                    <div id="player"></div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div id="completion-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h2 id="modal-title">Game Over!</h2>
+            <p id="final-score-text"></p>
+            <button id="play-again-btn" class="button" style="background-color: var(--accent-green);">Play Again</button>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- DOM Elements ---
+        const mainContent = document.querySelector('.main-content');
+        const toggleViewBtn = document.getElementById('toggle-view-btn');
+        const difficultyBtn = document.getElementById('difficulty-btn');
+        const gameArea = document.getElementById('game-area');
+        const player = document.getElementById('player');
+        const scoreDisplay = document.getElementById('score-value');
+        const healthBar = document.getElementById('health-bar');
+        const completionModal = document.getElementById('completion-modal');
+        const finalScoreText = document.getElementById('final-score-text');
+        const playAgainBtn = document.getElementById('play-again-btn');
+
+        // --- Game Settings & State ---
+        const difficultySettings = {
+            easy:   { speed: 1.5, spawnRate: 1200, health: 100, hazardChance: 0.25 },
+            medium: { speed: 2.5, spawnRate: 900,  health: 80,  hazardChance: 0.4 },
+            hard:   { speed: 3.5, spawnRate: 650,  health: 60,  hazardChance: 0.55 }
+        };
+        const difficulties = ['easy', 'medium', 'hard'];
+        let difficultyIndex = 0;
+        
+        let score, health, playerX, gameAnimationId, spawnInterval;
+        let gameObjects = [];
+        let keys = {};
+        let isGameOver = true;
+        let showActivity = false;
+        
+        // --- Game Loop and Logic ---
+        function startGame() {
+            const currentDifficultyKey = difficulties[difficultyIndex];
+            const settings = difficultySettings[currentDifficultyKey];
+            
+            isGameOver = false;
+            score = 0;
+            health = settings.health;
+            playerX = gameArea.offsetWidth / 2 - player.offsetWidth / 2;
+            gameObjects = [];
+            
+            completionModal.style.display = 'none';
+            gameArea.innerHTML = '';
+            gameArea.appendChild(player);
+
+            clearInterval(spawnInterval);
+            if (gameAnimationId) cancelAnimationFrame(gameAnimationId);
+
+            spawnInterval = setInterval(() => spawnObject(settings), settings.spawnRate);
+            gameLoop();
+        }
+
+        function gameLoop() {
+            if (isGameOver) return;
+            
+            updatePlayerPosition();
+            updateGameObjects();
+            updateUI();
+
+            gameAnimationId = requestAnimationFrame(gameLoop);
+        }
+
+        function spawnObject(settings) {
+            const obj = document.createElement('div');
+            obj.classList.add('game-object');
+
+            const isHazard = Math.random() < settings.hazardChance;
+            let type1, type2;
+
+            if (isHazard) {
+                type1 = 'hazard';
+                type2 = Math.random() > 0.5 ? 'virus' : 'bacteria';
+            } else {
+                type1 = 'collectible';
+                type2 = Math.random() > 0.5 ? 'glucose' : 'oxygen';
+            }
+            obj.classList.add(type1, type2);
+
+            const newObject = {
+                element: obj,
+                x: Math.random() * (gameArea.offsetWidth - 40),
+                y: -40,
+                type: type1
+            };
+            
+            obj.style.left = `${newObject.x}px`;
+            obj.style.top = `${newObject.y}px`;
+            
+            gameObjects.push(newObject);
+            gameArea.appendChild(obj);
+        }
+
+        function updatePlayerPosition() {
+            const playerSpeed = 6;
+            if (keys['ArrowLeft'] && playerX > 0) {
+                playerX -= playerSpeed;
+            }
+            if (keys['ArrowRight'] && playerX < gameArea.offsetWidth - player.offsetWidth) {
+                playerX += playerSpeed;
+            }
+            player.style.left = `${playerX}px`;
+        }
+
+        function updateGameObjects() {
+            const settings = difficultySettings[difficulties[difficultyIndex]];
+            const playerRect = player.getBoundingClientRect();
+            
+            for (let i = gameObjects.length - 1; i >= 0; i--) {
+                let obj = gameObjects[i];
+                obj.y += settings.speed;
+                obj.element.style.top = `${obj.y}px`;
+
+                if (isColliding(playerRect, obj.element.getBoundingClientRect())) {
+                    if (obj.type === 'collectible') {
+                        score += 10;
+                    } else {
+                        health -= 20;
+                    }
+                    obj.element.remove();
+                    gameObjects.splice(i, 1);
+                }
+                else if (obj.y > gameArea.offsetHeight) {
+                    obj.element.remove();
+                    gameObjects.splice(i, 1);
+                }
+            }
+            
+            if (health <= 0) {
+                endGame();
+            }
+        }
+        
+        function updateUI() {
+            scoreDisplay.textContent = score;
+            const maxHealth = difficultySettings[difficulties[difficultyIndex]].health;
+            const healthPercentage = Math.max(0, health) / maxHealth * 100;
+            healthBar.style.width = `${healthPercentage}%`;
+            healthBar.style.backgroundColor = healthPercentage < 30 ? 'var(--health-bar-danger)' : 'var(--health-bar-color)';
+        }
+
+        function endGame() {
+            isGameOver = true;
+            cancelAnimationFrame(gameAnimationId);
+            clearInterval(spawnInterval);
+            finalScoreText.textContent = `Your final score is ${score}.`;
+            completionModal.style.display = 'flex';
+        }
+        
+        function isColliding(rect1, rect2) {
+            return !(rect1.right < rect2.left || rect1.left > rect2.right || rect1.bottom < rect2.top || rect1.top > rect2.bottom);
+        }
+
+        // --- Event Listeners ---
+        window.addEventListener('keydown', e => {
+            if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+                e.preventDefault();
+                keys[e.key] = true;
+            }
+        });
+        window.addEventListener('keyup', e => keys[e.key] = false);
+
+        toggleViewBtn.addEventListener('click', () => {
+            showActivity = !showActivity;
+            mainContent.classList.toggle('activity-visible', showActivity);
+
+            if (showActivity) {
+                toggleViewBtn.textContent = 'Briefing';
+                toggleViewBtn.style.backgroundColor = 'var(--text-light)';
+                startGame();
+            } else {
+                toggleViewBtn.textContent = 'Start Game';
+                toggleViewBtn.style.backgroundColor = 'var(--accent-green)';
+                if (!isGameOver) endGame();
+            }
+        });
+        
+        difficultyBtn.addEventListener('click', () => {
+            difficultyIndex = (difficultyIndex + 1) % difficulties.length;
+            const newDifficulty = difficulties[difficultyIndex];
+            difficultyBtn.textContent = `Difficulty: ${newDifficulty.charAt(0).toUpperCase() + newDifficulty.slice(1)}`;
+            if (showActivity) startGame();
+        });
+        
+        playAgainBtn.addEventListener('click', () => {
+             completionModal.style.display = 'none';
+             startGame();
+        });
+    });
+    </script>
+</body>
+</html>

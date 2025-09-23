@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Straight Lines: Line Inspector</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --header-bg: #ffffff;
+            --page-bg: #f0f2f5;
+            --panel-bg: #ffffff;
+            --border-color: #e5e7eb;
+            --text-dark: #1f2937;
+            --text-light: #475569;
+            --accent-teal: #14b8a6;
+            --accent-teal-dark: #0f766e;
+            --primary-blue: #007bff;
+            --secondary-gray: #6c757d;
+            --accent-red: #ef4444;
+            --accent-green: #22c55e;
+        }
+        body { font-family: 'Poppins', sans-serif; background-color: var(--page-bg); color: var(--text-dark); margin: 0; height: 100vh; overflow: hidden; }
+        .page-container { display: flex; flex-direction: column; height: 100vh; }
+        .header {
+            position: fixed; top: 0; left: 0; width: 100%; height: 60px;
+            background-color: var(--header-bg); display: flex; align-items: center; justify-content: space-between;
+            padding: 0 24px; border-bottom: 1px solid var(--border-color);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05); z-index: 1000; box-sizing: border-box;
+        }
+        .header-section { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .header-section.center { text-align: center; font-size: 1.2em; font-weight: bold; }
+        .header-section.right { display: flex; justify-content: flex-end; }
+        .button {
+            padding: 8px 16px; margin-left: 10px; cursor: pointer;
+            border: none; border-radius: 6px; font-weight: 600; color: white;
+            transition: transform 0.1s, background-color 0.2s;
+        }
+        .button:active { transform: scale(0.95); }
+        .main-content {
+            margin-top: 60px; padding: 24px; display: flex;
+            flex-grow: 1; overflow: hidden; box-sizing: border-box;
+            gap: 24px; justify-content: center;
+        }
+        .panel {
+            background-color: var(--panel-bg); border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: 1px solid var(--border-color);
+            box-sizing: border-box; overflow-y: auto;
+            height: calc(100vh - 108px);
+            transition: width 400ms ease-in-out, min-width 400ms ease-in-out, margin 400ms ease-in-out;
+        }
+        #info-panel {
+            padding: 24px 32px;
+            width: 100%;
+            max-width: 700px;
+            margin: 0 auto;
+            flex-shrink: 0;
+        }
+        #activity-panel { display: none; flex-grow: 1; min-width: 400px; padding: 24px; flex-direction: column; }
+        
+        .main-content.activity-visible { justify-content: flex-start; }
+        .main-content.activity-visible #info-panel { width: 340px; min-width: 340px; margin: 0; }
+        .main-content.activity-visible #activity-panel { display: flex; }
+
+        /* --- Info & Game Styles --- */
+        .info-panel-content { background-color: #f0f9ff; padding: 1.5rem; border-radius: 0.75rem; border: 1px solid #e0f2fe; }
+        .info-panel-content h3 { color: var(--accent-teal-dark); }
+        .game-card { background-color: white; border-radius: 8px; padding: 20px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); }
+        .feedback { font-size: 1.1rem; font-weight: 600; text-align: center; min-height: 28px; margin-top: 20px;}
+        .feedback-correct { color: var(--accent-green); }
+        .feedback-incorrect { color: var(--accent-red); }
+    </style>
+</head>
+<body class="page-container">
+    <header class="header">
+        <div class="header-section">Class 11 - Straight Lines</div>
+        <div id="header-title" class="header-section center">Information</div>
+        <div class="header-section right">
+            <button id="back-btn" class="button" style="background-color: var(--secondary-gray);">Back</button>
+            <button id="toggle-view-btn" class="button" style="background-color: var(--primary-blue);">Activity</button>
+            <button id="difficulty-btn" class="button" style="background-color: var(--accent-teal);">Mode: Easy</button>
+        </div>
+    </header>
+
+    <main class="main-content" id="main-content">
+        <section id="info-panel" class="panel">
+            <h2 class="text-3xl font-bold mb-6 text-center text-gray-800">Straight Lines</h2>
+            <div class="space-y-4">
+                <div class="info-panel-content">
+                    <h3 class="text-xl font-semibold">Forms of a Line</h3>
+                    <ul class="list-disc list-inside mt-3 space-y-2 text-gray-600">
+                        <li><b>Slope-Intercept Form:</b> y = mx + c</li>
+                        <li><b>Point-Slope Form:</b> y - y₁ = m(x - x₁)</li>
+                        <li><b>General Form:</b> Ax + By + C = 0</li>
+                    </ul>
+                </div>
+                <div class="info-panel-content">
+                    <h3 class="text-xl font-semibold">Key Formulas</h3>
+                    <ul class="list-disc list-inside mt-3 space-y-2 text-gray-600">
+                        <li><b>Slope (m):</b> (y₂ - y₁) / (x₂ - x₁)</li>
+                        <li><b>Distance of a point from a line</b></li>
+                        <li><b>Angle between two lines</b></li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="activity-panel" class="panel">
+            <div id="game-area"></div>
+        </section>
+    </main>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const mainContent = document.getElementById('main-content');
+            const headerTitle = document.getElementById('header-title');
+            const toggleViewBtn = document.getElementById('toggle-view-btn');
+            const difficultyBtn = document.getElementById('difficulty-btn');
+            const backBtn = document.getElementById('back-btn');
+            const gameArea = document.getElementById('game-area');
+
+            let showActivity = false;
+            let difficultyIdx = 0;
+            const difficulties = ['easy', 'medium', 'hard'];
+            let score = 0;
+            let isAnswered = false;
+
+            const problems={easy:[{line:"y = 2x + 3",q:"What is the slope of this line?",a:"2"},{line:"y = -x + 5",q:"What is the y-intercept?",a:"5"},{line:"x + y = 7",q:"Find the slope.",a:"-1"},{line:"Find slope of line joining (1,1) and (3,5).",a:"2"}],medium:[{line:"2x + 3y = 6",q:"What is the slope of this line?",a:"-2/3"},{line:"Line: y = 3x - 1",q:"Find slope of a parallel line.",a:"3"},{line:"Find x-intercept of 4x - 3y = 12.",a:"3"}],hard:[{line:"Line: y = 2x + 5",q:"Find slope of a perpendicular line.",a:"-1/2"},{line:"Distance of (3,-5) from 3x-4y-26=0?",a:"3/5"},{line:"Angle between y=√3x+1 and y=(1/√3)x+2?",a:"30"}]};
+
+            function updateLayout() {
+                mainContent.classList.toggle('activity-visible', showActivity);
+                headerTitle.textContent = showActivity ? 'Activity' : 'Information';
+                toggleViewBtn.textContent = showActivity ? 'Information' : 'Activity';
+            }
+
+            function startGame() {
+                isAnswered = false;
+                const difficulty = difficulties[difficultyIdx];
+                const questions = problems[difficulty];
+                const question = questions[Math.floor(Math.random() * questions.length)];
+
+                gameArea.innerHTML = `
+                    <div class="game-card">
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-2xl font-bold">${capitalize(difficulty)} Challenge</h2>
+                            <div class="text-xl font-bold">Score: <span id="score-display">${score}</span></div>
+                        </div>
+                        <p class="text-2xl my-4 text-center font-mono">${question.line || ''}</p>
+                        <p id="question-text" class="text-xl my-4 text-center">${question.q.replace(/√/g, '&radic;')}</p>
+                        <form id="answer-form" class="flex justify-center items-center gap-4 mt-6">
+                            <input type="text" id="answer-input" class="text-center text-xl font-bold w-48 p-3 rounded-lg border-2 border-gray-300" placeholder="Answer" required>
+                            <button type="submit" class="button text-lg px-6 py-3" style="background-color: var(--accent-teal);">Submit</button>
+                        </form>
+                        <p id="feedback" class="feedback"></p>
+                    </div>`;
+
+                document.getElementById('answer-form').addEventListener('submit', (e) => handleAnswerSubmit(e, question));
+            }
+            
+            function handleAnswerSubmit(e, question) {
+                e.preventDefault();
+                if (isAnswered) return;
+                isAnswered = true;
+
+                const answerInput = document.getElementById('answer-input');
+                const feedbackEl = document.getElementById('feedback');
+                const scoreDisplay = document.getElementById('score-display');
+                
+                const userAnswer = answerInput.value.trim().toLowerCase().replace(/\s/g, '');
+                const correctAnswer = question.a.toLowerCase().replace(/\s/g, '');
+
+                if (userAnswer === correctAnswer) {
+                    score += 10;
+                    feedbackEl.textContent = "Correct!";
+                    feedbackEl.className = "feedback feedback-correct";
+                } else {
+                    feedbackEl.textContent = `Incorrect. The correct answer is ${question.a}.`;
+                    feedbackEl.className = "feedback feedback-incorrect";
+                }
+                scoreDisplay.textContent = score;
+                setTimeout(startGame, 2500);
+            }
+            
+            function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+            // --- Event Listeners ---
+            toggleViewBtn.addEventListener('click', () => {
+                showActivity = !showActivity;
+                updateLayout();
+                if (showActivity) {
+                    score = 0;
+                    startGame();
+                }
+            });
+
+            difficultyBtn.addEventListener('click', () => {
+                difficultyIdx = (difficultyIdx + 1) % difficulties.length;
+                const newDifficulty = difficulties[difficultyIdx];
+                difficultyBtn.textContent = `Mode: ${capitalize(newDifficulty)}`;
+                if (showActivity) {
+                    score = 0;
+                    startGame();
+                }
+            });
+            
+            backBtn.addEventListener('click', () => {
+                window.history.back();
+            });
+            
+            updateLayout();
+        });
+    </script>
+</body>
+</html>

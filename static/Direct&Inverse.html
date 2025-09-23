@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Direct & Inverse Proportions</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --header-bg: #ffffff;
+            --page-bg: #f0f2f5;
+            --panel-bg: #ffffff;
+            --border-color: #e5e7eb;
+            --text-dark: #111827;
+            --text-light: #475569;
+            --accent-orange: #f97316;
+            --accent-green: #22c55e;
+            --accent-red: #ef4444;
+            --primary-blue: #007bff;
+            --secondary-gray: #6c757d;
+        }
+        body { font-family: 'Poppins', sans-serif; background-color: var(--page-bg); color: var(--text-dark); margin: 0; height: 100vh; overflow: hidden; }
+        .page-container { display: flex; flex-direction: column; height: 100vh; }
+        .header {
+            position: fixed; top: 0; left: 0; width: 100%; height: 60px;
+            background-color: var(--header-bg); display: flex; align-items: center; justify-content: space-between;
+            padding: 0 24px; border-bottom: 1px solid var(--border-color); box-shadow: 0 2px 4px rgba(0,0,0,0.05); z-index: 1000; box-sizing: border-box;
+        }
+        .header-section { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .header-section.center { text-align: center; font-size: 1.2em; font-weight: bold; }
+        .header-section.right { display: flex; justify-content: flex-end; }
+        .button {
+            padding: 8px 16px; margin-left: 10px; cursor: pointer;
+            border: none; border-radius: 6px; font-weight: 600; color: white;
+            transition: transform 0.1s, background-color 0.2s;
+        }
+        .button:active { transform: scale(0.95); }
+        .main-content {
+            margin-top: 60px; padding: 24px; display: flex;
+            flex-grow: 1; overflow: hidden; box-sizing: border-box;
+            gap: 24px; justify-content: center;
+        }
+        .panel {
+            background-color: var(--panel-bg); border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: 1px solid var(--border-color);
+            box-sizing: border-box; overflow-y: auto;
+            height: calc(100vh - 108px);
+            transition: width 400ms ease-in-out, min-width 400ms ease-in-out, margin 400ms ease-in-out;
+        }
+        #info-panel {
+            padding: 24px 32px;
+            width: 100%;
+            max-width: 700px;
+            margin: 0 auto;
+            flex-shrink: 0;
+        }
+        #activity-panel { display: none; flex-grow: 1; min-width: 400px; }
+        
+        /* Layout when activity is visible */
+        .main-content.activity-visible { justify-content: flex-start; }
+        .main-content.activity-visible #info-panel { width: 340px; min-width: 340px; margin: 0; }
+        .main-content.activity-visible #activity-panel { display: block; }
+
+        /* Game Specific Styles */
+        .game-panel { padding: 2rem; width: 100%; max-width: 800px; margin: auto; }
+        #question-text { font-size: 1.25rem; font-weight: 500; color: #111827; line-height: 1.75; }
+        #options-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; margin-top: 2.5rem; }
+        .option-btn { background-color: #f3f4f6; color: #1f2937; padding: 1.5rem; font-size: 1.25rem; font-weight: 600; border-radius: 0.75rem; transition: all 0.2s; border: 2px solid #e5e7eb; cursor: pointer; text-align: left; }
+        .option-btn:hover:not(:disabled) { transform: scale(1.05); box-shadow: 0 0 15px rgba(249, 115, 22, 0.2); }
+        .option-btn.correct { background-color: #22c55e; border-color: #16a34a; color: white; }
+        .option-btn.incorrect { background-color: #ef4444; border-color: #dc2626; color: white; }
+        .info-panel-content { background-color: #ffffff; padding: 1.5rem; border-radius: 0.75rem; border: 1px solid #e5e7eb; box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1); }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+    <header class="header">
+        <div class="header-section">Class 8 - Direct & Inverse Proportions</div>
+        <div id="header-title" class="header-section center">Information</div>
+        <div class="header-section right">
+            <button id="back-btn" class="button" style="background-color: var(--secondary-gray);">Back</button>
+            <button id="toggle-view-btn" class="button" style="background-color: var(--primary-blue);">Activity</button>
+            <button id="difficulty-btn" class="button" style="background-color: var(--accent-orange);">Mode: Easy</button>
+        </div>
+    </header>
+
+    <main class="main-content" id="main-content">
+        <section id="info-panel" class="panel">
+            <h2 class="text-3xl font-bold mb-6 text-center text-gray-800">Proportions Explained</h2>
+            <div class="space-y-4">
+                <div class="info-panel-content">
+                    <h3 class="text-xl font-semibold text-gray-900">Direct Proportion</h3>
+                    <p class="mt-2 text-gray-600">Two quantities are in direct proportion when they increase or decrease together at the same rate. If you double one quantity, the other one also doubles.</p>
+                    <p class="mt-2 text-gray-600"><b>Example:</b> The more hours you work, the more money you earn. If you buy more packets of chips, the total cost increases.</p>
+                </div>
+                <div class="info-panel-content">
+                    <h3 class="text-xl font-semibold text-gray-900">Inverse Proportion</h3>
+                    <p class="mt-2 text-gray-600">Two quantities are in inverse proportion when an increase in one quantity causes a decrease in the other, and vice versa.</p>
+                     <p class="mt-2 text-gray-600"><b>Example:</b> The more people you have to do a job, the less time it will take. If you increase the speed of a car, it takes less time to reach your destination.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="activity-panel" class="panel">
+            <div class="game-panel">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h2 id="level-title" class="text-2xl font-bold text-gray-900 text-left">Easy Challenge</h2>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-xs text-gray-500">SCORE</p>
+                        <p id="score" class="text-2xl font-bold text-gray-900">0</p>
+                    </div>
+                </div>
+                <div id="game-body">
+                    <p id="question-text" class="my-8">If 5 apples cost $2, how much do 10 apples cost?</p>
+                    <div id="options-container"></div>
+                    <p id="feedback-text" class="mt-4 font-semibold text-lg h-6"></p>
+                    <div id="level-complete-container" class="hidden text-center py-8">
+                        <h3 id="level-complete-title" class="text-3xl font-bold text-orange-500">Level Complete!</h3>
+                        <p id="level-complete-score" class="text-xl mt-2 text-gray-700">Your score was 0.</p>
+                        <button id="next-level-btn" class="button mt-6 text-lg py-3 px-8" style="background-color: var(--accent-orange);">Next Level</button>
+                        <button id="play-again-btn" class="button mt-6 text-lg py-3 px-8 hidden" style="background-color: var(--accent-green);">Play Again</button>
+                    </div>
+                </div>
+                <div class="mt-6 text-center">
+                    <button id="reset-game-btn" class="button" style="background-color: #e5e7eb; color: #374151;">Reset Game</button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const mainContent = document.getElementById('main-content'),
+                  infoPanel = document.getElementById('info-panel'),
+                  activityPanel = document.getElementById('activity-panel'),
+                  headerTitle = document.getElementById('header-title'),
+                  toggleViewBtn = document.getElementById('toggle-view-btn'),
+                  difficultyBtn = document.getElementById('difficulty-btn'),
+                  backBtn = document.getElementById('back-btn'),
+                  levelTitle = document.getElementById('level-title'),
+                  scoreDisplay = document.getElementById('score'),
+                  questionText = document.getElementById('question-text'),
+                  optionsContainer = document.getElementById('options-container'),
+                  feedbackText = document.getElementById('feedback-text'),
+                  levelCompleteContainer = document.getElementById('level-complete-container'),
+                  levelCompleteTitle = document.getElementById('level-complete-title'),
+                  levelCompleteScore = document.getElementById('level-complete-score'),
+                  nextLevelBtn = document.getElementById('next-level-btn'),
+                  playAgainBtn = document.getElementById('play-again-btn'),
+                  resetGameBtn = document.getElementById('reset-game-btn');
+            
+            const problems = {
+                easy: [
+                    { q: "If 5 pencils cost $2, how much will 10 pencils cost?", a: "$4", type: "Direct" },
+                    { q: "A car travels 100 km in 2 hours. How far will it travel in 3 hours?", a: "150 km", type: "Direct" },
+                    { q: "If 1 worker takes 4 days to build a wall, how many days will 2 workers take?", a: "2 days", type: "Inverse" },
+                    { q: "More workers on a job means the job will take...", a: "Less time", type: "Inverse" },
+                    { q: "If you buy more tickets, the total cost will...", a: "Increase", type: "Direct" }
+                ],
+                medium: [
+                    { q: "If 3 people can paint a fence in 6 hours, how long will it take 9 people?", a: "2 hours", type: "Inverse" },
+                    { q: "A recipe needs 2 cups of flour for 12 cookies. How much flour for 18 cookies?", a: "3 cups", type: "Direct" },
+                    { q: "If a car's speed increases, the time to cover the same distance will...", a: "Decrease", type: "Inverse" },
+                    { q: "If 8 pipes can fill a tank in 5 hours, how long will it take 10 pipes?", a: "4 hours", type: "Inverse" },
+                    { q: "6 packets of chips cost $9. What is the cost of 4 packets?", a: "$6", type: "Direct" }
+                ],
+                hard: [
+                    { q: "A camp has enough food for 100 students for 20 days. If 25 more students join, how long will the food last?", a: "16 days", type: "Inverse" },
+                    { q: "A map scale is 1 cm : 50 km. If two cities are 4.5 cm apart, what is the actual distance?", a: "225 km", type: "Direct" },
+                    { q: "12 men can reap a field in 25 days. In how many days can 20 men reap the same field?", a: "15 days", type: "Inverse" },
+                    { q: "If the price of sugar increases, the amount of sugar you can buy for the same money will...", a: "Decrease", type: "Inverse" },
+                    { q: "A car uses 10 litres of petrol to travel 150 km. How many litres are needed for 120 km?", a: "8 litres", type: "Direct" }
+                ]
+            };
+            const levelOrder = ['easy', 'medium', 'hard'];
+            let currentLevel, score, isAnswered, currentQuestion, currentLevelProblems, showActivity = false;
+            
+            function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+            
+            function generateOptions(correctAnswer) {
+                let options = new Set([correctAnswer]);
+                const baseOptions = ["$1", "100 km", "4 days", "More time", "Decrease", "4 hours", "2 cups", "Increase", "6 hours", "$8", "20 days", "200 km", "12 days", "8 litres", "16 days", "225 km", "15 days", "$4", "150 km", "2 days", "$6", "3 cups"];
+                while(options.size < 4) {
+                    let rand = baseOptions[Math.floor(Math.random() * baseOptions.length)];
+                    if (!options.has(rand)) options.add(rand);
+                }
+                return [...options].sort(() => Math.random() - 0.5);
+            }
+            
+            function initializeGame() { currentLevel = 'easy'; resetGame(); }
+            
+            function resetGame() { score = 0; resetLevel(); }
+            
+            function resetLevel() {
+                const originalProblems = problems[currentLevel];
+                currentLevelProblems = [...originalProblems].sort(() => Math.random() - 0.5);
+                updateScoreDisplay();
+                loadQuestion();
+            }
+            
+            function loadQuestion() {
+                if (currentLevelProblems.length === 0) {
+                    showLevelComplete();
+                    return;
+                }
+                currentQuestion = currentLevelProblems.pop();
+                isAnswered = false;
+                levelCompleteContainer.classList.add('hidden');
+                optionsContainer.classList.remove('hidden');
+                feedbackText.textContent = "";
+                questionText.style.display = 'block';
+                levelTitle.textContent = `${capitalize(currentLevel)} Challenge`;
+                questionText.textContent = `${currentQuestion.q}`;
+                optionsContainer.innerHTML = '';
+                generateOptions(currentQuestion.a).forEach(opt => {
+                    const optionBtn = document.createElement('button');
+                    optionBtn.className = 'option-btn';
+                    optionBtn.dataset.value = opt;
+                    optionBtn.textContent = opt;
+                    optionBtn.addEventListener('click', handleAnswerClick);
+                    optionsContainer.appendChild(optionBtn);
+                });
+            }
+            
+            function handleAnswerClick(e) {
+                if (isAnswered) return;
+                isAnswered = true;
+                document.querySelectorAll('.option-btn').forEach(btn => btn.disabled = true);
+                const clickedBtn = e.currentTarget;
+                const clickedValue = clickedBtn.dataset.value;
+                const correctValue = currentQuestion.a;
+                if (clickedValue === correctValue) {
+                    score += 10;
+                    updateScoreDisplay();
+                    clickedBtn.classList.add('correct');
+                    feedbackText.textContent = `Correct! (${currentQuestion.type} Proportion)`;
+                    feedbackText.style.color = 'var(--accent-green)';
+                } else {
+                    clickedBtn.classList.add('incorrect');
+                    feedbackText.textContent = `Sorry! It was ${correctValue}.`;
+                    feedbackText.style.color = 'var(--accent-red)';
+                    const correctBtn = document.querySelector(`[data-value="${correctValue}"]`);
+                    if (correctBtn) correctBtn.classList.add('correct');
+                }
+                setTimeout(() => loadQuestion(), 2000);
+            }
+            
+            function showLevelComplete() {
+                optionsContainer.classList.add('hidden');
+                questionText.style.display = 'none';
+                feedbackText.textContent = '';
+                levelCompleteContainer.classList.remove('hidden');
+                levelCompleteTitle.textContent = `Level ${capitalize(currentLevel)} Complete!`;
+                levelCompleteScore.textContent = `Your score: ${score}.`;
+                const currentLevelIdx = levelOrder.indexOf(currentLevel);
+                if (currentLevelIdx < levelOrder.length - 1) {
+                    nextLevelBtn.classList.remove('hidden');
+                    playAgainBtn.classList.add('hidden');
+                } else {
+                    levelCompleteTitle.textContent = "Congratulations!";
+                    levelCompleteScore.textContent = `You've completed all challenges! Final score: ${score}`;
+                    nextLevelBtn.classList.add('hidden');
+                    playAgainBtn.classList.remove('hidden');
+                }
+            }
+            
+            function handleNextLevel() {
+                const currentLevelIdx = levelOrder.indexOf(currentLevel);
+                currentLevel = levelOrder[currentLevelIdx + 1];
+                difficultyBtn.textContent = `Mode: ${capitalize(currentLevel)}`;
+                resetLevel();
+            }
+            
+            function updateScoreDisplay() { scoreDisplay.textContent = score; }
+
+            function updateLayout() {
+                mainContent.classList.toggle('activity-visible', showActivity);
+                headerTitle.textContent = showActivity ? 'Activity' : 'Information';
+                toggleViewBtn.textContent = showActivity ? 'Information' : 'Activity';
+            }
+            
+            toggleViewBtn.addEventListener('click', () => {
+                showActivity = !showActivity;
+                updateLayout();
+            });
+            
+            difficultyBtn.addEventListener('click', () => {
+                const currentLevelIdx = levelOrder.indexOf(currentLevel);
+                currentLevel = levelOrder[(currentLevelIdx + 1) % levelOrder.length];
+                difficultyBtn.textContent = `Mode: ${capitalize(currentLevel)}`;
+                resetGame();
+            });
+
+            resetGameBtn.addEventListener('click', resetGame);
+            nextLevelBtn.addEventListener('click', handleNextLevel);
+            playAgainBtn.addEventListener('click', () => {
+                currentLevel = 'easy';
+                difficultyBtn.textContent = `Mode: Easy`;
+                resetGame();
+            });
+            
+            backBtn.addEventListener('click', () => {
+                window.history.back();
+            });
+            
+            initializeGame();
+            updateLayout();
+        });
+    </script>
+</body>
+</html>

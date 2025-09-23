@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>School User Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        // --- CLIENT-SIDE AUTHENTICATION GUARD ---
+        const authToken = localStorage.getItem('authToken');
+        if (!authToken) {
+            window.location.replace('index.html');
+        }
+    </script>
+    <style>
+        :root {
+            --primary-bg: #f8f9fa; --sidebar-bg: #1e2a38; --sidebar-text: #a6b0cf;
+            --sidebar-active: #2563eb; --header-text: #1c3879; --primary-accent: #2563eb;
+            --accent-hover: #1d4ed8; --success-green: #4caf50; --danger-red: #e53935;
+            --light-gray: #e9ecef; --text-color: #343a40; --white: #ffffff;
+            --shadow-sm: 0 2px 8px rgba(0,0,0,0.06); --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body, html { height: 100vh; overflow: hidden; font-family: 'Poppins', sans-serif; background: var(--primary-bg); }
+        .school-dashboard { display: flex; height: 100vh; }
+        .sidebar {
+            width: 240px; background: var(--sidebar-bg); color: var(--sidebar-text);
+            display: flex; flex-direction: column; flex-shrink: 0; user-select: none;
+            transition: width 0.3s ease;
+        }
+        .sidebar .logo {
+            text-align: center; font-size: 1.5rem; font-weight: 700; margin: 20px 0;
+            background: linear-gradient(90deg, #60a5fa, #3b82f6); -webkit-background-clip: text;
+            color: transparent; cursor: pointer;
+        }
+        .sidebar-nav { list-style: none; flex-grow: 1; }
+        .sidebar-nav li .navitem {
+            padding: 14px 25px; display: flex; align-items: center; gap: 15px;
+            cursor: pointer; border-radius: 0 8px 8px 0; font-weight: 500;
+            color: var(--sidebar-text); transition: all 0.3s ease; margin: 5px 10px 5px 0;
+        }
+        .sidebar-nav .navitem:hover, .sidebar-nav .navitem.active {
+            background: var(--sidebar-active); color: var(--white); transform: translateX(5px);
+            box-shadow: 0 4px 10px rgba(41, 102, 189, 0.4);
+        }
+        .sidebar-footer { padding: 15px 0; text-align: center; }
+        .sidebar-footer button {
+            background-color: var(--primary-accent); color: white; border: none;
+            padding: 10px 20px; border-radius: 8px; cursor: pointer;
+            width: calc(100% - 40px); margin-bottom: 10px; transition: background-color 0.3s;
+        }
+        .sidebar-footer button:hover { background-color: var(--accent-hover); }
+        .main-panel { flex-grow: 1; padding: 30px 40px; overflow-y: auto; }
+        .main-panel h2 {
+            margin-bottom: 25px; color: var(--header-text); font-size: 2rem;
+            border-bottom: 3px solid var(--primary-accent); padding-bottom: 10px; display: inline-block;
+        }
+        .card { background: var(--white); padding: 25px; border-radius: 8px; box-shadow: var(--shadow-md); margin-bottom: 25px; }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;}
+        .card-header h3 { color: var(--header-text); font-size: 1.5rem; margin: 0; }
+        .profile .row { display: flex; margin-bottom: 18px; align-items: center; font-size: 1.1rem;}
+        .profile .row .label { flex: 0 0 150px; font-weight: 600; color: var(--primary-accent); }
+        .profile .row .value { font-weight: 500; color: var(--text-color); }
+        .edit-input { width: 100%; padding: 8px 12px; font-size: 1rem; border-radius: 6px; border: 1px solid #aac8ff; }
+        .action-button {
+            background-color: var(--primary-accent); color: white; padding: 10px 25px; font-weight: 600;
+            border: none; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; margin-right: 10px;
+        }
+        .action-button:hover:not(:disabled) { background-color: var(--accent-hover); transform: translateY(-2px); box-shadow: var(--shadow-sm); }
+        .action-button:disabled { background-color: #999; cursor: not-allowed; }
+        .action-button.cancel { background-color: #6c757d; }
+        .action-button.cancel:hover { background-color: #5a6268; }
+        table { width: 100%; border-collapse: collapse; background: var(--white); border-radius: 8px; overflow: hidden; box-shadow: var(--shadow-md); }
+        th, td { padding: 15px; border-bottom: 1px solid var(--light-gray); text-align: left; font-weight: 500; color: var(--text-color); }
+        th { background-color: var(--light-gray); font-weight: 700; color: var(--header-text); }
+        tr:nth-child(even) { background-color: #fcfdff; }
+        tr:last-child td { border-bottom: none; }
+        td .action-icon { cursor: pointer; margin: 0 5px; font-size: 1.2rem; transition: transform 0.2s; }
+        td .action-icon:hover { transform: scale(1.2); }
+        .edit-actions button { background: none; border: none; font-size: 1.2rem; }
+        .form-label { display: block; margin-bottom: 8px; font-weight: 600; color: var(--primary-accent); }
+        .form-input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ccc; margin-bottom: 15px; font-size: 1rem; }
+        .form-textarea { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ccc; margin-bottom: 15px; font-size: 1rem; min-height: 100px; resize: vertical; font-family: 'Poppins', sans-serif;}
+        .modal-container { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.6); display: flex; justify-content: center; align-items: center; z-index: 1000; opacity: 0; visibility: hidden; transition: opacity 0.3s, visibility 0.3s; }
+        .modal-container.show { opacity: 1; visibility: visible; }
+        .modal-content { background: var(--white); padding: 30px; border-radius: 8px; width: 90%; max-width: 500px; box-shadow: var(--shadow-md); transform: scale(0.9); transition: transform 0.3s; }
+        .modal-container.show .modal-content { transform: scale(1); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .modal-header h3 { color: var(--header-text); }
+        .modal-header .close-btn { font-size: 1.5rem; cursor: pointer; background: none; border: none; color: #aaa; }
+        .modal-footer { text-align: right; }
+        .graphs-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 25px; margin-top: 30px; }
+        .graph-box { text-align: center; background: var(--white); padding: 20px; border-radius: 8px; box-shadow: var(--shadow-md); }
+        .graph-box h4 { margin-bottom: 20px; color: var(--primary-accent); font-weight: 700; }
+        .graph-box img { max-width: 100%; height: auto; }
+        
+        @media (max-width: 900px) {
+            .sidebar { width: 60px; }
+            .sidebar .logo, .sidebar-footer p, .navitem .nav-text { display: none; }
+            .sidebar-nav .navitem { border-radius: 10px; margin: 5px; justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+    <div class="school-dashboard">
+        <nav class="sidebar">
+            <div class="logo">EDUPLAY</div>
+            <ul class="sidebar-nav" id="sidebar-nav"></ul>
+            <div class="sidebar-footer">
+                <button id="back-to-home-btn">Back to Home</button>
+            </div>
+        </nav>
+        <main class="main-panel" id="main-panel">
+            <p>Loading dashboard...</p>
+        </main>
+    </div>
+
+    <div id="modal-container" class="modal-container">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title">Add New</h3>
+                <button class="close-btn" id="modal-close-btn">&times;</button>
+            </div>
+            <div id="modal-body"></div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            let activeTab = "profile";
+            let teachers = [], students = [], profile = {};
+            let loading = true, error = null, isProfileEditing = false, editingId = null;
+            
+            const mainPanel = document.getElementById('main-panel');
+            const sidebarNav = document.getElementById('sidebar-nav');
+            const modalContainer = document.getElementById('modal-container');
+            const modalTitle = document.getElementById('modal-title');
+            const modalBody = document.getElementById('modal-body');
+            const modalCloseBtn = document.getElementById('modal-close-btn');
+            const API_BASE_URL = "http://127.0.0.1:5001/api";
+            const authToken = localStorage.getItem('authToken');
+
+            async function fetchData() {
+                loading = true; error = null; render();
+                try {
+                    const headers = { 'Authorization': `Bearer ${authToken}` };
+                    const [pRes, tRes, sRes] = await Promise.all([
+                        fetch(`${API_BASE_URL}/profile`, { headers }),
+                        fetch(`${API_BASE_URL}/teachers`, { headers }),
+                        fetch(`${API_BASE_URL}/students`, { headers })
+                    ]);
+                    if (!pRes.ok || !tRes.ok || !sRes.ok) {
+                        const errorData = await (pRes.ok ? (tRes.ok ? sRes : tRes) : pRes).json();
+                        throw new Error(errorData.message || "Session expired or server error.");
+                    }
+                    profile = await pRes.json();
+                    teachers = await tRes.json();
+                    students = await sRes.json();
+                } catch (err) {
+                    error = err.message;
+                    if (err.message.toLowerCase().includes("token")) {
+                        localStorage.removeItem('authToken');
+                        window.location.replace('index.html');
+                    }
+                } finally {
+                    loading = false;
+                    render();
+                }
+            }
+
+            function render() {
+                renderSidebar();
+                const viewRenderers = {
+                    profile: renderProfile,
+                    teachers: renderTeachers,
+                    students: renderStudents,
+                    feedback: renderFeedback, // NEW
+                    settings: renderSettings
+                };
+                if (loading) mainPanel.innerHTML = `<h2>Loading Dashboard...</h2>`;
+                else if (error) mainPanel.innerHTML = `<h2>Error</h2><p style="color: red;">${error}</p>`;
+                else viewRenderers[activeTab]();
+            }
+
+            function renderSidebar() {
+                const tabs = [
+                    { id: "profile", name: "Profile" },
+                    { id: "teachers", name: "Teachers" },
+                    { id: "students", name: "Students" },
+                    { id: "feedback", name: "Feedback & Queries" }, // NEW TAB
+                    { id: "settings", name: "Settings" }
+                ];
+                sidebarNav.innerHTML = tabs.map(tab => `
+                    <li><div class="navitem ${activeTab === tab.id ? "active" : ""}" data-tab="${tab.id}">
+                        <span class="nav-text">${tab.name}</span>
+                    </div></li>`).join('');
+                document.querySelectorAll('.navitem').forEach(item => item.addEventListener('click', e => {
+                    activeTab = e.currentTarget.dataset.tab;
+                    editingId = null;
+                    render();
+                }));
+            }
+            
+            // --- NEW: RENDER FUNCTION FOR FEEDBACK ---
+            function renderFeedback() {
+                mainPanel.innerHTML = `
+                    <h2>Feedback & Queries</h2>
+                    <div class="card">
+                        <div class="card-header"><h3>Submit Feedback to Admin</h3></div>
+                        <form id="feedback-form">
+                            <div>
+                                <label for="feedback-subject" class="form-label">Subject</label>
+                                <input type="text" id="feedback-subject" name="subject" class="form-input" required placeholder="e.g., Feature Request, Bug Report">
+                            </div>
+                            <div>
+                                <label for="feedback-message" class="form-label">Message</label>
+                                <textarea id="feedback-message" name="message" class="form-textarea" required rows="6" placeholder="Please describe your feedback or query in detail..."></textarea>
+                            </div>
+                            <div style="text-align: right; margin-top: 1rem;">
+                                <button type="submit" class="action-button">Send Feedback</button>
+                            </div>
+                        </form>
+                    </div>`;
+                document.getElementById('feedback-form').addEventListener('submit', handleFeedbackSubmit);
+            }
+
+            async function handleFeedbackSubmit(e) {
+                e.preventDefault();
+                const form = e.target;
+                const submitButton = form.querySelector('button');
+                submitButton.disabled = true;
+                submitButton.textContent = 'Sending...';
+
+                try {
+                    const feedbackData = {
+                        subject: form.elements.subject.value,
+                        message: form.elements.message.value
+                    };
+                    await apiRequest('/feedback', 'POST', feedbackData);
+                    alert('Feedback sent successfully! Thank you.');
+                    form.reset();
+                } catch (err) {
+                    alert(`Error: ${err.message}`);
+                } finally {
+                    submitButton.disabled = false;
+                    submitButton.textContent = 'Send Feedback';
+                }
+            }
+
+            // All other render functions and helpers remain the same
+            function renderProfile() { const chartData = { type: "doughnut", data: { labels: ["Teachers", "Students"], datasets: [{ data: [teachers.length, students.length], backgroundColor: ['#2563eb', '#4caf50'] }] } }; const barChartData = { type: "bar", data: { labels: ["Teachers", "Students"], datasets: [{ label: 'Count', data: [teachers.length, students.length], backgroundColor: ['#2563eb', '#4caf50'] }] }, options: { legend: { display: false } }}; const doughnutChartUrl = `https://quickchart.io/chart?bkg=white&c=${encodeURIComponent(JSON.stringify(chartData))}`; const barChartUrl = `https://quickchart.io/chart?bkg=white&c=${encodeURIComponent(JSON.stringify(barChartData))}`; const profileRows = Object.entries(profile).map(([key, value]) => { if (key === '_id' || key === 'password') return ''; const label = (key.charAt(0).toUpperCase() + key.slice(1)).replace(/_/g, ' '); return isProfileEditing ? `<div class="row"><div class="label">${label}</div><input class="edit-input" name="${key}" value="${profile[key] || ''}"></div>` : `<div class="row"><div class="label">${label}</div><div class="value">${value || 'Not set'}</div></div>`; }).join(''); mainPanel.innerHTML = `<div class="card"><div class="card-header"><h3>School Profile</h3><div id="profile-actions">${isProfileEditing ? `<button class="action-button" id="save-profile-btn">Save</button><button class="action-button cancel" id="cancel-profile-btn">Cancel</button>` : `<button class="action-button" id="edit-profile-btn">Edit Profile</button>`}</div></div><div class="profile">${profileRows}</div></div><div class="graphs-container"><div class="graph-box"><h4>Population Ratio</h4><img alt="Ratio Doughnut Chart" src="${doughnutChartUrl}" /></div><div class="graph-box"><h4>Population Count</h4><img alt="Ratio Bar Chart" src="${barChartUrl}" /></div></div>`; attachProfileEventListeners(); }
+            function renderTeachers() { mainPanel.innerHTML = `<div class="card"><div class="card-header"><h3>Manage Teachers</h3><button class="action-button" id="add-btn">＋ Add New Teacher</button></div><table><thead><tr><th>Name</th><th>Email</th><th>Post</th><th>Actions</th></tr></thead><tbody>${teachers.map(createRow('teacher')).join('') || '<tr><td colspan="4">No teachers found.</td></tr>'}</tbody></table></div>`; attachTableEventListeners('teacher'); }
+            function renderStudents() { mainPanel.innerHTML = `<div class="card"><div class="card-header"><h3>Manage Students</h3><button class="action-button" id="add-btn">＋ Add New Student</button></div><table><thead><tr><th>Name</th><th>Section</th><th>Roll No.</th><th>Actions</th></tr></thead><tbody>${students.map(createRow('student')).join('') || '<tr><td colspan="4">No students found.</td></tr>'}</tbody></table></div>`; attachTableEventListeners('student'); }
+            function renderSettings() { mainPanel.innerHTML = `<h2>Settings</h2><p>Feature coming soon.</p>`; }
+            function createRow(type) { return (item) => { const fields = type === 'teacher' ? { name: item.name, email: item.email, post: item.post } : { name: item.name, section: item.section, roll: item.roll }; if (editingId === item._id) { const inputs = Object.entries(fields).map(([key, value]) => `<td><input class="edit-input" name="${key}" value="${value}"></td>`).join(''); return `<tr>${inputs}<td class="edit-actions"><button class="action-icon" data-id="${item._id}" data-action="save">💾</button><button class="action-icon" data-action="cancel">❌</button></td></tr>`; } const cells = Object.values(fields).map(value => `<td>${value}</td>`).join(''); return `<tr>${cells}<td><span class="action-icon" data-id="${item._id}" data-action="edit">✏️</span><span class="action-icon" data-id="${item._id}" data-action="delete">🗑️</span></td></tr>`; }; }
+            function attachProfileEventListeners() { if (isProfileEditing) { document.getElementById('save-profile-btn').addEventListener('click', async () => { const updatedProfile = {}; mainPanel.querySelectorAll('.edit-input').forEach(input => updatedProfile[input.name] = input.value); try { await apiRequest('/profile', 'PUT', updatedProfile); isProfileEditing = false; await fetchData(); } catch (err) { alert(`Error saving profile: ${err.message}`); } }); document.getElementById('cancel-profile-btn').addEventListener('click', () => { isProfileEditing = false; render(); }); } else { document.getElementById('edit-profile-btn').addEventListener('click', () => { isProfileEditing = true; render(); }); } }
+            function attachTableEventListeners(type) { document.getElementById('add-btn').addEventListener('click', () => showAddModal(type)); mainPanel.querySelectorAll(`[data-action]`).forEach(btn => btn.addEventListener('click', e => { const action = e.currentTarget.dataset.action; const id = e.currentTarget.dataset.id; handleTableAction(type, action, id, e.currentTarget.closest('tr')); })); }
+            async function handleTableAction(type, action, id, row) { try { if (action === 'edit') { editingId = id; render(); } else if (action === 'cancel') { editingId = null; render(); } else if (action === 'delete' && confirm('Are you sure?')) { await apiRequest(`/${type}s/${id}`, 'DELETE'); await fetchData(); } else if (action === 'save') { const data = {}; row.querySelectorAll('.edit-input').forEach(input => data[input.name] = input.value); await apiRequest(`/${type}s/${id}`, 'PUT', data); editingId = null; await fetchData(); } } catch (err) { alert(`Error: ${err.message}`); editingId = null; render(); } }
+            function showAddModal(type) { modalTitle.textContent = `Add New ${capitalize(type)}`; const fields = type === 'teacher' ? { name: 'text', email: 'email', post: 'text' } : { name: 'text', section: 'text', roll: 'text' }; const formHTML = Object.entries(fields).map(([key, inputType]) => `<label class="form-label">${capitalize(key)}</label><input type="${inputType}" name="${key}" class="form-input" required />`).join(''); modalBody.innerHTML = `<form class="modal-form" id="modal-form">${formHTML}<div class="modal-footer"><button type="submit" class="action-button">Save</button></div></form>`; modalContainer.classList.add('show'); document.getElementById('modal-form').addEventListener('submit', async e => { e.preventDefault(); const data = Object.fromEntries(new FormData(e.target).entries()); try { await apiRequest(`/${type}s`, 'POST', data); hideModal(); await fetchData(); } catch(err) { alert(`Error: ${err.message}`); } }); }
+            function hideModal() { modalContainer.classList.remove('show'); }
+            async function apiRequest(endpoint, method, body = null) { const options = { method, headers: { 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' } }; if (body) options.body = JSON.stringify(body); const response = await fetch(`${API_BASE_URL}${endpoint}`, options); if (!response.ok) { const errorData = await response.json().catch(() => ({ message: 'An unknown error occurred.' })); throw new Error(errorData.message); } return response.json().catch(() => ({})); }
+            function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+            modalCloseBtn.addEventListener('click', hideModal);
+            modalContainer.addEventListener('click', e => { if(e.target === modalContainer) hideModal(); });
+            document.querySelector('.logo').addEventListener('click', () => { activeTab = 'profile'; render(); });
+            document.getElementById('back-to-home-btn').addEventListener('click', () => window.history.back());
+
+            fetchData();
+        });
+    </script>
+</body>
+</html>

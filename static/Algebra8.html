@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Algebra: Polynomials</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --header-bg: #ffffff; --page-bg: #f0f2f5; --panel-bg: #ffffff;
+            --border-color: #e5e7eb; --text-dark: #1f2937; --accent-blue: #3b82f6;
+            --secondary-gray: #6c757d; --primary-blue-btn: #007bff;
+        }
+        body { font-family: 'Poppins', sans-serif; background-color: var(--page-bg); color: var(--text-dark); margin: 0; height: 100vh; overflow: hidden; }
+        .page-container { display: flex; flex-direction: column; height: 100vh; }
+        .header {
+            position: fixed; top: 0; left: 0; width: 100%; height: 60px;
+            background-color: var(--header-bg); display: flex; align-items: center; justify-content: space-between;
+            padding: 0 24px; border-bottom: 1px solid var(--border-color);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05); z-index: 1000;
+        }
+        .header-section { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .header-section.center { text-align: center; font-size: 1.2em; font-weight: bold; }
+        .header-section.right { display: flex; justify-content: flex-end; }
+        .button {
+            padding: 8px 16px; margin-left: 10px; cursor: pointer;
+            border: none; border-radius: 6px; font-weight: 600; color: white;
+            white-space: nowrap; transition: transform 0.1s;
+        }
+        .button:active { transform: scale(0.95); }
+        .main-content { margin-top: 60px; padding: 24px; display: flex; gap: 24px; flex-grow: 1; overflow: hidden; justify-content: center; }
+        .panel {
+            background-color: var(--panel-bg); border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: 1px solid var(--border-color);
+            overflow-y: auto; padding: 32px 48px; height: calc(100vh - 108px);
+            transition: width 400ms ease-in-out;
+        }
+        #info-panel { flex-shrink: 0; }
+        #activity-panel { display: none; flex-grow: 1; padding: 0; flex-direction: column; }
+        .main-content.activity-visible { justify-content: flex-start; }
+        .main-content.activity-visible #info-panel { width: 340px; min-width: 340px; padding: 24px 32px; }
+        .main-content.activity-visible #activity-panel { display: flex; }
+        
+        /* Activity Styles */
+        .activity-area { flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; }
+        .bottom-control-bar { height: 60px; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; background-color: var(--page-bg); border-top: 1px solid var(--border-color); flex-shrink: 0; border-radius: 0 0 12px 12px;}
+        .status-bar { font-weight: bold; color: var(--text-dark); font-size: 1.2rem;}
+        .reset-button { padding: 8px 16px; cursor: pointer; background-color: #ef4444; color: white; border: none; border-radius: 6px; font-weight: 600; }
+        #question-text { font-size: 1.5rem; font-weight: 600; color: #111827; }
+        #options-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; margin-top: 2.5rem; width: 100%; max-width: 700px; }
+        .option-btn { background-color: #f3f4f6; color: #1f2937; padding: 1.5rem; font-size: 1.25rem; font-weight: 600; border-radius: 0.75rem; transition: all 0.2s; border: 2px solid #e5e7eb; cursor: pointer;}
+        .option-btn:hover:not(:disabled) { transform: scale(1.05); box-shadow: 0 0 15px rgba(59, 130, 246, 0.2); }
+        .option-btn:disabled { cursor: not-allowed; }
+        .option-btn.correct { background-color: #22c55e; border-color: #16a34a; color: white; }
+        .option-btn.incorrect { background-color: #ef4444; border-color: #dc2626; color: white; }
+        .info-panel-content { background-color: #ffffff; padding: 1.5rem; border-radius: 0.75rem; border: 1px solid #e5e7eb; }
+    </style>
+</head>
+<body class="page-container">
+    <header class="header">
+        <div class="header-section font-bold text-lg" style="color: var(--accent-blue);">Class-8</div>
+        <div id="header-title" class="header-section center">Information</div>
+        <div class="header-section right">
+            <button id="back-btn" class="button" style="background-color: var(--secondary-gray);">Back</button>
+            <button id="activity-info-btn" class="button" style="background-color: var(--primary-blue-btn);">Activity</button>
+            <button id="difficulty-btn" class="button" style="background-color: var(--accent-blue);">Difficulty: Easy</button>
+        </div>
+    </header>
+
+    <main id="main-content" class="main-content">
+        <section id="info-panel" class="panel">
+            <h2 class="text-3xl font-bold mb-6 text-center" style="color: var(--accent-blue);">Understanding Polynomials</h2>
+            <div class="space-y-4">
+                <div class="info-panel-content">
+                    <h3 class="text-xl font-semibold text-gray-900">What is a Polynomial?</h3>
+                    <p class="mt-2 text-gray-600">A polynomial is an expression made up of variables (like x), constants, and exponents, combined using addition, subtraction, and multiplication. A key rule is that variables cannot have negative or fractional exponents.</p>
+                </div>
+                <div class="info-panel-content">
+                    <h3 class="text-xl font-semibold text-gray-900">Types of Polynomials</h3>
+                    <p class="mt-2 text-gray-600">We name polynomials based on the number of terms:</p>
+                    <ul class="list-disc list-inside mt-3 space-y-2 text-gray-600">
+                        <li><b>Monomial:</b> One term (e.g., $5x$ or $-3y^2$).</li>
+                        <li><b>Binomial:</b> Two terms (e.g., $2x + 5$).</li>
+                        <li><b>Trinomial:</b> Three terms (e.g., $x^2 + 3x - 4$).</li>
+                    </ul>
+                </div>
+                <div class="info-panel-content">
+                    <h3 class="text-xl font-semibold text-gray-900">Adding and Subtracting</h3>
+                    <p class="mt-2 text-gray-600">To add or subtract polynomials, you simply combine "like terms." Like terms have the exact same variable and exponent.</p>
+                    <p class="mt-2 text-gray-600"><b>Example:</b> $(3x^2 + 2x) + (5x^2 - x) = 8x^2 + x$.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="activity-panel" class="panel">
+            <div class="activity-area">
+                <div class="text-center w-full">
+                    <h2 id="level-title" class="text-2xl font-bold text-gray-900">Easy Challenge</h2>
+                    <p id="question-text" class="my-8">What type of polynomial is 2x + 5?</p>
+                    <div id="options-container"></div>
+                    <p id="feedback-text" class="mt-4 font-semibold text-lg h-6"></p>
+                    <div id="level-complete-container" style="display: none;" class="text-center py-8">
+                        <h3 id="level-complete-title" class="text-3xl font-bold" style="color: var(--accent-blue);">Level Complete!</h3>
+                        <p id="level-complete-score" class="text-xl mt-2 text-gray-700">Your score was 0.</p>
+                        <button id="next-level-btn" class="button" style="background-color: var(--accent-blue); margin-top: 1.5rem; font-size: 1.125rem; padding: 0.75rem 2rem;">Next Level</button>
+                        <button id="play-again-btn" class="button" style="background-color: #f59e0b; margin-top: 1.5rem; font-size: 1.125rem; padding: 0.75rem 2rem; display: none;">Play Again</button>
+                    </div>
+                </div>
+            </div>
+            <footer class="bottom-control-bar">
+                <div id="status-bar" class="status-bar">Score: 0</div>
+                <button id="reset-game-btn" class="reset-button">Reset Game</button>
+            </footer>
+        </section>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const mainContent = document.getElementById('main-content'),
+                  infoPanel = document.getElementById('info-panel'),
+                  activityPanel = document.getElementById('activity-panel'),
+                  activityInfoBtn = document.getElementById('activity-info-btn'),
+                  difficultyBtn = document.getElementById('difficulty-btn'),
+                  backBtn = document.getElementById('back-btn'),
+                  headerTitle = document.getElementById('header-title'),
+                  levelTitle = document.getElementById('level-title'),
+                  statusBar = document.getElementById('status-bar'),
+                  questionText = document.getElementById('question-text'),
+                  optionsContainer = document.getElementById('options-container'),
+                  feedbackText = document.getElementById('feedback-text'),
+                  levelCompleteContainer = document.getElementById('level-complete-container'),
+                  levelCompleteTitle = document.getElementById('level-complete-title'),
+                  levelCompleteScore = document.getElementById('level-complete-score'),
+                  nextLevelBtn = document.getElementById('next-level-btn'),
+                  playAgainBtn = document.getElementById('play-again-btn'),
+                  resetGameBtn = document.getElementById('reset-game-btn');
+
+            const problems = {
+                easy: [
+                    { q: "What type of polynomial is $3x^2$?", a: "Monomial", options: ["Monomial", "Binomial", "Trinomial", "None"] },
+                    { q: "What type of polynomial is $5x - 7$?", a: "Binomial", options: ["Monomial", "Binomial", "Trinomial", "None"] },
+                    { q: "Simplify: $(2x + 3) + (x + 5)$", a: "3x + 8", options: ["2x + 8", "3x + 8", "3x + 2", "2x + 2"] },
+                    { q: "Simplify: $(7y) + (4y)$", a: "11y", options: ["10y", "11y", "12y", "28y"] },
+                    { q: "What type of polynomial is $x^2 + 2x - 1$?", a: "Trinomial", options: ["Monomial", "Binomial", "Trinomial", "None"] }
+                ],
+                medium: [
+                    { q: "Simplify: $(5x - 2) - (3x + 1)$", a: "2x - 3", options: ["2x - 1", "2x + 3", "2x - 3", "8x - 1"] },
+                    { q: "Simplify: $(y^2 + 4y) + (2y^2 - 3y)$", a: "3y² + y", options: ["3y² + 7y", "2y² + y", "3y² - y", "3y² + y"] },
+                    { q: "Multiply: $3(2x + 4)$", a: "6x + 12", options: ["6x + 4", "6x + 7", "6x + 12", "5x + 7"] },
+                    { q: "Simplify: $(6a + 2b) - (3a - b)$", a: "3a + 3b", options: ["3a + b", "9a + b", "3a + 3b", "9a + 3b"] },
+                    { q: "Multiply: $2x(x + 5)$", a: "2x² + 10x", options: ["2x² + 5", "2x² + 5x", "2x² + 10x", "x² + 10x"] }
+                ],
+                hard: [
+                    { q: "Multiply: $(x + 2)(x + 3)$", a: "x² + 5x + 6", options: ["x² + 6", "x² + 5x + 6", "x² + 6x + 5", "2x + 5"] },
+                    { q: "Simplify: $(4x^2 - 3x + 1) - (2x^2 - x + 5)$", a: "2x² - 2x - 4", options: ["2x² - 4x - 4", "2x² - 2x + 6", "6x² - 4x - 4", "2x² - 2x - 4"] },
+                    { q: "Multiply: $(2x - 1)(x + 4)$", a: "2x² + 7x - 4", options: ["2x² + 8x - 4", "2x² - 7x - 4", "2x² + 7x - 4", "2x² + 9x - 4"] },
+                    { q: "Find the degree of $7x^3 - 4x^5 + 2$", a: "5", options: ["3", "7", "5", "2"] },
+                    { q: "Multiply: $(x - 3)(x + 3)$", a: "x² - 9", options: ["x² + 6x - 9", "x² - 9", "x² + 9", "x² - 6x + 9"] }
+                ]
+            };
+
+            const levelOrder = ['easy', 'medium', 'hard'];
+            let currentLevel, score, isAnswered, currentQuestion, currentLevelProblems, showActivity = false;
+            
+            function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+            
+            function updateLayout() {
+                mainContent.classList.toggle('activity-visible', showActivity);
+                infoPanel.style.width = showActivity ? '340px' : `${Math.min(800, window.innerWidth - 48)}px`;
+                headerTitle.textContent = showActivity ? 'Polynomial Challenge' : 'Information';
+                activityInfoBtn.textContent = showActivity ? 'Information' : 'Activity';
+            }
+
+            function initializeGame() { currentLevel = 'easy'; resetGame(); }
+            function resetGame() { score = 0; resetLevel(); }
+            function resetLevel() {
+                const originalProblems = problems[currentLevel];
+                currentLevelProblems = [...originalProblems].sort(() => Math.random() - 0.5);
+                updateScoreDisplay();
+                loadQuestion();
+            }
+            
+            function loadQuestion() {
+                if (currentLevelProblems.length === 0) { showLevelComplete(); return; }
+                currentQuestion = currentLevelProblems.pop(); isAnswered = false;
+                levelCompleteContainer.style.display = 'none';
+                optionsContainer.style.display = 'grid';
+                feedbackText.textContent = "";
+                levelTitle.textContent = `${capitalize(currentLevel)} Challenge`;
+                questionText.innerHTML = currentQuestion.q; // Use innerHTML to render math symbols
+                optionsContainer.innerHTML = '';
+                currentQuestion.options.forEach(opt => {
+                    const optionBtn = document.createElement('button');
+                    optionBtn.className = 'option-btn';
+                    optionBtn.dataset.value = opt;
+                    optionBtn.innerHTML = opt; // Use innerHTML
+                    optionBtn.addEventListener('click', handleAnswerClick);
+                    optionsContainer.appendChild(optionBtn);
+                });
+            }
+            
+            function handleAnswerClick(e) {
+                if (isAnswered) return; isAnswered = true;
+                const clickedBtn = e.currentTarget;
+                if (clickedBtn.dataset.value === currentQuestion.a) {
+                    score += 10;
+                    updateScoreDisplay();
+                    clickedBtn.classList.add('correct');
+                    feedbackText.textContent = "Correct!";
+                    feedbackText.style.color = '#16a34a';
+                } else {
+                    clickedBtn.classList.add('incorrect');
+                    feedbackText.textContent = `Sorry! The answer was ${currentQuestion.a}.`;
+                    feedbackText.style.color = '#dc2626';
+                    const correctBtn = document.querySelector(`[data-value="${currentQuestion.a}"]`);
+                    if (correctBtn) correctBtn.classList.add('correct');
+                }
+                setTimeout(() => { loadQuestion(); }, 2000);
+            }
+            
+            function showLevelComplete() {
+                optionsContainer.style.display = 'none';
+                questionText.textContent = "";
+                feedbackText.textContent = '';
+                levelCompleteContainer.style.display = 'block';
+                levelCompleteTitle.textContent = `Level ${capitalize(currentLevel)} Complete!`;
+                levelCompleteScore.textContent = `Your score: ${score}.`;
+                
+                const currentLevelIdx = levelOrder.indexOf(currentLevel);
+                if (currentLevelIdx < levelOrder.length - 1) {
+                    nextLevelBtn.style.display = 'inline-block';
+                    playAgainBtn.style.display = 'none';
+                } else {
+                    levelCompleteTitle.textContent = "Congratulations!";
+                    levelCompleteScore.textContent = `You've completed all challenges! Final score: ${score}`;
+                    nextLevelBtn.style.display = 'none';
+                    playAgainBtn.style.display = 'inline-block';
+                }
+            }
+            
+            function handleNextLevel() {
+                const currentLevelIdx = levelOrder.indexOf(currentLevel);
+                currentLevel = levelOrder[currentLevelIdx + 1];
+                difficultyBtn.textContent = `Difficulty: ${capitalize(currentLevel)}`;
+                resetLevel();
+            }
+            
+            function updateScoreDisplay() {
+                statusBar.textContent = `Score: ${score}`;
+            }
+
+            // --- Event Listeners ---
+            activityInfoBtn.addEventListener('click', () => {
+                showActivity = !showActivity;
+                updateLayout();
+            });
+            backBtn.addEventListener('click', () => {
+                if (showActivity) {
+                    showActivity = false;
+                    updateLayout();
+                } else {
+                    window.history.back();
+                }
+            });
+            difficultyBtn.addEventListener('click', () => {
+                const currentLevelIdx = levelOrder.indexOf(currentLevel);
+                currentLevel = levelOrder[(currentLevelIdx + 1) % levelOrder.length];
+                difficultyBtn.textContent = `Difficulty: ${capitalize(currentLevel)}`;
+                if (showActivity) resetGame();
+            });
+            
+            resetGameBtn.addEventListener('click', resetGame);
+            nextLevelBtn.addEventListener('click', handleNextLevel);
+            playAgainBtn.addEventListener('click', () => {
+                currentLevel = 'easy';
+                difficultyBtn.textContent = `Difficulty: Easy`;
+                resetGame();
+            });
+            
+            initializeGame();
+            updateLayout();
+        });
+    </script>
+</body>
+</html>

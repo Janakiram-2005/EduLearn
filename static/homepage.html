@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduPlay Learning Portal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        // --- CLIENT-SIDE AUTHENTICATION GUARD ---
+        const authToken = localStorage.getItem('authToken');
+        if (!authToken) {
+            window.location.replace('index.html'); 
+        }
+        window.addEventListener('pageshow', function(event) {
+            if (event.persisted && !localStorage.getItem('authToken')) {
+                window.location.replace('index.html');
+            }
+        });
+    </script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Poppins', sans-serif; overflow-x: hidden; background: #f5f7fa; color: #222; }
+
+        .home-container { position: relative; width: 100vw; min-height: 100vh; overflow-y: auto; }
+        .background-slideshow { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; overflow: hidden; }
+        .slide { position: absolute; width: 100%; height: 100%; background-size: cover; background-position: center; opacity: 0; transition: opacity 1.5s ease-in-out; }
+        .slide.active { opacity: 1; }
+        .slide::after { content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(230, 220, 255, 0.4); opacity: 0.95; }
+
+        .content-overlay { position: relative; z-index: 2; display: flex; flex-direction: column; min-height: 100vh; width: 100vw; background: rgba(255, 255, 255, 0.233); color: #222; padding: 20px; }
+        .home-header { text-align: center; padding: 40px 20px 20px 20px; margin-bottom: 25px; position: relative; }
+        .home-header h1 { font-size: 3rem; margin-bottom: 5px; background: linear-gradient(45deg, #7b2ff7, #f107a3); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent; text-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+        .home-header p { margin-top: 0; font-size: 1.25rem; font-weight: 500; color: #555; }
+        
+        .header-buttons { position: absolute; top: 20px; right: 20px; display: flex; gap: 15px; z-index: 100; }
+        .header-buttons button { background-color: rgba(255, 255, 255, 0.5); border: 1px solid rgba(0, 0, 0, 0.1); color: #555; padding: 8px 14px; font-size: 1rem; border-radius: 20px; cursor: pointer; font-weight: 600; transition: all 0.3s ease; backdrop-filter: blur(6px); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); }
+        .header-buttons button:hover { background-color: rgba(255,255,255,0.8); color: #7b2ff7; border-color: #7b2ff7; }
+
+        .main-content { flex: 1; display: flex; justify-content: center; align-items: flex-start; width: 100%; }
+        .selection-panel { background: rgba(255, 255, 255, 0.381); backdrop-filter: blur(8px); border-radius: 20px; padding: 30px 20px; width: 100%; max-width: 1000px; text-align: center; box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08); border: 1px solid rgba(255,255,255,0.5); margin: 0 auto 40px; max-height: 80vh; overflow-y: auto; flex-direction: column; display: flex; }
+        .selection-panel h2 { margin-bottom: 30px; font-size: 2rem; color: #333; }
+        .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 24px; margin-bottom: 30px; }
+        .card { background: #ffffff91; border-radius: 15px; padding: 30px 10px; cursor: pointer; transition: all 0.3s ease; border: 1px solid rgba(0,0,0,0.08); box-shadow: 0 4px 8px rgba(0,0,0,0.05); }
+        .card:hover { transform: translateY(-4px) scale(1.03); background: #fdfdff; box-shadow: 0 6px 14px rgba(0,0,0,0.1); }
+        .card-icon { font-size: 3rem; margin-bottom: 15px; }
+        .card h3 { margin-bottom: 10px; font-size: 1.22rem; color: #333; }
+        .card p { font-size: 0.99rem; opacity: 0.7; color: #555; }
+        .back-button { background: #7b2ff7; border: none; color: white; padding: 12px 24px; border-radius: 50px; cursor: pointer; font-size: 1rem; transition: background 0.3s; margin-top: 5px; }
+        .back-button:hover { background: #6a24d4; }
+        .home-footer { text-align: center; margin-top: auto; padding: 18px; opacity: 0.8; font-size: 0.9rem; color: #444; }
+        
+        /* ChatBox Styles */
+        .chat-container { z-index: 10000; }
+        .chat-floating-button { position: fixed; bottom: 20px; right: 20px; background: #7b2ff7; color: white; border-radius: 50%; width: 60px; height: 60px; border: none; font-size: 24px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 10001; }
+        .chat-window { position: fixed; bottom: 90px; right: 20px; width: 320px; height: 430px; background: #ffffff; border: 1px solid #ddd; border-radius: 10px; display: none; flex-direction: column; box-shadow: 0 6px 16px rgba(0,0,0,0.2); font-family: 'Poppins', sans-serif; }
+        .chat-header { background: #7b2ff7; color: white; padding: 12px; border-top-left-radius: 10px; border-top-right-radius: 10px; font-weight: 600; font-size: 1.15rem; }
+        .messages-container { flex: 1; overflow-y: auto; padding: 15px 12px; font-size: 14px; background-color: #f9f9f9; color: black; }
+        .message-wrapper { margin: 8px 0; }
+        .message-wrapper.user { text-align: right; }
+        .message-wrapper.bot { text-align: left; }
+        .message { padding: 7px 14px; border-radius: 14px; display: inline-block; max-width: 80%; word-break: break-word; }
+        .message.user { background: #7b2ff7; color: white; }
+        .message.bot { background: #eee; color: black; }
+        .input-container { display: flex; border-top: 1px solid #ccc; padding: 10px; }
+        .input-container input { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 25px; outline: none; font-size: 14px; margin-right: 8px; font-family: 'Poppins', sans-serif; }
+        .input-container button { background: #7b2ff7; color: white; border: none; width: 44px; height: 44px; border-radius: 50%; cursor: pointer; font-size: 20px; line-height: 1; user-select: none; }
+        
+        /* Notifications Modal Styles */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.6); display: none; justify-content: center; align-items: center; z-index: 10002; backdrop-filter: blur(5px); }
+        .modal-content { background: white; padding: 0; border-radius: 12px; width: 90%; max-width: 500px; max-height: 80vh; display: flex; flex-direction: column; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2); animation: fadeIn 0.3s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid #eee; }
+        .modal-header h2 { color: #7b2ff7; font-size: 1.5rem; }
+        .modal-header .close-btn { font-size: 2rem; cursor: pointer; background: none; border: none; color: #aaa; line-height: 1; }
+        .notifications-list { flex-grow: 1; overflow-y: auto; padding: 20px; }
+        .notification-item { border-bottom: 1px solid #f0f0f0; padding: 15px 0; }
+        .notification-item:last-child { border-bottom: none; }
+        .notification-item p { margin: 0 0 5px 0; color: #333; font-size: 1rem; }
+        .notification-item span { font-size: 0.8rem; color: #888; }
+    </style>
+</head>
+<body>
+    <div class="home-container">
+        <div class="background-slideshow" id="background-slideshow"></div>
+        <div class="content-overlay">
+            <header class="home-header">
+                <h1>EduPlay Learning Portal</h1>
+                <p>Where Education Meets Fun!</p>
+                <div class="header-buttons" id="header-buttons">
+                    <button id="profile-btn">Profile</button>
+                    <button id="notifications-btn">Notifications</button>
+                    <button id="signout-btn">Sign Out</button>
+                </div>
+            </header>
+            
+            <main class="main-content" id="main-content-area"></main>
+
+            <footer class="home-footer">
+                <p>© 2025 EduPlay Learning Portal | Gamified Education for Better Learning</p>
+            </footer>
+        </div>
+        
+        <div class="chat-container" id="chat-container"></div>
+        
+        <div class="modal-overlay" id="notifications-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Notifications</h2>
+                    <button class="close-btn" id="close-modal-btn">&times;</button>
+                </div>
+                <div class="notifications-list" id="notifications-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+  const allTopics = [
+                // --- GRADE 6 ---
+                // Biology
+                { class: "Grade 6", subject: "Biology", topic: "Cell Structure", htmlFile: "cell_structure.html" },
+                { class: "Grade 6", subject: "Biology", topic: "Food and Nutrition", htmlFile: "nutrition.html" },
+                { class: "Grade 6", subject: "Biology", topic: "Plants", htmlFile: "plant.html" },
+                { class: "Grade 6", subject: "Biology", topic: "Food Components", htmlFile: "food.html" },
+                { class: "Grade 6", subject: "Biology", topic: "Body Movements", htmlFile: "body.html" },
+                // Chemistry
+                { class: "Grade 6", subject: "Chemistry", topic: "States of Matter", htmlFile: "state.html" },
+                { class: "Grade 6", subject: "Chemistry", topic: "Elements & Compounds", htmlFile: "ElementsCompounds.html" },
+                { class: "Grade 6", subject: "Chemistry", topic: "Simple Chemical Reactions", htmlFile: "SimpleChemicalReactions.html" },
+                // Physics
+                { class: "Grade 6", subject: "Physics", topic: "Motion", htmlFile: "motion.html" },
+                { class: "Grade 6", subject: "Physics", topic: "Light Basics", htmlFile: "Light.html" },
+                { class: "Grade 6", subject: "Physics", topic: "Magnetism", htmlFile: "Magnetism.html" },
+                // Computer Science
+                { class: "Grade 6", subject: "Computer Science", topic: "Basics of Computers", htmlFile: "computers.html" },
+                { class: "Grade 6", subject: "Computer Science", topic: "Introduction to Coding", htmlFile: "coding_basics.html" },
+                // Maths
+                { class: "Grade 6", subject: "Maths", topic: "Number Systems", htmlFile: "numbersystem.html" },
+                { class: "Grade 6", subject: "Maths", topic: "Fractions & Decimals", htmlFile: "fractions.html" },
+                { class: "Grade 6", subject: "Maths", topic: "Algebra", htmlFile: "algebra.html" },
+                { class: "Grade 6", subject: "Maths", topic: "Geometry", htmlFile: "geometry.html" },
+                { class: "Grade 6", subject: "Maths", topic: "Ratio & Proportions", htmlFile: "Ratio_proportions.html" },
+
+                // --- GRADE 7 ---
+                // Chemistry
+                { class: "Grade 7", subject: "Chemistry", topic: "Acids, Bases & Salts", htmlFile: "AcidsBasesSalts.html" },
+                { class: "Grade 7", subject: "Chemistry", topic: "Atomic Structure", htmlFile: "AtomicStructure.html" },
+                // Biology
+                { class: "Grade 7", subject: "Biology", topic: "Respiration", htmlFile: "respiration.html" },
+                { class: "Grade 7", subject: "Biology", topic: "Photosynthesis", htmlFile: "photosynthesis.html" },
+                { class: "Grade 7", subject: "Biology", topic: "Reproduction in Plants", htmlFile: "plants-repro.html" },
+                { class: "Grade 7", subject: "Biology", topic: "Human Digestion", htmlFile: "digestion.html" },
+                // Maths
+                { class: "Grade 7", subject: "Maths", topic: "Data Handling", htmlFile: "DataHandling.html" },
+                { class: "Grade 7", subject: "Maths", topic: "Exponents", htmlFile: "Exponent.html" },
+                { class: "Grade 7", subject: "Maths", topic: "Integers", htmlFile: "Integer.html" },
+                { class: "Grade 7", subject: "Maths", topic: "Geometry", htmlFile: "Geometry7.html" },
+                // Computer Science
+                { class: "Grade 7", subject: "Computer Science", topic: "Number Systems Race", htmlFile: "numbersystem_race.html" },
+                { class: "Grade 7", subject: "Computer Science", topic: "MS Office", htmlFile: "msoffice.html" },
+                { class: "Grade 7", subject: "Computer Science", topic: "HTML Basics", htmlFile: "html_basics.html" },
+                // Physics
+                { class: "Grade 7", subject: "Physics", topic: "Heat", htmlFile: "Heat.html" },
+                { class: "Grade 7", subject: "Physics", topic: "Sound", htmlFile: "Sound.html" },
+                { class: "Grade 7", subject: "Physics", topic: "Force and Motion", htmlFile: "ForceandMotion.html" },
+
+                // --- GRADE 8 ---
+                // Maths
+                { class: "Grade 8", subject: "Maths", topic: "Direct & Inverse Proportions", htmlFile: "Direct_Inverse.html" },
+                { class: "Grade 8", subject: "Maths", topic: "Introduction to Graphs", htmlFile: "IntroductionsToGraphs.html" },
+                { class: "Grade 8", subject: "Maths", topic: "Mensuration", htmlFile: "Mensuration.html" },
+                // Chemistry
+                { class: "Grade 8", subject: "Chemistry", topic: "Metals & Non-Metals", htmlFile: "metal_Nonmetal.html" },
+                { class: "Grade 8", subject: "Chemistry", topic: "Coal & Petroleum", htmlFile: "Coal_Petroleum.html" },
+                { class: "Grade 8", subject: "Chemistry", topic: "Combustion & Flame", htmlFile: "CombustionFlame.html" },
+                // Biology
+                { class: "Grade 8", subject: "Biology", topic: "Reproduction in Animals", htmlFile: "reproduction.html" },
+                { class: "Grade 8", subject: "Biology", topic: "Microorganisms", htmlFile: "micro.html" },
+                { class: "Grade 8", subject: "Biology", topic: "Human Circulatory & Excretory Systems", htmlFile: "human_circulatory.html" },
+                // Computer Science
+                { class: "Grade 8", subject: "Computer Science", topic: "Flowcharts", htmlFile: "flowcharts1.html" },
+                { class: "Grade 8", subject: "Computer Science", topic: "Python Basics", htmlFile: "Pythonbasics.html" },
+                { class: "Grade 8", subject: "Computer Science", topic: "Introduction to Databases", htmlFile: "database.html" },
+                // Physics
+                { class: "Grade 8", subject: "Physics", topic: "Pressure", htmlFile: "Pressure.html" },
+                { class: "Grade 8", subject: "Physics", topic: "Friction", htmlFile: "Friction.html" },
+                { class: "Grade 8", subject: "Physics", topic: "Sound Waves", htmlFile: "SoundWaves.html" },
+
+                // --- GRADE 9 ---
+                // Chemistry
+                { class: "Grade 9", subject: "Chemistry", topic: "Periodic Table", htmlFile: "periodicTable.html" },
+                { class: "Grade 9", subject: "Chemistry", topic: "Chemical Bonding", htmlFile: "chemicalBonding.html" },
+                { class: "Grade 9", subject: "Chemistry", topic: "Structure of Atom", htmlFile: "StructureOfAtom.html" },
+
+                // Physics
+                { class: "Grade 9", subject: "Physics", topic: "Laws of Motion", htmlFile: "LawsofMotion.html" },
+                { class: "Grade 9", subject: "Physics", topic: "Sound", htmlFile: "Sound1.html" },
+                // Biology
+                { class: "Grade 9", subject: "Biology", topic: "Tissues", htmlFile: "Tissues.html" },
+                { class: "Grade 9", subject: "Biology", topic: "Diversity in Living Organisms", htmlFile: "diversity.html" },
+                { class: "Grade 9", subject: "Biology", topic: "Improvement in Food Resources", htmlFile: "improvement.html" },
+                // Maths
+                { class: "Grade 9", subject: "Maths", topic: "Coordinate Geometry", htmlFile: "CoordinateGeometry.html" },
+                { class: "Grade 9", subject: "Maths", topic: "Geometry (Circles)", htmlFile: "GeometryCircle.html" },
+                { class: "Grade 9", subject: "Maths", topic: "Statistics", htmlFile: "Statistics.html" },
+                { class: "Grade 9", subject: "Maths", topic: "Probability", htmlFile: "Probability.html" },
+                { class: "Grade 9", subject: "Maths", topic: "Algebraic Identities", htmlFile: "AlgebraicIdentities.html" },
+ 		// Computer Science
+                { class: "Grade 9", subject: "Computer Science", topic: "Programming in Python", htmlFile: "Python1.html" },
+
+                // --- GRADE 10 ---
+                { class: "Grade 10", subject: "Computer Science", topic: "Internet & CyberSecurity", htmlFile: "cybersecurity.html" },
+                { class: "Grade 10", subject: "Biology", topic: "Life Processes", htmlFile: "life.html" },
+                { class: "Grade 10", subject: "Chemistry", topic: "Carbon Compounds", htmlFile: "CarbonCompounds.html" },
+                { class: "Grade 10", subject: "Chemistry", topic: "Chemical Reactions", htmlFile: "ChemicalReactions.html" },
+
+                { class: "Grade 10", subject: "Maths", topic: "Quadratic Equations", htmlFile: "QuadraticEquations.html" },
+                { class: "Grade 10", subject: "Maths", topic: "Arithmetic Progressions", htmlFile: "AP.html" },
+                { class: "Grade 10", subject: "Maths", topic: "Probability", htmlFile: "Probability10.html" },
+                { class: "Grade 10", subject: "Maths", topic: "Statistics", htmlFile: "Statistics10.html" },
+                
+                // --- GRADE 11 ---
+                { class: "Grade 11", subject: "Chemistry", topic: "Chemical Equilibrium", htmlFile: "ChemicalEquilibrium.html" },
+                { class: "Grade 11", subject: "Chemistry", topic: "Organic Chemistry Basics", htmlFile: "OrganicChemistry.html" },
+                { class: "Grade 11", subject: "Chemistry", topic: "Electrochemistry", htmlFile: "ElectroChemistry.html" },
+                { class: "Grade 11", subject: "Physics", topic: "Kinematics", htmlFile: "kinematics.html" },
+                { class: "Grade 11", subject: "Chemistry", topic: "Redox Reactions", htmlFile: "RedoxReactions.html" },
+                
+                { class: "Grade 11", subject: "Maths", topic: "Probability	", htmlFile: "Probability11.html" },
+                { class: "Grade 11", subject: "Maths", topic: "Sequences & Series", htmlFile: "Sequence&Series.html" },
+                { class: "Grade 11", subject: "Maths", topic: " Trigonometric Functions", htmlFile: "TrigonometryFunctions.html.html" },
+                { class: "Grade 11", subject: "Maths", topic: " Straight Lines", htmlFile: "StraightLines.html" },
+                { class: "Grade 11", subject: "Maths", topic: " Limits & Derivatives", htmlFile: "Limits&Derivatives.html" },
+                { class: "Grade 11", subject: "Maths", topic: "Sets", htmlFile: "Sets.html" },
+                { class: "Grade 11", subject: "Maths", topic: "Relations & Functions", htmlFile: "RelationsAndFunctions.html" },
+
+                // --- GRADE 12 ---
+                { class: "Grade 12", subject: "Chemistry", topic: "Biomolecules & Polymers", htmlFile: "Biomolecules_Polymers.html" },
+                { class: "Grade 12", subject: "Chemistry", topic: "Chemical Kinetics", htmlFile: "chemicalKinetics.html" },
+            
+                { class: "Grade 12", subject: "Maths", topic: "Vectors & 3D Geometry", htmlFile: "VectorGeometry.html" },
+
+            ];
+            
+            const backgroundImages = ["https://images.unsplash.com/photo-1543269865-cbf427effbad?auto=format&fit=crop&w=2100&q=80", "https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?auto=format&fit=crop&w=2100&q=80"];
+            
+            let currentSlide = 0, selectedClass = "", selectedSubject = "";
+
+            const slideshowContainer = document.getElementById('background-slideshow');
+            const mainContentArea = document.getElementById('main-content-area');
+            const signOutBtn = document.getElementById('signout-btn');
+            const profileBtn = document.getElementById('profile-btn');
+            const notificationsBtn = document.getElementById('notifications-btn');
+            const notificationsModal = document.getElementById('notifications-modal');
+            const closeModalBtn = document.getElementById('close-modal-btn');
+            const notificationsList = document.getElementById('notifications-list');
+
+            function getSubjectIcon(subject) {
+                if (subject.includes("Computer")) return "💻";
+                if (subject.includes("Maths")) return "🧮";
+                if (subject.includes("Biology") || subject.includes("Chemistry") || subject.includes("Physics")) return "🔬";
+                return "🎓";
+            }
+
+            function renderClasses() {
+                const classes = [...new Set(allTopics.map(t => t.class))].sort();
+                const classGrid = classes.map(cls => `<div class="card" data-class="${cls}"><div class="card-icon">🎓</div><h3>${cls}</h3></div>`).join('');
+                mainContentArea.innerHTML = `<div class="selection-panel"><h2>Select Your Class</h2><div class="card-grid">${classGrid}</div></div>`;
+                document.querySelectorAll('.card[data-class]').forEach(card => card.addEventListener('click', () => { selectedClass = card.dataset.class; renderSubjects(); }));
+            }
+
+            function renderSubjects() {
+                const subjects = [...new Set(allTopics.filter(t => t.class === selectedClass).map(t => t.subject))];
+                const subjectGrid = subjects.map(subject => `<div class="card" data-subject="${subject}"><div class="card-icon">${getSubjectIcon(subject)}</div><h3>${subject}</h3></div>`).join('');
+                mainContentArea.innerHTML = `<div class="selection-panel"><h2>Select Subject for ${selectedClass}</h2><div class="card-grid">${subjectGrid}</div><button class="back-button" id="back-to-classes">← Back to Classes</button></div>`;
+                document.querySelectorAll('.card[data-subject]').forEach(card => card.addEventListener('click', () => { selectedSubject = card.dataset.subject; renderTopics(); }));
+                document.getElementById('back-to-classes').addEventListener('click', () => { selectedClass = ""; renderClasses(); });
+            }
+
+                      function renderTopics() {
+                const topics = allTopics.filter(t => t.class === selectedClass && t.subject === selectedSubject);
+                const topicGrid = topics.map(topicData => `<div class="card" data-file="${topicData.htmlFile}"><h3>${topicData.topic}</h3><p>Interactive Learning Game</p></div>`).join('');
+                mainContentArea.innerHTML = `<div class="selection-panel"><h2>Select Topic in ${selectedSubject}</h2><div class="card-grid">${topicGrid}</div><button class="back-button" id="back-to-subjects">← Back to Subjects</button></div>`;
+                
+                // --- THIS IS THE FIX ---
+                document.querySelectorAll('.card[data-file]').forEach(card => {
+                    card.addEventListener('click', () => {
+                        // Correctly constructs the path assuming games are in a 'games' subfolder
+                        window.location.href = card.dataset.file;
+                    });
+                });
+                
+                document.getElementById('back-to-subjects').addEventListener('click', () => { selectedSubject = ""; renderSubjects(); });
+            }
+
+            function initializeSlideshow() {
+                backgroundImages.forEach((img, idx) => {
+                    const slide = document.createElement('div');
+                    slide.className = `slide${idx === 0 ? " active" : ""}`;
+                    slide.style.backgroundImage = `url(${img})`;
+                    slideshowContainer.appendChild(slide);
+                });
+                setInterval(() => {
+                    const slides = slideshowContainer.querySelectorAll('.slide');
+                    slides[currentSlide].classList.remove('active');
+                    currentSlide = (currentSlide + 1) % backgroundImages.length;
+                    slides[currentSlide].classList.add('active');
+                }, 5000);
+            }
+
+            function initializeChatbot() {
+                const chatContainer = document.getElementById('chat-container');
+                chatContainer.innerHTML = `<button class="chat-floating-button">💬</button><div class="chat-window"><div class="chat-header">EduBot 🤖</div><div class="messages-container"></div><div class="input-container"><input type="text" placeholder="Ask about a topic..." /><button>➤</button></div></div>`;
+                const floatingButton = chatContainer.querySelector('.chat-floating-button');
+                const chatWindow = chatContainer.querySelector('.chat-window');
+                const messagesContainer = chatContainer.querySelector('.messages-container');
+                const inputField = chatContainer.querySelector('input');
+                const sendButton = chatContainer.querySelector('.input-container button');
+                let messages = [{ from: "bot", text: "Hi! Ask me if we have a topic like 'Grade 6 Maths' or 'Python'." }];
+                const renderMessages = () => { messagesContainer.innerHTML = messages.map(msg => `<div class="message-wrapper ${msg.from}"><span class="message ${msg.from}">${msg.text}</span></div>`).join(''); messagesContainer.scrollTop = messagesContainer.scrollHeight; };
+                const handleSendMessage = async () => {
+                    const text = inputField.value.trim();
+                    if (!text) return;
+                    messages.push({ from: 'user', text });
+                    inputField.value = '';
+                    renderMessages();
+                    messages.push({ from: 'bot', text: 'Thinking...' });
+                    renderMessages();
+                    try {
+                        const response = await fetch('http://127.0.0.1:5001/chat', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` }, body: JSON.stringify({ message: text }) });
+                        if (!response.ok) throw new Error('Network response was not ok');
+                        const data = await response.json();
+                        messages.pop();
+                        messages.push({ from: 'bot', text: data.reply });
+                    } catch (error) {
+                        console.error('Error fetching chatbot response:', error);
+                        messages.pop();
+                        messages.push({ from: 'bot', text: 'Sorry, I had trouble connecting. Please ensure the backend server is running.' });
+                    }
+                    renderMessages();
+                };
+                floatingButton.addEventListener('click', () => { chatWindow.style.display = chatWindow.style.display === 'flex' ? 'none' : 'flex'; });
+                sendButton.addEventListener('click', handleSendMessage);
+                inputField.addEventListener('keydown', (e) => e.key === 'Enter' && handleSendMessage());
+                renderMessages();
+            }
+
+            function initializeNotifications() {
+                notificationsBtn.addEventListener('click', async () => {
+                    notificationsList.innerHTML = '<p style="text-align: center;">Loading...</p>';
+                    notificationsModal.style.display = 'flex';
+                    try {
+                        const response = await fetch('http://127.0.0.1:5001/api/notifications', {
+                            headers: { 'Authorization': `Bearer ${authToken}` }
+                        });
+                        if (!response.ok) throw new Error('Failed to fetch');
+                        const notifications = await response.json();
+                        if (notifications.length === 0) {
+                            notificationsList.innerHTML = '<p style="text-align: center;">No new notifications.</p>';
+                        } else {
+                            notificationsList.innerHTML = notifications.map(n => `
+                                <div class="notification-item">
+                                    <p>${n.message}</p>
+                                    <span class="timestamp">${new Date(n.timestamp).toLocaleString()}</span>
+                                </div>`).join('');
+                        }
+                    } catch (error) {
+                        notificationsList.innerHTML = '<p style="text-align: center; color: red;">Could not load notifications.</p>';
+                    }
+                });
+                closeModalBtn.addEventListener('click', () => { notificationsModal.style.display = 'none'; });
+                notificationsModal.addEventListener('click', (e) => { if (e.target === notificationsModal) { notificationsModal.style.display = 'none'; } });
+            }
+
+            signOutBtn.addEventListener('click', () => {
+                localStorage.removeItem('authToken');
+                localStorage.removeItem('username');
+                window.location.href = 'index.html';
+            });
+            
+            profileBtn.addEventListener('click', () => {
+                window.location.href = 'profile.html';
+            });
+
+            // --- START THE APP ---
+            initializeSlideshow();
+            initializeChatbot();
+            initializeNotifications();
+            renderClasses();
+        });
+    </script>
+</body>
+</html> 

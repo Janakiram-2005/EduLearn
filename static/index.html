@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to EduPlay</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body, html {
+            height: 100%;
+            font-family: 'Poppins', sans-serif;
+            background: #f0f4f8; /* Light blueprint gray-blue */
+            color: #1a2a45;
+            overflow: hidden;
+        }
+
+        /* --- Animated Background --- */
+        #geometric-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        /* --- Main Content --- */
+        .landing-container {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+            z-index: 2;
+        }
+
+        .content-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 35px rgba(0, 0, 0, 0.1);
+            animation: popIn 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            opacity: 0;
+        }
+
+        @keyframes popIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            font-weight: 700;
+            background: linear-gradient(45deg, #0052D4, #4364F7, #6FB1FC);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        p {
+            font-size: 1.25rem;
+            margin-bottom: 40px;
+            max-width: 550px;
+            line-height: 1.6;
+            color: #34495e;
+        }
+
+        /* --- Buttons --- */
+        .button-group {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+        .btn {
+            border: 2px solid #007bff;
+            padding: 15px 40px;
+            border-radius: 50px;
+            font-size: 1.25rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .btn:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 20px rgba(0, 123, 255, 0.2);
+        }
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-online {
+            color: #fff;
+            background: #007bff;
+        }
+        .btn-online:hover {
+             background: #0069d9;
+             border-color: #0062cc;
+        }
+        
+        .btn-offline {
+            color: #007bff;
+            background: transparent;
+        }
+        .btn-offline:hover {
+            color: #fff;
+            background: #007bff;
+        }
+
+        /* --- Responsive Design --- */
+        @media (max-width: 600px) {
+            h1 { font-size: 2.2rem; }
+            p { font-size: 1rem; max-width: 90vw; }
+            .button-group { max-width: 90vw; }
+            .btn { width: 100%; font-size: 1.1rem; }
+            .content-card { padding: 30px 25px; }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="geometric-canvas"></canvas>
+
+    <div class="landing-container">
+        <div class="content-card">
+            <h1>Welcome to EduPlay</h1>
+            <p>
+                Where education meets fun! Unlock interactive learning games tailored to your class, subject, and interests.
+            </p>
+            <div class="button-group">
+                <button class="btn btn-online" id="online-btn">Login / Sign Up →</button>
+                <button class="btn btn-offline" id="offline-btn">Continue Offline</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Navigation ---
+        document.getElementById('online-btn').addEventListener('click', () => {
+            window.location.href = 'online.html';
+        });
+
+        document.getElementById('offline-btn').addEventListener('click', () => {
+            window.location.href = 'offline.html';
+        });
+
+        // --- Animated Geometric Background ---
+        const canvas = document.getElementById('geometric-canvas');
+        const ctx = canvas.getContext('2d');
+
+        let particles = [];
+        const numParticles = 60;
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 2 + 1;
+                // MODIFIED: Increased the speed multiplier for faster movement
+                this.speedX = Math.random() * 1.5 - 0.75; 
+                this.speedY = Math.random() * 1.5 - 0.75;
+            }
+
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+
+                if (this.x < 0 || this.x > canvas.width) this.speedX *= -1;
+                if (this.y < 0 || this.y > canvas.height) this.speedY *= -1;
+            }
+
+            draw() {
+                ctx.fillStyle = 'rgba(0, 123, 255, 0.6)'; // Blueprint Blue
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function createParticles() {
+            for (let i = 0; i < numParticles; i++) {
+                particles.push(new Particle());
+            }
+        }
+
+        function connectParticles() {
+            for (let a = 0; a < particles.length; a++) {
+                for (let b = a; b < particles.length; b++) {
+                    const distance = Math.sqrt(
+                        Math.pow(particles[a].x - particles[b].x, 2) +
+                        Math.pow(particles[a].y - particles[b].y, 2)
+                    );
+
+                    if (distance < 150) {
+                        const opacityValue = 1 - (distance / 150);
+                        ctx.strokeStyle = `rgba(0, 123, 255, ${opacityValue * 0.5})`;
+                        ctx.lineWidth = 1;
+                        ctx.beginPath();
+                        ctx.moveTo(particles[a].x, particles[a].y);
+                        ctx.lineTo(particles[b].x, particles[b].y);
+                        ctx.stroke();
+                    }
+                }
+            }
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+            connectParticles();
+            requestAnimationFrame(animate);
+        }
+        
+        createParticles();
+        animate();
+    </script>
+</body>
+</html>
+

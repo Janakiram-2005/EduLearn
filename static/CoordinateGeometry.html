@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coordinate Geometry: Minesweeper</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --header-bg: #ffffff; --page-bg: #f0f2f5; --panel-bg: #ffffff;
+            --border-color: #e5e7eb; --text-dark: #1f2937; --accent-violet: #8b5cf6;
+            --primary-blue: #007bff; --secondary-gray: #6c757d;
+        }
+        body { font-family: 'Poppins', sans-serif; background-color: var(--page-bg); color: var(--text-dark); margin: 0; height: 100vh; overflow: hidden; }
+        .page-container { display: flex; flex-direction: column; height: 100vh; }
+        .header {
+            position: fixed; top: 0; left: 0; width: 100%; height: 60px;
+            background-color: var(--header-bg); display: flex; align-items: center; justify-content: space-between;
+            padding: 0 24px; border-bottom: 1px solid var(--border-color);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05); z-index: 1000;
+        }
+        .header-section { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .header-section.center { text-align: center; font-size: 1.2em; font-weight: bold; }
+        .header-section.right { display: flex; justify-content: flex-end; }
+        .button {
+            padding: 8px 16px; margin-left: 10px; cursor: pointer;
+            border: none; border-radius: 6px; font-weight: 600; color: white;
+            white-space: nowrap; transition: transform 0.1s;
+        }
+        .button:active { transform: scale(0.95); }
+        .main-content { margin-top: 60px; padding: 24px; display: flex; gap: 24px; flex-grow: 1; overflow: hidden; justify-content: center; }
+        .panel {
+            background-color: var(--panel-bg); border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: 1px solid var(--border-color);
+            overflow-y: auto; padding: 32px 48px; height: calc(100vh - 108px);
+            transition: width 400ms ease-in-out;
+        }
+        #info-panel { flex-shrink: 0; }
+        #activity-panel { display: none; flex-grow: 1; padding: 0; flex-direction: column; }
+        .main-content.activity-visible { justify-content: flex-start; }
+        .main-content.activity-visible #info-panel { width: 340px; min-width: 340px; padding: 24px 32px; }
+        .main-content.activity-visible #activity-panel { display: flex; }
+        
+        .activity-area { flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; }
+        .bottom-control-bar { height: 60px; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; background-color: var(--page-bg); border-top: 1px solid var(--border-color); flex-shrink: 0; border-radius: 0 0 12px 12px;}
+        .status-bar { font-weight: bold; color: var(--text-dark); font-size: 1.2rem;}
+        .reset-button { padding: 8px 16px; cursor: pointer; background-color: #ef4444; color: white; border: none; border-radius: 6px; font-weight: 600; }
+        .info-panel-content { background-color: #ffffff; padding: 1.5rem; border-radius: 0.75rem; border: 1px solid #e5e7eb; }
+        
+        #minesweeper-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; background-color: #d1d5db; padding: 4px; border-radius: 8px; }
+        .grid-cell { background-color: #e5e7eb; height: 50px; display: flex; align-items: center; justify-content: center; font-weight: 600; cursor: pointer; transition: background-color 0.2s; }
+        .grid-cell:hover { background-color: #d1d5db; }
+        .grid-cell.safe { background-color: #a7f3d0; color: #047857; }
+        .grid-cell.mine { background-color: #fca5a5; color: #b91c1c; font-size: 1.5rem; }
+    </style>
+</head>
+<body class="page-container">
+    <header class="header">
+        <div class="header-section font-bold text-lg" style="color: var(--accent-violet);">Class-9</div>
+        <div id="header-title" class="header-section center">Information</div>
+        <div class="header-section right">
+            <button id="back-btn" class="button" style="background-color: var(--secondary-gray);">Back</button>
+            <button id="activity-info-btn" class="button" style="background-color: var(--primary-blue);">Activity</button>
+            <button id="difficulty-btn" class="button" style="background-color: var(--accent-violet);">Difficulty: Easy</button>
+        </div>
+    </header>
+
+    <main id="main-content" class="main-content">
+        <section id="info-panel" class="panel">
+            <h2 class="text-3xl font-bold mb-6 text-center" style="color: var(--accent-violet);">Coordinate Geometry</h2>
+            <div class="space-y-4">
+                <div class="info-panel-content">
+                    <h3 class="text-xl font-semibold text-gray-900">The Cartesian Plane</h3>
+                    <p class="mt-2 text-gray-600">Coordinate Geometry uses a plane with a horizontal <b>x-axis</b> and a vertical <b>y-axis</b>. Their intersection is the <b>Origin (0,0)</b>.</p>
+                </div>
+                <div class="info-panel-content">
+                    <h3 class="text-xl font-semibold text-gray-900">Quadrants</h3>
+                    <p class="mt-2 text-gray-600">The axes divide the plane into four quadrants, each with different sign patterns for coordinates (x, y).</p>
+                </div>
+                <div class="info-panel-content">
+                    <h3 class="text-xl font-semibold text-gray-900">Linear Equations</h3>
+                    <p class="mt-2 text-gray-600">A linear equation, like <b>y = 2x + 1</b>, represents a straight line. In our game, the "safe" points are solutions to the given rule, while the "mines" are not!</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="activity-panel" class="panel">
+            <div class="activity-area">
+                <div class="text-center w-full max-w-lg">
+                    <h2 id="level-title" class="text-2xl font-bold text-gray-900">Easy Challenge</h2>
+                    <p id="question-counter" class="text-left text-gray-500"></p>
+                    <p id="question-text" class="my-4">Find all points on the line y = x + 1. Avoid the mines!</p>
+                    <div id="minesweeper-grid" class="mx-auto my-4"></div>
+                    <p id="feedback-text" class="mt-4 font-semibold text-lg h-6"></p>
+                    <div id="level-complete-container" class="hidden text-center py-8">
+                         <h3 id="level-complete-title" class="text-3xl font-bold" style="color: var(--accent-violet);">Level Complete!</h3>
+                         <p id="level-complete-score" class="text-xl mt-2 text-gray-700">You cleared the field!</p>
+                         <button id="next-level-btn" class="button" style="background-color: var(--accent-violet); margin-top: 1.5rem; font-size: 1.125rem; padding: 0.75rem 2rem;">Next Level</button>
+                    </div>
+                </div>
+            </div>
+            <footer class="bottom-control-bar">
+                <div id="status-bar" class="status-bar">Score: 0</div>
+                <button id="reset-game-btn" class="reset-button">Reset Game</button>
+            </footer>
+        </section>
+    </main>
+    <script>
+         document.addEventListener('DOMContentLoaded', () => {
+            const mainContent = document.getElementById('main-content'), infoPanel = document.getElementById('info-panel'), activityPanel = document.getElementById('activity-panel'), activityInfoBtn = document.getElementById('activity-info-btn'), difficultyBtn = document.getElementById('difficulty-btn'), backBtn = document.getElementById('back-btn'), headerTitle = document.getElementById('header-title'), levelTitle = document.getElementById('level-title'), statusBar = document.getElementById('status-bar'), questionCounter = document.getElementById('question-counter'), questionText = document.getElementById('question-text'), gridContainer = document.getElementById('minesweeper-grid'), feedbackText = document.getElementById('feedback-text'), levelCompleteContainer = document.getElementById('level-complete-container'), levelCompleteScore = document.getElementById('level-complete-score'), nextLevelBtn = document.getElementById('next-level-btn'), resetGameBtn = document.getElementById('reset-game-btn');
+            const problems = { /* Game Data remains the same */ };
+            Object.assign(problems, {easy:[{q:"Find all points on the x-axis.",rule:(x,y)=>y===0},{q:"Find all points where the coordinates are identical (y = x).",rule:(x,y)=>y===x},{q:"Find all points where the coordinates are opposites (y = -x).",rule:(x,y)=>y===-x},{q:"Find all points in Quadrant I (x>0, y>0).",rule:(x,y)=>x>0&&y>0},{q:"Find all points on the vertical line x = -2.",rule:(x,y)=>x===-2}],medium:[{q:"Find all points on the line y = 2x.",rule:(x,y)=>y===2*x},{q:"Find all points on the line x + y = 3.",rule:(x,y)=>x+y===3},{q:"Find all points where y > x + 1.",rule:(x,y)=>y>x+1},{q:"Find all points on the line y - x = 2.",rule:(x,y)=>y-x===2},{q:"Find all points on the line x = 2y.",rule:(x,y)=>x===2*y}],hard:[{q:"Find all points where y = x².",rule:(x,y)=>y===x*x},{q:"Find all points where the absolute value of x is 2 (|x|=2).",rule:(x,y)=>Math.abs(x)===2},{q:"Find all points where the product of coordinates is 0 (xy=0).",rule:(x,y)=>x*y===0},{q:"Find all points on the circle x² + y² = 4.",rule:(x,y)=>x*x+y*y===4},{q:"Find all points where |x| + |y| = 3.",rule:(x,y)=>Math.abs(x)+Math.abs(y)===3}]});
+            const levelOrder = ['easy', 'medium', 'hard'];
+            let currentLevel, score, gameOver, safeCellsCount, currentQuestionIndex, shuffledProblems, showActivity = false;
+            function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+            function updateLayout() {
+                mainContent.classList.toggle('activity-visible', showActivity);
+                infoPanel.style.width = showActivity ? '340px' : `${Math.min(800, window.innerWidth - 48)}px`;
+                headerTitle.textContent = showActivity ? 'Geometry Minesweeper' : 'Information';
+                activityInfoBtn.textContent = showActivity ? 'Information' : 'Activity';
+            }
+            function initializeGame() { currentLevel = 'easy'; resetGame(); }
+            function resetGame() { score = 0; resetLevel(); }
+            function resetLevel() {
+                shuffledProblems = [...problems[currentLevel]].sort(() => Math.random() - 0.5);
+                currentQuestionIndex = 0;
+                updateScoreDisplay();
+                loadNextField();
+            }
+            function loadNextField() {
+                if (currentQuestionIndex >= shuffledProblems.length) { showLevelComplete(); return; }
+                gameOver = false; safeCellsCount = 0;
+                feedbackText.textContent = "";
+                levelCompleteContainer.classList.add('hidden');
+                gridContainer.classList.remove('hidden');
+                const problem = shuffledProblems[currentQuestionIndex];
+                questionText.textContent = problem.q;
+                levelTitle.textContent = `${capitalize(currentLevel)} Challenge`;
+                questionCounter.textContent = `Field ${currentQuestionIndex + 1} of ${shuffledProblems.length}`;
+                gridContainer.innerHTML = '';
+                for (let y = 3; y >= -3; y--) {
+                    for (let x = -3; x <= 3; x++) {
+                        const cell = document.createElement('div');
+                        cell.className = 'grid-cell';
+                        cell.dataset.isMine = !problem.rule(x, y);
+                        if (!JSON.parse(cell.dataset.isMine)) safeCellsCount++;
+                        cell.textContent = `(${x},${y})`;
+                        cell.addEventListener('click', handleCellClick);
+                        gridContainer.appendChild(cell);
+                    }
+                }
+            }
+            function handleCellClick(e) {
+                if (gameOver) return;
+                const cell = e.currentTarget;
+                if (cell.classList.contains('safe') || cell.classList.contains('mine')) return;
+                const isMine = JSON.parse(cell.dataset.isMine);
+                if (isMine) {
+                    cell.innerHTML = '💥'; cell.classList.add('mine');
+                    feedbackText.textContent = "Boom! That's a mine. Reset to try again.";
+                    feedbackText.style.color = '#dc2626';
+                    gameOver = true;
+                } else {
+                    cell.classList.add('safe'); score += 10;
+                    updateScoreDisplay();
+                    safeCellsCount--;
+                    if (safeCellsCount === 0) {
+                        feedbackText.textContent = "Field Cleared! Loading next...";
+                        feedbackText.style.color = '#16a34a';
+                        gameOver = true;
+                        currentQuestionIndex++;
+                        setTimeout(loadNextField, 2000);
+                    }
+                }
+            }
+            function showLevelComplete() {
+                gridContainer.classList.add('hidden');
+                questionText.textContent = ""; questionCounter.textContent = ""; feedbackText.textContent = "";
+                levelCompleteContainer.classList.remove('hidden');
+                levelCompleteScore.textContent = `You completed the level with a score of ${score}!`;
+            }
+            function handleNextLevel() {
+                const currentLevelIdx = levelOrder.indexOf(currentLevel);
+                if (currentLevelIdx < levelOrder.length - 1) {
+                    currentLevel = levelOrder[currentLevelIdx + 1];
+                    difficultyBtn.textContent = `Difficulty: ${capitalize(currentLevel)}`;
+                    resetGame();
+                } else {
+                    questionText.textContent = "You've finished all challenges!";
+                    levelCompleteContainer.classList.add('hidden');
+                }
+            }
+            function updateScoreDisplay() { statusBar.textContent = `Score: ${score}`; }
+            activityInfoBtn.addEventListener('click', () => { showActivity = !showActivity; updateLayout(); });
+            backBtn.addEventListener('click', () => { if (showActivity) { showActivity = false; updateLayout(); } else { window.history.back(); } });
+            difficultyBtn.addEventListener('click', () => {
+                const currentLevelIdx = levelOrder.indexOf(currentLevel);
+                currentLevel = levelOrder[(currentLevelIdx + 1) % levelOrder.length];
+                difficultyBtn.textContent = `Difficulty: ${capitalize(currentLevel)}`;
+                if(showActivity) resetGame();
+            });
+            resetGameBtn.addEventListener('click', resetGame);
+            nextLevelBtn.addEventListener('click', handleNextLevel);
+            initializeGame(); updateLayout();
+        });
+    </script>
+</body>
+</html>

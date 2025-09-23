@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grade 12: Chemical Kinetics - Game Hub</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
+    <style>
+        :root {
+            --header-bg: #ffffff;
+            --page-bg: #f3f4f6;
+            --panel-bg: #ffffff;
+            --border-color: #e5e7eb;
+            --text-dark: #1f2937;
+            --text-mid: #4b5563;
+            --accent-blue: #38bdf8;
+            --accent-green: #34d399;
+            --accent-red: #fb7185;
+            --accent-orange: #f97316;
+            --primary-blue: #007bff;
+            --secondary-gray: #6c757d;
+            --player-health: 100%;
+            --boss-health: 100%;
+        }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--page-bg);
+            color: var(--text-dark);
+            margin: 0;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .page-container { display: flex; flex-direction: column; height: 100vh; }
+        .header {
+            position: fixed; top: 0; left: 0; width: 100%; height: 60px;
+            background-color: var(--header-bg);
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 24px;
+            border-bottom: 1px solid var(--border-color);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            z-index: 1000;
+            box-sizing: border-box;
+        }
+        .header-section { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .header-section.center { text-align: center; font-size: 1.2em; font-weight: bold; }
+        .header-section.right { display: flex; justify-content: flex-end; }
+        .button {
+            padding: 8px 16px; margin-left: 10px; cursor: pointer;
+            border: none; border-radius: 6px; font-weight: 600; color: white;
+            transition: transform 0.1s;
+        }
+        .button:active { transform: scale(0.95); }
+        .main-content {
+            margin-top: 60px; padding: 24px; display: flex;
+            flex-grow: 1; overflow: hidden; box-sizing: border-box;
+            gap: 24px; justify-content: center;
+        }
+        .panel {
+            background-color: var(--panel-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            border: 1px solid var(--border-color);
+            box-sizing: border-box;
+            overflow-y: auto; padding: 24px 32px;
+            height: calc(100vh - 108px);
+        }
+        #info-panel { flex-shrink: 0; transition: width 400ms ease-in-out, margin 400ms ease-in-out; }
+        #activity-panel { display: none; flex-grow: 1; padding: 0; flex-direction: column; }
+        .main-content.activity-visible { justify-content: flex-start; }
+        .main-content.activity-visible #info-panel { width: 340px; min-width: 340px; }
+        .main-content.activity-visible #activity-panel { display: flex; }
+
+        .activity-area { flex-grow: 1; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; padding: 1rem; background-color: #e0e7ff; border-radius: 12px; }
+        .bottom-control-bar { height: 60px; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; background-color: var(--page-bg); border-top: 1px solid var(--border-color); flex-shrink: 0; }
+        .status-bar { font-weight: bold; color: var(--text-dark); }
+        .reset-button { padding: 8px 16px; cursor: pointer; background-color: var(--accent-red); color: white; border: none; border-radius: 6px; font-weight: 600; }
+        
+        /* Game 1: Collision Simulator */
+        .simulator-game { display: flex; width:100%; height:100%; gap: 1rem; }
+        #collision-canvas { flex-grow: 1; background: #1e293b; border-radius: 8px; }
+        .simulator-controls { flex-basis: 250px; display: flex; flex-direction: column; gap: 1rem; background: var(--panel-bg); padding: 1rem; border-radius: 8px; }
+        .control-group label { font-weight: 600; }
+        .control-group input[type="range"] { width: 100%; }
+        
+        /* Game 2: Quiz Arena */
+        .battle-game { width: 100%; height: 100%; display: flex; flex-direction: column; }
+        .battle-arena { flex-grow: 1; display: flex; justify-content: space-between; align-items: center; padding: 1rem; }
+        .battle-character { text-align: center; }
+        .battle-character .emoji { font-size: 80px; transition: transform 0.2s; }
+        .health-bar-container { width: 150px; height: 20px; background: #e5e7eb; border-radius: 10px; overflow: hidden; margin: 0.5rem auto; border: 1px solid #d1d5db; }
+        .health-bar { height: 100%; transition: width 0.5s ease; }
+        #player-health { background: var(--accent-green); width: var(--player-health); }
+        #boss-health { background: var(--accent-red); width: var(--boss-health); }
+        .quiz-area { padding: 1.5rem; background: var(--page-bg); border-top: 1px solid var(--border-color); }
+        .options-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 1rem; }
+        .option-btn { background-color: var(--panel-bg); color: var(--text-dark); padding: 1rem; font-weight: 600; border-radius: 0.5rem; transition: all 0.2s ease; border: 1px solid var(--border-color); cursor: pointer; }
+        .option-btn.correct { background-color: var(--accent-green); color: white; }
+        .option-btn.incorrect { background-color: var(--accent-red); color: white; animation: shake 0.5s; }
+
+        /* Game 3: Energy Profile */
+        .energy-profile-game { width: 100%; height: 100%; display: flex; align-items: center; gap: 2rem; }
+        .graph-container { flex-grow: 1; height: 100%; background: #eef2ff; border-radius: 8px; position: relative; }
+        .label-bank { flex-basis: 200px; display: flex; flex-direction: column; gap: 1rem; }
+        .draggable-label { background: #4f46e5; color: white; padding: 0.75rem; border-radius: 8px; cursor: grab; text-align: center; }
+        .drop-zone { position: absolute; width: 120px; height: 40px; border: 2px dashed #a5b4fc; border-radius: 8px; transition: background-color 0.2s; }
+        .drop-zone.over { background-color: #dbeafe; }
+        .drop-zone.correct { border: 2px solid var(--accent-green); background-color: #d1fae5; color: var(--accent-green); font-weight: bold; display:flex; align-items: center; justify-content: center; }
+        
+        .level-complete-container { text-align: center; }
+        h3.level-complete-title { font-size: 1.875rem; font-weight: bold; color: var(--accent-green); }
+        p.level-complete-score { font-size: 1.25rem; margin-top: 0.5rem; }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+    </style>
+</head>
+<body class="page-container">
+    
+    <header class="header">
+        <div class="header-section">Grade 12 - Chemical Kinetics</div>
+        <div id="header-title" class="header-section center">Information</div>
+        <div class="header-section right">
+            <button id="back-btn" class="button" style="background-color: var(--secondary-gray);">Back</button>
+            <button id="toggle-view-btn" class="button" style="background-color: var(--primary-blue);">Activity</button>
+            <button id="difficulty-btn" class="button" style="background-color: var(--accent-blue);">Difficulty: Easy</button>
+        </div>
+    </header>
+
+    <main class="main-content" id="main-content">
+        <section id="info-panel" class="panel">
+            <h1 class="text-3xl font-bold mb-4" style="color: var(--accent-blue);">Chemical Kinetics</h1>
+            <div style="display:flex; flex-direction:column; gap:1.5rem;">
+                <div>
+                    <h2 class="text-xl font-semibold">Reaction Rate</h2>
+                    <p class="mt-2 text-gray-600">The speed at which a chemical reaction occurs. It's affected by several factors.</p>
+                </div>
+                <div>
+                    <h2 class="text-xl font-semibold">Collision Theory</h2>
+                    <p class="mt-2 text-gray-600">For a reaction to occur, particles must collide with sufficient energy (Activation Energy) and in the correct orientation.</p>
+                </div>
+                 <div>
+                    <h2 class="text-xl font-semibold">Factors Affecting Rate</h2>
+                     <ul class="list-disc list-inside mt-3 space-y-2 text-gray-600">
+                         <li><b>Temperature:</b> Higher temp = faster particles = more effective collisions.</li>
+                         <li><b>Concentration:</b> More particles = more frequent collisions.</li>
+                         <li><b>Catalyst:</b> Provides an alternative pathway with lower activation energy.</li>
+                     </ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="activity-panel" class="panel">
+            <div class="activity-area" id="activity-area"></div>
+            <footer class="bottom-control-bar">
+                <div id="status-bar" class="status-bar">Let's begin!</div>
+                <button id="reset-btn" class="reset-button">Reset</button>
+            </footer>
+        </section>
+    </main>
+
+    <script src="./neutralino.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            try { Neutralino.init(); } catch (e) { console.error("Neutralino not found."); }
+            
+            const difficulties = ['Easy', 'Medium', 'Hard'];
+            let showActivity = false, difficultyIdx = 0, score = 0, gameLoopId;
+
+            const mainContent = document.getElementById('main-content');
+            const infoPanel = document.getElementById('info-panel');
+            const activityArea = document.getElementById('activity-area');
+            const headerTitle = document.getElementById('header-title');
+            const toggleViewBtn = document.getElementById('toggle-view-btn');
+            const difficultyBtn = document.getElementById('difficulty-btn');
+            const backBtn = document.getElementById('back-btn');
+            const resetBtn = document.getElementById('reset-btn');
+            const statusBar = document.getElementById('status-bar');
+            
+            const quizProblems = {
+                medium: [ { q: "Increasing temperature increases reaction rate because...", a: "More particles have energy > Ea" }, { q: "A catalyst speeds up a reaction by...", a: "Lowering the activation energy" }, { q: "What is the unit of a first-order rate constant?", a: "s⁻¹" }, { q: "In the rate law Rate = k[A][B]², what is the overall order?", a: "3" } ],
+                hard: [ { q: "The half-life of a first-order reaction is...", a: "Independent of initial concentration" }, { q: "The Arrhenius equation relates rate constant to...", a: "Temperature" }, { q: "For a zero-order reaction, the rate is...", a: "Constant" }, { q: "The rate-determining step in a reaction mechanism is the...", a: "Slowest step" } ]
+            };
+
+            function updateLayout() {
+                if (showActivity) mainContent.classList.add('activity-visible');
+                else mainContent.classList.remove('activity-visible');
+                infoPanel.style.width = showActivity ? '340px' : `${Math.min(700, window.innerWidth - 48)}px`;
+                headerTitle.textContent = showActivity ? `Activity: ${difficulties[difficultyIdx]}` : 'Information';
+                toggleViewBtn.textContent = showActivity ? 'Information' : 'Activity';
+            }
+
+            function startGame() {
+                score = 0;
+                statusBar.textContent = `Score: ${score}`;
+                cancelAnimationFrame(gameLoopId);
+                activityArea.innerHTML = '';
+                const gameType = difficulties[difficultyIdx];
+                if (gameType === 'Easy') initCollisionSimulator();
+                if (gameType === 'Medium') initKineticsQuiz();
+                if (gameType === 'Hard') initEnergyProfile();
+            }
+
+            function initCollisionSimulator() {
+                activityArea.innerHTML = `
+                    <div class="simulator-game">
+                        <canvas id="collision-canvas"></canvas>
+                        <div class="simulator-controls">
+                             <h3 class="text-lg font-bold">Controls</h3>
+                             <div class="control-group"><label>Temperature: <span id="temp-val">5</span></label><input type="range" id="temp-slider" min="1" max="10" value="5"></div>
+                             <div class="control-group"><label>Concentration: <span id="conc-val">20</span></label><input type="range" id="conc-slider" min="5" max="100" value="20"></div>
+                             <button id="catalyst-btn" class="button" style="background-color:var(--accent-green)">Add Catalyst</button>
+                             <div class="text-center mt-4">
+                                <p class="text-sm">Successful Collisions / 5s</p>
+                                <p id="collision-count" class="text-3xl font-bold">0</p>
+                             </div>
+                        </div>
+                    </div>`;
+                
+                const canvas = document.getElementById('collision-canvas'), ctx = canvas.getContext('2d');
+                let particles = [], successfulCollisions = 0, tempFactor = 5, catalyst = 0.1;
+
+                function resizeCanvas() { canvas.width = canvas.clientWidth; canvas.height = canvas.clientHeight; }
+                window.addEventListener('resize', resizeCanvas);
+                resizeCanvas();
+
+                function resetParticles(num) {
+                    particles = Array.from({length: num}, () => ({
+                        x: Math.random() * canvas.width, y: Math.random() * canvas.height, r: 5,
+                        vx: (Math.random() - 0.5) * 2, vy: (Math.random() - 0.5) * 2,
+                        color: Math.random() > 0.5 ? '#3b82f6' : '#ef4444'
+                    }));
+                }
+                
+                document.getElementById('temp-slider').oninput = e => { tempFactor = e.target.value; document.getElementById('temp-val').textContent = tempFactor; };
+                document.getElementById('conc-slider').oninput = e => { resetParticles(e.target.value); document.getElementById('conc-val').textContent = e.target.value; };
+                document.getElementById('catalyst-btn').onclick = e => { catalyst = 0.5; e.target.style.background = 'var(--accent-orange)'; };
+
+                setInterval(() => { document.getElementById('collision-count').textContent = successfulCollisions; successfulCollisions = 0; }, 5000);
+
+                function gameLoop() {
+                    ctx.clearRect(0,0, canvas.width, canvas.height);
+                    particles.forEach(p => {
+                        p.x += p.vx * (tempFactor / 5); p.y += p.vy * (tempFactor / 5);
+                        if(p.x < p.r || p.x > canvas.width - p.r) p.vx *= -1;
+                        if(p.y < p.r || p.y > canvas.height - p.r) p.vy *= -1;
+                        ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fillStyle = p.color; ctx.fill();
+                    });
+                    for(let i=0; i<particles.length; i++) {
+                        for(let j=i+1; j<particles.length; j++) {
+                           if(Math.hypot(particles[i].x - particles[j].x, particles[i].y - particles[j].y) < 10) {
+                               if(Math.random() < catalyst) successfulCollisions++;
+                           }
+                        }
+                    }
+                    gameLoopId = requestAnimationFrame(gameLoop);
+                }
+                resetParticles(20);
+                gameLoop();
+            }
+
+            function initKineticsQuiz() {
+                let currentProblemSet = [...quizProblems.medium, ...quizProblems.hard].sort(() => 0.5 - Math.random()).slice(0, 5);
+                let qIndex = 0;
+
+                function loadQuestion() {
+                    if (qIndex >= currentProblemSet.length) {
+                        activityArea.innerHTML = `<div class="level-complete-container"><h3>Arena Victorious!</h3><p>Your score: ${score}</p></div>`;
+                        return;
+                    }
+                    const problem = currentProblemSet[qIndex];
+                    let options = [problem.a, "Option B", "Option C", "Option D"].slice(0,4); // Simplified options
+                    
+                    activityArea.innerHTML = `
+                        <div style="width:100%; max-width:700px;" class="text-center">
+                            <div class="game-header">
+                                <div><h2 class="text-2xl font-bold">Kinetics Quiz Arena</h2></div>
+                                <div id="score-box" class="stat-box"><div class="stat-box-label">SCORE</div><div id="score" class="stat-box-value">${score}</div></div>
+                            </div>
+                            <p class="quiz-question">${problem.q}</p>
+                            <div class="options-grid"></div>
+                        </div>`;
+                    
+                    const optionsContainer = activityArea.querySelector('.options-grid');
+                    options.sort(() => 0.5 - Math.random()).forEach(opt => {
+                        const btn = document.createElement('button');
+                        btn.className = 'option-btn';
+                        btn.textContent = opt;
+                        btn.onclick = (e) => checkAnswer(e, opt === problem.a);
+                        optionsContainer.appendChild(btn);
+                    });
+                }
+                 function checkAnswer(e, isCorrect) {
+                    if(isCorrect) {
+                        score += 10;
+                        e.currentTarget.classList.add('correct');
+                    } else {
+                        e.currentTarget.classList.add('incorrect');
+                    }
+                    qIndex++;
+                    setTimeout(loadQuestion, 1500);
+                 }
+                loadQuestion();
+            }
+            
+            function initEnergyProfile() {
+                let correctPlacements = 0;
+                const labels = ['Reactants', 'Products', 'Activation Energy (Ea)', 'ΔH'];
+                
+                activityArea.innerHTML = `
+                    <div class="energy-profile-game">
+                        <div class="label-bank"></div>
+                        <div class="graph-container">
+                            <svg viewbox="0 0 200 150" style="position:absolute; width:100%; height:100%;"><path d="M 10 80 C 40 10, 80 10, 110 50 S 160 90, 190 90" stroke="${`var(--accent-blue)`}" stroke-width="2" fill="none"/></svg>
+                            <div class="drop-zone" data-zone="Reactants" style="left: 5px; top: 65px;"></div>
+                            <div class="drop-zone" data-zone="Products" style="right: 5px; top: 75px;"></div>
+                            <div class="drop-zone" data-zone="Activation Energy (Ea)" style="left: 70px; top: 5px;"></div>
+                            <div class="drop-zone" data-zone="ΔH" style="right: 40px; top: 110px;"></div>
+                        </div>
+                    </div>`;
+                const bank = activityArea.querySelector('.label-bank');
+                labels.forEach(l => {
+                    const el = document.createElement('div');
+                    el.className = 'draggable-label';
+                    el.textContent = l;
+                    el.draggable = true;
+                    el.ondragstart = e => e.dataTransfer.setData('text', l);
+                    bank.appendChild(el);
+                });
+
+                activityArea.querySelectorAll('.drop-zone').forEach(zone => {
+                    zone.ondragover = e => { e.preventDefault(); zone.classList.add('over'); };
+                    zone.ondragleave = () => zone.classList.remove('over');
+                    zone.ondrop = e => {
+                        e.preventDefault();
+                        zone.classList.remove('over');
+                        const droppedLabel = e.dataTransfer.getData('text');
+                        if (zone.dataset.zone === droppedLabel) {
+                            zone.textContent = droppedLabel;
+                            zone.classList.add('correct');
+                            score += 25;
+                            statusBar.textContent = `Score: ${score}`;
+                            correctPlacements++;
+                            if (correctPlacements === labels.length) {
+                                activityArea.innerHTML = `<div class="level-complete-container"><h3>Well Done!</h3><p>You correctly labeled the energy profile! Score: ${score}</p></div>`;
+                            }
+                        }
+                    };
+                });
+            }
+            
+            backBtn.addEventListener('click', () => { cancelAnimationFrame(gameLoopId); window.history.back(); });
+            toggleViewBtn.addEventListener('click', () => { showActivity = !showActivity; cancelAnimationFrame(gameLoopId); if (showActivity) startGame(); updateLayout(); });
+            difficultyBtn.addEventListener('click', () => {
+                difficultyIdx = (difficultyIdx + 1) % difficulties.length;
+                difficultyBtn.textContent = `Difficulty: ${difficulties[difficultyIdx]}`;
+                if (showActivity) { cancelAnimationFrame(gameLoopId); startGame(); }
+            });
+            resetBtn.addEventListener('click', () => { cancelAnimationFrame(gameLoopId); startGame(); });
+            window.addEventListener('resize', updateLayout);
+            updateLayout();
+        });
+    </script>
+</body>
+</html>
+

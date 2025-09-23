@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mensuration: Surface Area & Volume</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --header-bg: #ffffff;
+            --page-bg: #f0f2f5;
+            --panel-bg: #ffffff;
+            --border-color: #e5e7eb;
+            --text-dark: #111827;
+            --text-light: #475569;
+            --accent-green: #16a34a;
+            --accent-green-dark: #15803d;
+            --accent-red: #ef4444;
+            --primary-blue: #007bff;
+            --secondary-gray: #6c757d;
+        }
+        body { font-family: 'Poppins', sans-serif; background-color: var(--page-bg); color: var(--text-dark); margin: 0; height: 100vh; overflow: hidden; }
+        .page-container { display: flex; flex-direction: column; height: 100vh; }
+        .header {
+            position: fixed; top: 0; left: 0; width: 100%; height: 60px;
+            background-color: var(--header-bg); display: flex; align-items: center; justify-content: space-between;
+            padding: 0 24px; border-bottom: 1px solid var(--border-color); box-shadow: 0 2px 4px rgba(0,0,0,0.05); z-index: 1000; box-sizing: border-box;
+        }
+        .header-section { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .header-section.center { text-align: center; font-size: 1.2em; font-weight: bold; }
+        .header-section.right { display: flex; justify-content: flex-end; }
+        .button {
+            padding: 8px 16px; margin-left: 10px; cursor: pointer;
+            border: none; border-radius: 6px; font-weight: 600; color: white;
+            transition: transform 0.1s, background-color 0.2s;
+        }
+        .button:active { transform: scale(0.95); }
+        .main-content {
+            margin-top: 60px; padding: 24px; display: flex;
+            flex-grow: 1; overflow: hidden; box-sizing: border-box;
+            gap: 24px; justify-content: center;
+        }
+        .panel {
+            background-color: var(--panel-bg); border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: 1px solid var(--border-color);
+            box-sizing: border-box; overflow-y: auto;
+            height: calc(100vh - 108px);
+            transition: width 400ms ease-in-out, min-width 400ms ease-in-out, margin 400ms ease-in-out;
+        }
+        #info-panel {
+            padding: 24px 32px;
+            width: 100%;
+            max-width: 700px;
+            margin: 0 auto;
+            flex-shrink: 0;
+        }
+        #activity-panel { display: none; flex-grow: 1; min-width: 400px; }
+        
+        /* Layout when activity is visible */
+        .main-content.activity-visible { justify-content: flex-start; }
+        .main-content.activity-visible #info-panel { width: 340px; min-width: 340px; margin: 0; }
+        .main-content.activity-visible #activity-panel { display: block; }
+
+        /* Game Specific Styles */
+        .game-panel { padding: 2rem; width: 100%; max-width: 800px; margin: auto; }
+        #question-text { font-size: 1.25rem; font-weight: 500; color: #111827; line-height: 1.75; }
+        #options-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; margin-top: 2.5rem; }
+        .option-btn { background-color: #f3f4f6; color: #1f2937; padding: 1.5rem; font-size: 1.25rem; font-weight: 600; border-radius: 0.75rem; transition: all 0.2s; border: 2px solid #e5e7eb; cursor: pointer; text-align: left; }
+        .option-btn:hover:not(:disabled) { transform: scale(1.05); box-shadow: 0 0 15px rgba(22, 163, 74, 0.2); }
+        .option-btn.correct { background-color: #22c55e; border-color: #16a34a; color: white; }
+        .option-btn.incorrect { background-color: #ef4444; border-color: #dc2626; color: white; }
+        .info-panel-content { background-color: #ffffff; padding: 1.5rem; border-radius: 0.75rem; border: 1px solid #e5e7eb; box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1); }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+    <header class="header">
+        <div class="header-section">Class 8 - Mensuration</div>
+        <div id="header-title" class="header-section center">Information</div>
+        <div class="header-section right">
+            <button id="back-btn" class="button" style="background-color: var(--secondary-gray);">Back</button>
+            <button id="toggle-view-btn" class="button" style="background-color: var(--primary-blue);">Activity</button>
+            <button id="difficulty-btn" class="button" style="background-color: var(--accent-green);">Mode: Easy</button>
+        </div>
+    </header>
+
+    <main class="main-content" id="main-content">
+        <section id="info-panel" class="panel">
+            <h2 class="text-3xl font-bold mb-6 text-center text-gray-800">Surface Area & Volume</h2>
+            <div class="space-y-4">
+                <div class="info-panel-content">
+                    <h3 class="text-xl font-semibold text-gray-900">What's the Difference?</h3>
+                    <p class="mt-2 text-gray-600">In mensuration, we measure geometric figures. Two key measurements for 3D shapes are surface area and volume.</p>
+                    <ul class="list-disc list-inside mt-3 space-y-2 text-gray-600">
+                        <li><b>Surface Area:</b> Think of it as the "wrapping paper." It's the total area of all the surfaces (or faces) of a 3D object. It's measured in square units (like cm²).</li>
+                        <li><b>Volume:</b> Think of it as the "space inside." It's the amount of space an object occupies. It's measured in cubic units (like cm³).</li>
+                    </ul>
+                </div>
+                <div class="info-panel-content">
+                    <h3 class="text-xl font-semibold text-gray-900">Common Formulas</h3>
+                    <p class="mt-2 text-gray-600">Here are the formulas for some common shapes (l=length, w=width, h=height, r=radius):</p>
+                    <p class="mt-2 text-gray-600"><b>Cube (side 's'):</b></p>
+                    <ul class="list-disc list-inside ml-4">
+                        <li>Volume = s³</li>
+                        <li>Surface Area = 6s²</li>
+                    </ul>
+                    <p class="mt-2 text-gray-600"><b>Cuboid:</b></p>
+                    <ul class="list-disc list-inside ml-4">
+                        <li>Volume = l × w × h</li>
+                        <li>Surface Area = 2(lw + lh + wh)</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="activity-panel" class="panel">
+            <div class="game-panel">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h2 id="level-title" class="text-2xl font-bold text-gray-900 text-left">Easy Challenge</h2>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-xs text-gray-500">SCORE</p>
+                        <p id="score" class="text-2xl font-bold text-gray-900">0</p>
+                    </div>
+                </div>
+                <div id="game-body">
+                    <p id="question-text" class="my-8">Calculate the Volume of a cube with side 3 cm.</p>
+                    <div id="options-container"></div>
+                    <p id="feedback-text" class="mt-4 font-semibold text-lg h-6"></p>
+                    <div id="level-complete-container" class="hidden text-center py-8">
+                        <h3 id="level-complete-title" class="text-3xl font-bold text-green-600">Level Complete!</h3>
+                        <p id="level-complete-score" class="text-xl mt-2 text-gray-700">Your score was 0.</p>
+                        <button id="next-level-btn" class="button primary-btn mt-6 text-lg py-3 px-8">Next Level</button>
+                        <button id="play-again-btn" class="button danger-btn mt-6 text-lg py-3 px-8 hidden" style="background-color: #f59e0b;">Play Again</button>
+                    </div>
+                </div>
+                <div class="mt-6 text-center">
+                    <button id="reset-game-btn" class="button" style="background-color: #e5e7eb; color: #374151;">Reset Game</button>
+                </div>
+            </div>
+        </section>
+    </main>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const mainContent = document.getElementById('main-content'),
+                  infoPanel = document.getElementById('info-panel'),
+                  activityPanel = document.getElementById('activity-panel'),
+                  headerTitle = document.getElementById('header-title'),
+                  toggleViewBtn = document.getElementById('toggle-view-btn'),
+                  difficultyBtn = document.getElementById('difficulty-btn'),
+                  backBtn = document.getElementById('back-btn'),
+                  levelTitle = document.getElementById('level-title'),
+                  scoreDisplay = document.getElementById('score'),
+                  questionText = document.getElementById('question-text'),
+                  optionsContainer = document.getElementById('options-container'),
+                  feedbackText = document.getElementById('feedback-text'),
+                  levelCompleteContainer = document.getElementById('level-complete-container'),
+                  levelCompleteTitle = document.getElementById('level-complete-title'),
+                  levelCompleteScore = document.getElementById('level-complete-score'),
+                  nextLevelBtn = document.getElementById('next-level-btn'),
+                  playAgainBtn = document.getElementById('play-again-btn'),
+                  resetGameBtn = document.getElementById('reset-game-btn');
+
+            const problems = {
+                easy: [
+                    { q: "Calculate the Volume of a cube with side 3 cm.", a: "27 cm³" },
+                    { q: "Calculate the Volume of a cuboid with l=2, w=3, h=4.", a: "24 cm³" },
+                    { q: "Calculate the Volume of a cube with side 5 cm.", a: "125 cm³" },
+                    { q: "Calculate the Volume of a cuboid with l=5, w=2, h=2.", a: "20 cm³" },
+                    { q: "Calculate the Volume of a cube with side 10 cm.", a: "1000 cm³" }
+                ],
+                medium: [
+                    { q: "Calculate the Surface Area of a cube with side 4 cm.", a: "96 cm²" },
+                    { q: "Calculate the Surface Area of a cuboid with l=2, w=3, h=1.", a: "22 cm²" },
+                    { q: "A box is 5m long, 3m wide, 2m high. Find its volume.", a: "30 m³" },
+                    { q: "Calculate the Surface Area of a cube with side 6 cm.", a: "216 cm²" },
+                    { q: "Calculate the Volume of a cylinder with r=2, h=5 (use π≈3.14).", a: "62.80 cm³" }
+                ],
+                hard: [
+                    { q: "A cube has a volume of 64 cm³. What is its side length?", a: "4 cm" },
+                    { q: "Calculate the Surface Area of a cuboid with l=5, w=4, h=3.", a: "94 cm²" },
+                    { q: "A cube's surface area is 150 cm². What is its volume?", a: "125 cm³" },
+                    { q: "A water tank is a cuboid 10m x 5m x 2m. How much water can it hold?", a: "100 m³" },
+                    { q: "Calculate the Surface Area of a cylinder with r=3, h=5 (use π≈3.14).", a: "150.72 cm²" }
+                ]
+            };
+            const levelOrder = ['easy', 'medium', 'hard'];
+            let currentLevel, score, isAnswered, currentQuestion, currentLevelProblems, showActivity = false;
+            
+            function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+            
+            function generateOptions(correctAnswer) {
+                let options = new Set([correctAnswer]);
+                const num = parseFloat(correctAnswer);
+                const unit = correctAnswer.split(' ').pop();
+                while(options.size < 4) {
+                    let wrongNum = num + (Math.random() > 0.5 ? 1 : -1) * (Math.floor(Math.random() * 10) + 1) * (num > 10 ? 5: 1);
+                    if (wrongNum > 0) {
+                       options.add(wrongNum.toFixed(correctAnswer.includes('.') ? 2 : 0) + " " + unit);
+                    }
+                }
+                return [...options].sort(() => Math.random() - 0.5);
+            }
+            
+            function initializeGame() { currentLevel = 'easy'; resetGame(); }
+            
+            function resetGame() { score = 0; resetLevel(); }
+            
+            function resetLevel() {
+                const originalProblems = problems[currentLevel];
+                currentLevelProblems = [...originalProblems].sort(() => Math.random() - 0.5);
+                updateScoreDisplay();
+                loadQuestion();
+            }
+            
+            function loadQuestion() {
+                if (currentLevelProblems.length === 0) {
+                    showLevelComplete();
+                    return;
+                }
+                currentQuestion = currentLevelProblems.pop();
+                isAnswered = false;
+                levelCompleteContainer.classList.add('hidden');
+                optionsContainer.classList.remove('hidden');
+                feedbackText.textContent = "";
+                questionText.style.display = 'block';
+                levelTitle.textContent = `${capitalize(currentLevel)} Challenge`;
+                questionText.textContent = `${currentQuestion.q}`;
+                optionsContainer.innerHTML = '';
+                generateOptions(currentQuestion.a).forEach(opt => {
+                    const optionBtn = document.createElement('button');
+                    optionBtn.className = 'option-btn';
+                    optionBtn.dataset.value = opt;
+                    optionBtn.textContent = opt;
+                    optionBtn.addEventListener('click', handleAnswerClick);
+                    optionsContainer.appendChild(optionBtn);
+                });
+            }
+            
+            function handleAnswerClick(e) {
+                if (isAnswered) return;
+                isAnswered = true;
+                document.querySelectorAll('.option-btn').forEach(btn => btn.disabled = true);
+                const clickedBtn = e.currentTarget;
+                const clickedValue = clickedBtn.dataset.value;
+                const correctValue = currentQuestion.a;
+                if (clickedValue === correctValue) {
+                    score += 10;
+                    updateScoreDisplay();
+                    clickedBtn.classList.add('correct');
+                    feedbackText.textContent = "Correct!";
+                    feedbackText.style.color = 'var(--accent-green)';
+                } else {
+                    clickedBtn.classList.add('incorrect');
+                    feedbackText.textContent = `Sorry! The correct answer was ${correctValue}.`;
+                    feedbackText.style.color = 'var(--accent-red)';
+                    const correctBtn = document.querySelector(`[data-value="${correctValue}"]`);
+                    if (correctBtn) correctBtn.classList.add('correct');
+                }
+                setTimeout(() => loadQuestion(), 2000);
+            }
+            
+            function showLevelComplete() {
+                optionsContainer.classList.add('hidden');
+                questionText.style.display = 'none';
+                feedbackText.textContent = '';
+                levelCompleteContainer.classList.remove('hidden');
+                levelCompleteTitle.textContent = `Level ${capitalize(currentLevel)} Complete!`;
+                levelCompleteScore.textContent = `Your score: ${score}.`;
+                const currentLevelIdx = levelOrder.indexOf(currentLevel);
+                if (currentLevelIdx < levelOrder.length - 1) {
+                    nextLevelBtn.classList.remove('hidden');
+                    playAgainBtn.classList.add('hidden');
+                } else {
+                    levelCompleteTitle.textContent = "Congratulations!";
+                    levelCompleteScore.textContent = `You've completed all challenges! Final score: ${score}`;
+                    nextLevelBtn.classList.add('hidden');
+                    playAgainBtn.classList.remove('hidden');
+                }
+            }
+            
+            function handleNextLevel() {
+                const currentLevelIdx = levelOrder.indexOf(currentLevel);
+                currentLevel = levelOrder[currentLevelIdx + 1];
+                difficultyBtn.textContent = `Mode: ${capitalize(currentLevel)}`;
+                resetLevel();
+            }
+            
+            function updateScoreDisplay() { scoreDisplay.textContent = score; }
+
+            function updateLayout() {
+                mainContent.classList.toggle('activity-visible', showActivity);
+                headerTitle.textContent = showActivity ? 'Activity' : 'Information';
+                toggleViewBtn.textContent = showActivity ? 'Information' : 'Activity';
+            }
+            
+            toggleViewBtn.addEventListener('click', () => {
+                showActivity = !showActivity;
+                updateLayout();
+            });
+            
+            difficultyBtn.addEventListener('click', () => {
+                const currentLevelIdx = levelOrder.indexOf(currentLevel);
+                currentLevel = levelOrder[(currentLevelIdx + 1) % levelOrder.length];
+                difficultyBtn.textContent = `Mode: ${capitalize(currentLevel)}`;
+                resetGame();
+            });
+
+            resetGameBtn.addEventListener('click', resetGame);
+            nextLevelBtn.addEventListener('click', handleNextLevel);
+            playAgainBtn.addEventListener('click', () => {
+                currentLevel = 'easy';
+                difficultyBtn.textContent = `Mode: Easy`;
+                resetGame();
+            });
+            
+            backBtn.addEventListener('click', () => {
+                window.history.back();
+            });
+            
+            initializeGame();
+            updateLayout();
+        });
+    </script>
+</body>
+</html>

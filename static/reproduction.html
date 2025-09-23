@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Reproduction Ranger</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --header-bg: #ffffff; --page-bg: #f0f9ff; --panel-bg: #ffffff; --border: #e0f2fe;
+            --text: #075985; --muted: #475569; --accent: #0ea5e9; --accent-dark: #0369a1;
+            --health-bar: #22c55e; --health-bg: #dcfce7;
+            --primary-blue: #007bff; --secondary-gray: #6c757d; --accent-red: #ef4444;
+        }
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif; background: var(--page-bg); margin: 0;
+            height: 100vh; overflow: hidden; color: var(--text); -webkit-font-smoothing: antialiased;
+        }
+        .page-container { display: flex; flex-direction: column; height: 100vh; }
+        .header {
+            position: fixed; top: 0; left: 0; width: 100%; height: 60px;
+            background-color: var(--header-bg); display: flex; align-items: center; justify-content: space-between;
+            padding: 0 24px; border-bottom: 1px solid var(--border); box-shadow: 0 2px 4px rgba(10, 89, 133, 0.05); z-index: 1000;
+        }
+        .header-section { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .header-section.center { text-align: center; font-size: 1.2em; font-weight: bold; }
+        .header-section.right { display: flex; justify-content: flex-end; }
+        .button {
+            padding: 8px 16px; margin-left: 10px; cursor: pointer;
+            border: none; border-radius: 6px; font-weight: 600; color: white;
+            transition: transform 0.1s, background-color 0.2s;
+        }
+        .button:active { transform: scale(0.95); }
+        .main-content { margin-top: 60px; padding: 24px; display: flex; gap: 24px; flex-grow: 1; overflow: hidden; justify-content: center; }
+        .panel {
+            background: var(--panel-bg); border-radius: 12px;
+            box-shadow: 0 6px 20px rgba(20, 83, 45, 0.08);
+            overflow: auto; height: calc(100vh - 108px); flex-shrink: 0;
+            transition: width 400ms ease-in-out, min-width 400ms ease-in-out, margin 400ms ease-in-out;
+        }
+        #info-panel {
+            width: 100%;
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 24px 32px;
+        }
+        #activity-panel { display: none; flex-direction: column; flex-grow: 1; min-width: 400px; padding: 0; }
+        .main-content.activity-visible { justify-content: flex-start; }
+        .main-content.activity-visible #info-panel { width: 340px; min-width: 340px; margin: 0; }
+        .main-content.activity-visible #activity-panel { display: flex; }
+
+        .activity-area {
+            display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+            gap: 16px; padding: 22px; flex-grow: 1; overflow: auto; position: relative;
+        }
+        .bottom-control-bar {
+            height: 60px; display: flex; justify-content: flex-end; align-items: center;
+            padding: 0 20px; background-color: #f8fafc; border-top: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+        .reset-button { background-color: var(--accent-red); }
+        
+        .hud {
+            display: flex; gap: 20px; width: 100%; justify-content: space-around;
+            background: #fff; padding: 10px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        .hud-item { text-align: center; font-weight: 700; font-size: 1.1rem; }
+        .diversity-bar { width: 150px; height: 15px; background: #fecaca; border-radius: 10px; overflow: hidden; border: 1px solid #fca5a5;}
+        .diversity-bar-fill { height: 100%; background: var(--health-bar); transition: width 0.3s; }
+        .game-board { width: 100%; flex-grow: 1; display: flex; gap: 20px; }
+        .island-view {
+            flex: 1; background: linear-gradient(to bottom, #7dd3fc, #0ea5e9);
+            border-radius: 12px; position: relative; overflow: hidden;
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.2);
+        }
+        .island-view__ground {
+            position: absolute; bottom: 0; width: 100%; height: 30%;
+            background: #a3e636;
+            transition: background-color 1s ease-in-out;
+        }
+        .island-animal {
+            position: absolute; font-size: 2rem;
+            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .player-deck { width: 320px; display: flex; flex-direction: column; gap: 15px; }
+        .event-card, .animal-card {
+            background: #fff; border-radius: 12px; padding: 15px; text-align: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1); border: 2px solid var(--border);
+            animation: fadeIn 0.5s;
+        }
+        .event-card { border-color: var(--accent); }
+        .card__title { font-weight: 800; font-size: 1.2rem; margin: 0 0 5px 0; }
+        .card__icon { font-size: 4rem; margin: 10px 0; }
+        .card__name { font-weight: 800; font-size: 1.5rem; }
+        .card__hint { font-size: 0.9rem; color: var(--muted); min-height: 40px; }
+        
+        .choice-buttons { display: flex; gap: 10px; margin-top: 10px; }
+        .choice-btn {
+            width: 100%; padding: 12px; border-radius: 8px; border: 2px solid var(--border);
+            background: var(--accent-light); color: var(--accent-dark); font-weight: 700;
+            cursor: pointer; transition: all 0.2s; font-size: 1rem;
+        }
+        .choice-btn:hover { background: #dbeafe; border-color: var(--accent); }
+        .choice-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        #minigame-overlay {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.6); z-index: 100; backdrop-filter: blur(5px);
+            display: flex; align-items: center; justify-content: center;
+            animation: fadeIn 0.3s;
+        }
+        .minigame-box {
+            background: #fff; padding: 20px; border-radius: 12px; text-align: center;
+            width: 90%; max-width: 400px;
+        }
+        
+        .feedback-box {
+            padding: 10px; border-radius: 8px; margin-top: 15px;
+            animation: fadeIn 0.3s; font-weight: 700;
+        }
+        .feedback-box--correct { background-color: #dcfce7; color: #15803d; }
+        .feedback-box--incorrect { background-color: #fee2e2; color: #dc2626; }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        @keyframes popIn { from { opacity: 0; transform: scale(0.5); } to { opacity: 1; transform: scale(1); } }
+        
+        @media (max-width:920px){ 
+            .main-content.activity-visible .info-panel{display:none} 
+            .main-content.activity-visible .activity-panel{min-width:100%} 
+            .main-content{padding:12px} 
+            .game-board{flex-direction:column;} 
+            .island-view { height: 200px; flex-grow: 0; } 
+            .player-deck{width: 100%;} 
+        }
+    </style>
+</head>
+<body class="page-container">
+    <header class="header">
+        <div class="header-section">Biology - Reproduction in Animals</div>
+        <div id="header-title" class="header-section center">Information</div>
+        <div class="header-section right">
+            <button id="back-btn" class="button" style="background-color: var(--secondary-gray);">Back</button>
+            <button id="toggle-view-btn" class="button" style="background-color: var(--primary-blue);">Activity</button>
+            <button id="difficulty-btn" class="button" style="background-color: var(--accent-dark);">Mode: Easy</button>
+        </div>
+    </header>
+    
+    <main class="main-content" id="main-content">
+        <section id="info-panel" class="panel info-panel">
+            <h1 style="margin:0 0 8px 0; color:var(--accent-dark);">The Genesis Island</h1>
+            <p style="color:var(--muted)">As a Reproduction Ranger, your mission is to populate a new island. To succeed, you must understand the two main strategies animals use to reproduce.</p>
+            
+            <h3 style="color: #075985; margin-top: 20px;">🧬 Asexual Reproduction</h3>
+            <p style="color:var(--muted)">One parent creates genetically identical offspring. It's **fast** and creates large populations, but offers **low genetic diversity**.</p>
+            
+            <h3 style="margin-top:18px; color: #075985;">🧬 Sexual Reproduction</h3>
+            <p style="color:var(--muted)">Two parents create unique offspring. It's **slower**, but the **high genetic diversity** makes the ecosystem resilient to challenges like diseases.</p>
+            
+            <p style="color:var(--muted); margin-top: 20px;">In this game, you have 12 years to grow the island's population while keeping the ecosystem healthy. Balance your choices wisely!</p>
+        </section>
+        
+        <section id="activity-panel" class="panel activity-panel">
+            <div class="activity-area" id="game-area">
+                <p class="card__hint" style="text-align: center;">Click the 'Mode' button to select a difficulty and start your mission!</p>
+            </div>
+            <footer class="bottom-control-bar">
+                <button id="reset-btn" class="button reset-button">Reset Game</button>
+            </footer>
+        </section>
+    </main>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // ##################################################
+    // # GAME DATA
+    // ##################################################
+    const gameData = {
+        easy: [
+            { name: 'Amoeba', symbol: '🦠', type: 'Asexual', method: 'Binary Fission', hint: 'This single-celled organism splits in two.', points: 150, diversity: 5 },
+            { name: 'Frog', symbol: '🐸', type: 'Sexual', method: 'External Fertilization', hint: 'Lays eggs in water for fertilization.', points: 100, diversity: 20 }
+        ],
+        medium: [
+            { name: 'Hydra', symbol: '🦑', type: 'Asexual', method: 'Budding', hint: 'A smaller version grows off the parent\'s body.', points: 120, diversity: 5 },
+            { name: 'Bird', symbol: '🐦', type: 'Sexual', method: 'Internal Fertilization', hint: 'Lays a hard-shelled egg after fertilization.', points: 80, diversity: 25 },
+            { name: 'Frog', symbol: '🐸', type: 'Sexual', method: 'External Fertilization', hint: 'Lays eggs in water for fertilization.', points: 100, diversity: 20 },
+        ],
+        hard: [
+            { name: 'Starfish', symbol: '⭐', type: 'Asexual', method: 'Fragmentation', hint: 'Can regrow a whole body from a single arm.', points: 100, diversity: 5 },
+            { name: 'Fish', symbol: '🐠', type: 'Sexual', method: 'External Fertilization', hint: 'Releases thousands of eggs into the water.', points: 110, diversity: 15 },
+            { name: 'Human', symbol: '🧑', type: 'Sexual', method: 'Internal Fertilization', hint: 'Gives birth to live young.', points: 50, diversity: 30 }
+        ]
+    };
+    
+    const events = [
+        { name: 'Mild Year', effect: 'No special effect.', diversityChange: 5 },
+        { name: 'Food Surplus', effect: 'Sexual reproduction yields +50 population.', diversityChange: 0 },
+        { name: 'Drought', effect: 'External Fertilization is less successful (-50 population).', diversityChange: -5 },
+        { name: 'Disease Outbreak', effect: 'Ecosystem takes damage! Requires 40 Diversity to fully resist.', diversityChange: -20 },
+    ];
+    
+    // ##################################################
+    // # STATE & DOM REFERENCES
+    // ##################################################
+    const difficulties = ['Easy', 'Medium', 'Hard'];
+    let showActivity = false;
+    let difficultyIdx = 0;
+    let gameInstance = null;
+    
+    const mainContent = document.getElementById('main-content'),
+          gameArea = document.getElementById('game-area'),
+          headerTitle = document.getElementById('header-title'),
+          toggleViewBtn = document.getElementById('toggle-view-btn'),
+          difficultyBtn = document.getElementById('difficulty-btn'),
+          backBtn = document.getElementById('back-btn'),
+          resetBtn = document.getElementById('reset-btn');
+    
+    // ##########################################
+    // # CORE LOGIC & LAYOUT
+    // ##########################################
+    function updateLayout() {
+        mainContent.classList.toggle('activity-visible', showActivity);
+        headerTitle.textContent = showActivity ? "Activity" : 'Information';
+        toggleViewBtn.textContent = showActivity ? 'Information' : 'Activity';
+    }
+    
+    function initGame(difficulty) {
+        gameInstance = new Game(difficulty);
+    }
+    
+    // ##################################################
+    // # GAME CLASS
+    // ##################################################
+    class Game {
+        constructor(difficulty) {
+            this.difficulty = difficulty;
+            this.deck = this.shuffleArray([...gameData[difficulty]]);
+            this.round = 1;
+            this.maxRounds = 12;
+            this.population = 0;
+            this.diversity = 50;
+            this.islandAnimals = [];
+            this.currentEvent = null;
+            this.currentAnimal = null;
+            this.nextTurn();
+        }
+        
+        nextTurn() {
+            if (this.round > this.maxRounds || this.diversity <= 0) {
+                this.endGame(); 
+                return;
+            }
+            
+            this.currentEvent = events[Math.floor(Math.random() * events.length)];
+            
+            if (this.currentEvent.name === 'Disease Outbreak' && this.diversity < 40) {
+                this.diversity += this.currentEvent.diversityChange;
+            } else if (this.currentEvent.name !== 'Disease Outbreak') {
+                this.diversity = Math.min(100, this.diversity + this.currentEvent.diversityChange);
+            }
+            
+            this.currentAnimal = this.deck.pop();
+            if (!this.currentAnimal) {
+                this.deck = this.shuffleArray([...gameData[this.difficulty]]);
+                this.currentAnimal = this.deck.pop();
+            }
+            this.renderTurnUI();
+        }
+        
+        renderTurnUI() {
+            gameArea.innerHTML = `
+                <div class="hud">
+                    <div class="hud-item">Year: <span>${this.round}/${this.maxRounds}</span></div>
+                    <div class="hud-item">Population: <span>${this.population}</span></div>
+                    <div class="hud-item">
+                        <span>Genetic Diversity 🧬</span>
+                        <div class="diversity-bar">
+                            <div class="diversity-bar-fill" style="width: ${Math.max(0, this.diversity)}%"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="game-board">
+                    <div class="island-view" id="island-view">
+                        <div class="island-view__ground"></div>
+                    </div>
+                    <div class="player-deck">
+                        <div class="event-card">
+                            <div class="card__title">${this.currentEvent.name}</div>
+                            <p>${this.currentEvent.effect}</p>
+                        </div>
+                        <div class="animal-card">
+                            <div class="card__icon">${this.currentAnimal.symbol}</div>
+                            <div class="card__name">${this.currentAnimal.name}</div>
+                            <p class="card__hint">${this.currentAnimal.hint}</p>
+                            <div class="choice-buttons">
+                                <button class="choice-btn" data-choice="Asexual">Asexual</button>
+                                <button class="choice-btn" data-choice="Sexual">Sexual</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+            
+            this.updateIslandVisuals();
+            
+            document.querySelectorAll('.choice-btn').forEach(btn => 
+                btn.addEventListener('click', () => this.handleChoice(btn.dataset.choice))
+            );
+            
+            headerTitle.textContent = `Year ${this.round}: ${this.currentAnimal.name}`;
+        }
+        
+        handleChoice(choice) {
+            document.querySelectorAll('.choice-btn').forEach(b => b.disabled = true);
+            const animal = this.currentAnimal;
+            
+            const isCorrect = choice === animal.type;
+            let feedbackText = '';
+            let pointsGained = 0;
+
+            if (isCorrect) {
+                pointsGained = animal.points;
+                
+                if (this.currentEvent.name === 'Food Surplus' && animal.type === 'Sexual') {
+                    pointsGained += 50;
+                }
+                if (this.currentEvent.name === 'Drought' && animal.method === 'External Fertilization') {
+                    pointsGained = Math.max(0, pointsGained - 50);
+                }
+                
+                this.population += pointsGained;
+                this.diversity = Math.min(100, this.diversity + animal.diversity);
+                this.islandAnimals.push(animal.symbol);
+                feedbackText = `✅ Correct! Population: +${pointsGained}. Diversity: +${animal.diversity}%.`;
+            } else {
+                const diversityPenalty = 25;
+                this.diversity = Math.max(0, this.diversity - diversityPenalty);
+                feedbackText = `❌ Incorrect! ${animal.name} uses ${animal.type}. Diversity: -${diversityPenalty}%.`;
+            }
+            
+            this.showFeedback(feedbackText, isCorrect);
+            this.round++;
+            setTimeout(() => this.nextTurn(), 2500);
+        }
+        
+        endGame() {
+            const didWin = this.diversity > 0;
+            gameArea.innerHTML = `
+                <div class="screen-overlay" style="display:flex; justify-content:center; align-items:center; height: 100%;">
+                    <div class="animal-card" style="width: 400px; padding: 30px;">
+                        <h2 style="color: ${didWin ? 'var(--accent-dark)' : '#ef4444'}">
+                            ${didWin ? 'Island Flourishing!' : 'Ecosystem Collapsed!'}
+                        </h2>
+                        <p style="font-size: 1.5rem;">Final Population: <strong>${this.population}</strong></p>
+                        <p style="font-size: 1.2rem;">Final Diversity: <strong>${this.diversity}%</strong></p>
+                        <button class="button" id="play-again-btn" style="margin-top: 20px; background-color: var(--accent-dark);">Play Again</button>
+                    </div>
+                </div>`;
+            
+            document.getElementById('play-again-btn').addEventListener('click', () => initGame(this.difficulty));
+            headerTitle.textContent = "Game Over";
+        }
+        
+        showFeedback(text, isCorrect) {
+            const feedbackEl = document.createElement('div');
+            feedbackEl.className = `feedback-box ${isCorrect ? 'feedback-box--correct' : 'feedback-box--incorrect'}`;
+            feedbackEl.innerHTML = text;
+            
+            const playerDeck = document.querySelector('.player-deck');
+            if (playerDeck) {
+                playerDeck.appendChild(feedbackEl);
+                setTimeout(() => feedbackEl.remove(), 2400);
+            }
+        }
+        
+        updateIslandVisuals() {
+            const islandView = document.getElementById('island-view');
+            if (!islandView) return;
+            
+            const ground = islandView.querySelector('.island-view__ground');
+            islandView.querySelectorAll('.island-animal').forEach(el => el.remove());
+            
+            const brown = [161, 122, 85], green = [76, 175, 80];
+            const percent = Math.max(0, this.diversity) / 100;
+            const r = Math.round(brown[0] + (green[0] - brown[0]) * percent);
+            const g = Math.round(brown[1] + (green[1] - brown[1]) * percent);
+            const b = Math.round(brown[2] + (green[2] - brown[2]) * percent);
+            
+            if (ground) ground.style.backgroundColor = `rgb(${r},${g},${b})`;
+            
+            this.islandAnimals.forEach((symbol) => {
+                const el = document.createElement('div');
+                el.className = 'island-animal';
+                el.textContent = symbol;
+                el.style.left = `${10 + (Math.random() * 80)}%`;
+                el.style.bottom = `${25 + (Math.random() * 65)}%`;
+                islandView.appendChild(el);
+            });
+        }
+        
+        shuffleArray(arr) { 
+            for (let i = arr.length - 1; i > 0; i--) { 
+                const j = Math.floor(Math.random() * (i + 1)); 
+                [arr[i], arr[j]] = [arr[j], arr[i]]; 
+            } 
+            return arr; 
+        }
+    }
+    
+    // ##################################################
+    // # EVENT LISTENERS
+    // ##################################################
+    toggleViewBtn.addEventListener('click', () => {
+        showActivity = !showActivity;
+        updateLayout();
+        if (showActivity && !gameInstance) {
+            initGame(difficulties[difficultyIdx].toLowerCase());
+        }
+    });
+    
+    difficultyBtn.addEventListener('click', () => {
+        difficultyIdx = (difficultyIdx + 1) % difficulties.length;
+        const newDifficulty = difficulties[difficultyIdx];
+        difficultyBtn.textContent = `Mode: ${newDifficulty}`;
+        if (showActivity) {
+            initGame(newDifficulty.toLowerCase());
+        }
+    });
+    
+    resetBtn.addEventListener('click', () => { 
+        if (showActivity) {
+            initGame(difficulties[difficultyIdx].toLowerCase());
+        }
+    });
+    
+    backBtn.addEventListener('click', () => {
+        window.history.back();
+    });
+    
+    // Initialize layout
+    updateLayout();
+});
+</script>
+</body>
+</html>

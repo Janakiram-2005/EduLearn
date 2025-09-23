@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Number Systems Challenge</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* --- CORE TEMPLATE & GLOBAL STYLES (Light Theme) --- */
+        :root {
+            --header-bg: #ffffff;
+            --page-bg: #f4f7f9;
+            --panel-bg: #ffffff;
+            --border-color: #e0e0e0;
+            --text-dark: #1e293b;
+            --text-light: #475569;
+            --accent-blue-strong: #3b82f6;
+            --accent-green: #22c55e;
+            --accent-red: #ef4444;
+            --primary-blue: #007bff;
+            --secondary-gray: #6c757d;
+        }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--page-bg);
+            color: var(--text-dark);
+            margin: 0;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .page-container { display: flex; flex-direction: column; height: 100vh; }
+        .header {
+            position: fixed; top: 0; left: 0; width: 100%; height: 60px;
+            background-color: var(--header-bg);
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 24px;
+            border-bottom: 1px solid var(--border-color);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            z-index: 1000;
+            box-sizing: border-box;
+        }
+        .header-section { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .header-section.center { text-align: center; font-size: 1.2em; font-weight: bold; }
+        .header-section.right { display: flex; justify-content: flex-end; }
+        .button {
+            padding: 8px 16px; margin-left: 10px; cursor: pointer;
+            border: none; border-radius: 6px; font-weight: 600; color: white;
+            transition: transform 0.1s;
+        }
+        .button:active { transform: scale(0.95); }
+        .main-content {
+            margin-top: 60px; padding: 24px; display: flex;
+            flex-grow: 1; overflow: hidden; box-sizing: border-box;
+            gap: 24px; justify-content: center;
+        }
+        .panel {
+            background-color: var(--panel-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            border: 1px solid var(--border-color);
+            box-sizing: border-box;
+            overflow-y: auto; padding: 24px 32px;
+            height: calc(100vh - 108px);
+        }
+        #info-panel { flex-shrink: 0; transition: width 400ms ease-in-out, margin 400ms ease-in-out; }
+        #activity-panel { display: none; flex-grow: 1; padding: 0; flex-direction: column; }
+        .main-content.activity-visible { justify-content: flex-start; }
+        .main-content.activity-visible #info-panel { width: 340px; min-width: 340px; }
+        .main-content.activity-visible #activity-panel { display: flex; }
+
+        /* --- ACTIVITY-SPECIFIC STYLES --- */
+        .activity-area { flex-grow: 1; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; padding: 24px; }
+        .bottom-control-bar { height: 60px; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; background-color: var(--page-bg); border-top: 1px solid var(--border-color); flex-shrink: 0; }
+        .status-bar { font-weight: bold; color: var(--text-dark); }
+        .reset-button { padding: 8px 16px; cursor: pointer; background-color: var(--accent-red); color: white; border: none; border-radius: 6px; font-weight: 600; }
+        .game-header { display: flex; justify-content: space-between; align-items: flex-start; width: 100%; }
+        
+        /* Quiz Styles */
+        .stat-box { padding: 0.5rem 1.25rem; border-radius: 8px; text-align: center; }
+        .stat-box-label { font-size: 0.75rem; font-weight: 500; opacity: 0.8; }
+        .stat-box-value { font-size: 1.5rem; font-weight: 700; }
+        #score-box { background-color: #dbeafe; color: #1e40af; }
+        #question-text { font-size: 1.5rem; font-weight: 600; color: var(--text-dark); margin: 1.5rem 0; }
+        #options-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; width: 100%; max-width: 600px; }
+        .option-btn { background-color: #eef2ff; color: var(--text-dark); padding: 1.25rem; font-size: 1.25rem; font-weight: 600; border-radius: 0.75rem; transition: all 0.2s ease; border: 2px solid #c7d2fe; cursor: pointer; }
+        .option-btn:hover:not(:disabled) { transform: scale(1.05); }
+        .option-btn:disabled { cursor: not-allowed; }
+        .option-btn.correct { background-color: var(--accent-green); color: white; border-color: var(--accent-green); }
+        .option-btn.incorrect { background-color: var(--accent-red); color: white; border-color: var(--accent-red); }
+        .feedback-text { margin-top: 1rem; font-weight: 600; font-size: 1.1rem; min-height: 24px; }
+        
+        /* Race to Base Styles */
+        .game-board { display: flex; flex-direction: column; gap: 20px; align-items: center; width: 100%; max-width: 600px; padding: 20px; border-radius: 12px; background-color: #e2e8f0; }
+        .board-track { display: flex; flex-direction: row; justify-content: space-between; width: 100%; padding: 10px; border-radius: 8px; background-color: #f1f5f9; position: relative; }
+        .track-square { width: 40px; height: 40px; background-color: #cbd5e1; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #475569; }
+        .player-avatar { font-size: 2em; position: absolute; bottom: 5px; left: 5px; transition: all 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55); }
+        .modal-input { width: 100%; padding: 10px; font-size: 1.2rem; border: 2px solid #cbd5e1; border-radius: 8px; margin-top: 1rem; color: var(--text-dark); }
+        .avatar-selection { display: flex; gap: 20px; justify-content: center; margin-top: 20px; }
+        .avatar-option { font-size: 3rem; cursor: pointer; padding: 10px; border: 2px solid transparent; border-radius: 8px; transition: all 0.2s; }
+        .avatar-option.selected { border-color: var(--primary-blue); background-color: #e0f2fe; }
+    </style>
+</head>
+<body class="page-container">
+    
+    <header class="header">
+        <div class="header-section">Class 7 - Number Systems</div>
+        <div id="header-title" class="header-section center">Information</div>
+        <div class="header-section right">
+            <button id="back-btn" class="button" style="background-color: var(--secondary-gray);">Back</button>
+            <button id="toggle-view-btn" class="button" style="background-color: var(--primary-blue);">Activity</button>
+            <button id="difficulty-btn" class="button" style="background-color: var(--accent-blue-strong);">Mode: Easy Quiz</button>
+        </div>
+    </header>
+
+    <main class="main-content" id="main-content">
+        <section id="info-panel" class="panel">
+            <h1 class="text-3xl font-bold mb-4" style="color: var(--accent-blue-strong);">Number Systems</h1>
+            <div style="display:flex; flex-direction:column; gap:1.5rem;">
+                <div>
+                    <h2 class="text-xl font-semibold">The Decimal System (Base-10)</h2>
+                    <p class="mt-2 text-gray-600">The system we use every day. It has ten digits (0-9). The value of each digit depends on its <b>place value</b> (ones, tens, hundreds, etc.), which is a power of 10.</p>
+                </div>
+                <div>
+                    <h2 class="text-xl font-semibold">The Binary System (Base-2)</h2>
+                    <p class="mt-2 text-gray-600">Computers use binary, which only has two digits: 0 and 1. The value of each digit is a power of 2. These digits are called <b>bits</b>.</p>
+                </div>
+                <div>
+                    <h2 class="text-xl font-semibold">Converting Binary to Decimal</h2>
+                    <p class="mt-2 text-gray-600">To convert a binary number like <b>1011</b> to decimal, you add the place values for each '1': (1 × 8) + (0 × 4) + (1 × 2) + (1 × 1) = 11.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="activity-panel" class="panel">
+            <div class="activity-area" id="activity-area">
+                </div>
+            <footer class="bottom-control-bar">
+                <div id="status-bar" class="status-bar">Select a mode to begin!</div>
+                <button id="reset-btn" class="reset-button">Reset</button>
+            </footer>
+        </section>
+    </main>
+
+    <script src="./neutralino.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            try { Neutralino.init(); } catch (e) { console.error("Neutralino not found."); }
+            
+            const quizProblems = {
+                easy: [
+                    { q: "What is binary 101 in decimal?", o: [3, 5, 6, 7], a: 5 }, 
+                    { q: "What is the base of the Decimal system?", o: [2, 8, 10, 16], a: 10 }, 
+                    { q: "What is decimal 4 in binary?", o: [10, 11, 100, 101], a: 100 },
+                    { q: "Which two digits are used in the Binary system?", o: ["0 & 1", "1 & 2", "A & B", "0 & 10"], a: "0 & 1" },
+                    { q: "What is binary 11 in decimal?", o: [2, 3, 4, 11], a: 3 },
+                    { q: "What is decimal 10 in binary?", o: [1010, 1100, 1001, 1011], a: 1010 },
+                    { q: "How many digits does the Octal (base-8) system use?", o: [2, 8, 10, 16], a: 8 }
+                ],
+                hard: [
+                    { q: "What is Hex '1A' in decimal?", o: [17, 26, 30, 11], a: 26 }, 
+                    { q: "What is binary '101' + '110'?", o: [1111, 1001, 1011, 1101], a: 1011 }, 
+                    { q: "Convert decimal 42 to hexadecimal.", o: ['2A', '2B', '3A', 'A2'], a: '2A' },
+                    { q: "What is octal 77 in decimal?", o: [63, 77, 56, 64], a: 63 },
+                    { q: "What is binary 110110 in hexadecimal?", o: ['35', '36', 'D8', '66'], a: '36' },
+                    { q: "Convert decimal 100 to octal.", o: [124, 144, 100, 160], a: 144 },
+                    { q: "What is Hex 'FF' in decimal?", o: [15, 16, 255, 256], a: 255 }
+                ]
+            };
+            const difficulties = ['Easy Quiz', 'Race to Base', 'Hard Quiz'];
+            
+            let showActivity = false, score = 0, difficultyIdx = 0, isAnswered;
+            let currentProblemSet = [], raceGameState = {};
+
+            const mainContent = document.getElementById('main-content');
+            const infoPanel = document.getElementById('info-panel');
+            const activityArea = document.getElementById('activity-area');
+            const headerTitle = document.getElementById('header-title');
+            const toggleViewBtn = document.getElementById('toggle-view-btn');
+            const difficultyBtn = document.getElementById('difficulty-btn');
+            const backBtn = document.getElementById('back-btn');
+            const resetBtn = document.getElementById('reset-btn');
+            const statusBar = document.getElementById('status-bar');
+
+            function updateLayout() {
+                if (showActivity) mainContent.classList.add('activity-visible');
+                else mainContent.classList.remove('activity-visible');
+                infoPanel.style.width = showActivity ? '340px' : `${Math.min(700, window.innerWidth - 48)}px`;
+                headerTitle.textContent = showActivity ? 'Activity' : 'Information';
+                toggleViewBtn.textContent = showActivity ? 'Information' : 'Activity';
+            }
+
+            function startGame() {
+                const mode = difficulties[difficultyIdx];
+                statusBar.textContent = `Current Mode: ${mode}`;
+                if (mode === 'Race to Base') {
+                    startRaceToBase();
+                } else {
+                    startQuiz();
+                }
+            }
+
+            // --- QUIZ LOGIC ---
+            function startQuiz() {
+                score = 0;
+                const difficulty = difficulties[difficultyIdx].split(' ')[0].toLowerCase();
+                const originalProblems = quizProblems[difficulty];
+                // MODIFIED: Select 5 random questions
+                currentProblemSet = [...originalProblems].sort(() => 0.5 - Math.random()).slice(0, 5);
+                loadQuizProblem(0);
+            }
+
+            function loadQuizProblem(problemIndex) {
+                if (problemIndex >= currentProblemSet.length) {
+                    activityArea.innerHTML = `<div class="text-center"><h3>Quiz Complete!</h3><p>Your final score is ${score}.</p></div>`;
+                    return;
+                }
+                const problem = currentProblemSet[problemIndex];
+                activityArea.innerHTML = `
+                    <div style="width:100%; max-width:700px;" class="text-center">
+                        <div class="game-header">
+                            <h2 class="text-2xl font-bold text-left">${difficulties[difficultyIdx]}</h2>
+                            <div id="score-box" class="stat-box"><div class="stat-box-label">SCORE</div><div id="score" class="stat-box-value">${score}</div></div>
+                        </div>
+                        <p id="question-text">${problem.q}</p>
+                        <div id="options-container"></div>
+                        <p id="feedback-text" class="feedback-text"></p>
+                    </div>`;
+
+                const optionsContainer = document.getElementById('options-container');
+                problem.o.forEach(opt => {
+                    const btn = document.createElement('button');
+                    btn.className = 'option-btn';
+                    btn.dataset.value = opt;
+                    btn.textContent = opt;
+                    btn.onclick = (e) => handleQuizAnswer(e, problem, problemIndex);
+                    optionsContainer.appendChild(btn);
+                });
+            }
+            
+            function handleQuizAnswer(e, problem, problemIndex) {
+                if (isAnswered) return;
+                isAnswered = true;
+                const clickedValue = e.currentTarget.dataset.value;
+                const correctValue = problem.a.toString();
+                if (clickedValue === correctValue) {
+                    score += 10;
+                    e.currentTarget.classList.add('correct');
+                    document.getElementById('feedback-text').textContent = "Correct!";
+                    document.getElementById('feedback-text').style.color = 'var(--accent-green)';
+                } else {
+                    e.currentTarget.classList.add('incorrect');
+                    document.getElementById('feedback-text').textContent = `The correct answer was ${correctValue}.`;
+                    document.getElementById('feedback-text').style.color = 'var(--accent-red)';
+                    const correctBtn = document.querySelector(`[data-value="${correctValue}"]`);
+                    if(correctBtn) correctBtn.classList.add('correct');
+                }
+                document.getElementById('score').textContent = score;
+                setTimeout(() => { isAnswered = false; loadQuizProblem(problemIndex + 1); }, 2000);
+            }
+
+            // --- RACE TO BASE LOGIC ---
+            function startRaceToBase() {
+                activityArea.innerHTML = `
+                    <div id="welcome-screen" class="text-center">
+                        <h3 class="text-2xl font-semibold mb-4">Choose Your Avatar</h3>
+                        <div id="avatar-selector" class="avatar-selection">
+                            <span class="avatar-option" data-avatar="🚀">🚀</span>
+                            <span class="avatar-option" data-avatar="🤖">🤖</span>
+                            <span class="avatar-option" data-avatar="🏎️">🏎️</span>
+                        </div>
+                        <button id="start-race-btn" class="button mt-8" style="background-color: var(--primary-blue);" disabled>Start Race</button>
+                    </div>`;
+                document.getElementById('avatar-selector').addEventListener('click', selectAvatar);
+                document.getElementById('start-race-btn').addEventListener('click', launchRace);
+            }
+
+            function selectAvatar(e) {
+                if (e.target.classList.contains('avatar-option')) {
+                    document.querySelectorAll('.avatar-option').forEach(el => el.classList.remove('selected'));
+                    e.target.classList.add('selected');
+                    raceGameState.selectedAvatar = e.target.textContent;
+                    document.getElementById('start-race-btn').disabled = false;
+                }
+            }
+            
+            function launchRace() {
+                if (raceGameState.timerInterval) clearInterval(raceGameState.timerInterval);
+                raceGameState = { level: 0, position: 0, score: 0, timer: 120, selectedAvatar: raceGameState.selectedAvatar };
+                renderRaceScreen();
+                startRaceTimer();
+                startRaceLevel();
+            }
+
+            function renderRaceScreen() {
+                activityArea.innerHTML = `
+                    <div class="w-full flex flex-col items-center gap-6">
+                        <div class="game-board">
+                            <div id="level-title" class="text-xl font-bold text-gray-700"></div>
+                            <div id="track" class="board-track"></div>
+                            <div id="avatar-token" class="player-avatar">${raceGameState.selectedAvatar}</div>
+                        </div>
+                        <div class="w-full text-center">
+                            <div class="text-2xl font-bold" id="timer-display"></div>
+                            <div class="text-lg font-semibold" id="score-display"></div>
+                        </div>
+                        <div class="w-full max-w-lg text-center mt-2">
+                            <p id="challenge-prompt" class="text-lg font-medium"></p>
+                            <form id="challenge-form" class="flex items-center justify-center gap-2 mt-2">
+                                <input type="text" id="challenge-input" class="modal-input !mt-0" placeholder="Answer" required autocomplete="off">
+                                <button type="submit" class="button" style="background-color:var(--primary-blue)">Go!</button>
+                            </form>
+                            <p id="feedback-message" class="mt-2 font-bold"></p>
+                        </div>
+                    </div>`;
+                
+                const trackEl = document.getElementById('track');
+                for (let i = 0; i < 10; i++) {
+                    const square = document.createElement('div');
+                    square.className = 'track-square';
+                    square.textContent = i === 9 ? '🏁' : i;
+                    trackEl.appendChild(square);
+                }
+                document.getElementById('challenge-form').addEventListener('submit', handleRaceChallengeSubmit);
+            }
+
+            function startRaceTimer() {
+                if (raceGameState.timerInterval) clearInterval(raceGameState.timerInterval);
+                raceGameState.timerInterval = setInterval(() => {
+                    raceGameState.timer--;
+                    updateRaceUI();
+                    if (raceGameState.timer <= 0) {
+                        clearInterval(raceGameState.timerInterval);
+                        endRace("Game Over! You ran out of time.");
+                    }
+                }, 1000);
+            }
+
+            function startRaceLevel() {
+                const raceLevels = ['Binary Bay', 'Octal Oasis', 'Hexa Heights'];
+                if (raceGameState.level >= raceLevels.length) {
+                    endRace(); return;
+                }
+                document.getElementById('level-title').textContent = `Level ${raceGameState.level + 1}: ${raceLevels[raceGameState.level]}`;
+                raceGameState.position = 0;
+                moveAvatar();
+                generateRaceChallenge();
+            }
+
+            function updateRaceUI() {
+                if(document.getElementById('score-display')) document.getElementById('score-display').textContent = `Score: ${raceGameState.score}`;
+                if(document.getElementById('timer-display')) document.getElementById('timer-display').textContent = `Time: ${raceGameState.timer}s`;
+            }
+
+            function moveAvatar() {
+                const trackEl = document.getElementById('track');
+                if(!trackEl) return;
+                const squareWidth = trackEl.offsetWidth / 10;
+                document.getElementById('avatar-token').style.transform = `translateX(${squareWidth * raceGameState.position}px)`;
+            }
+
+            function generateRaceChallenge() {
+                let question, answer, num;
+                switch (raceGameState.level) {
+                    case 0: num = Math.floor(Math.random() * 100) + 1; question = `Convert <b>${num}</b> to binary.`; answer = num.toString(2); break;
+                    case 1: num = Math.floor(Math.random() * 100) + 1; question = `Convert <b>${num}</b> to octal.`; answer = num.toString(8); break;
+                    case 2: num = Math.floor(Math.random() * 100) + 1; question = `Convert <b>${num}</b> to hexadecimal.`; answer = num.toString(16); break;
+                }
+                document.getElementById('challenge-prompt').innerHTML = question;
+                document.getElementById('challenge-form').dataset.answer = answer.toLowerCase();
+                document.getElementById('challenge-input').value = '';
+                document.getElementById('feedback-message').textContent = '';
+            }
+
+            function handleRaceChallengeSubmit(e) {
+                e.preventDefault();
+                const userAnswer = document.getElementById('challenge-input').value.trim().toLowerCase();
+                const correctAnswer = document.getElementById('challenge-form').dataset.answer;
+                const feedbackMessage = document.getElementById('feedback-message');
+
+                if (userAnswer === correctAnswer) {
+                    raceGameState.score += 10;
+                    feedbackMessage.textContent = "Correct! +10 points!";
+                    feedbackMessage.style.color = 'var(--accent-green)';
+                    raceGameState.position++;
+                    moveAvatar();
+                    if (raceGameState.position >= 10) {
+                        setTimeout(() => { raceGameState.level++; startRaceLevel(); }, 1500);
+                    } else {
+                        setTimeout(generateRaceChallenge, 1000);
+                    }
+                } else {
+                    feedbackMessage.textContent = "Incorrect. Try again!";
+                    feedbackMessage.style.color = 'var(--accent-red)';
+                    raceGameState.timer = Math.max(0, raceGameState.timer - 5);
+                }
+                updateRaceUI();
+            }
+
+            function endRace(message = "Congratulations!") {
+                clearInterval(raceGameState.timerInterval);
+                activityArea.innerHTML = `<div class="text-center"><h2>${message}</h2><p>Your final score is ${raceGameState.score}.</p></div>`;
+            }
+            
+            backBtn.addEventListener('click', () => { window.history.back();; });
+            toggleViewBtn.addEventListener('click', () => {
+                showActivity = !showActivity;
+                if (showActivity) startGame();
+                updateLayout();
+            });
+            difficultyBtn.addEventListener('click', () => {
+                difficultyIdx = (difficultyIdx + 1) % difficulties.length;
+                difficultyBtn.textContent = `Mode: ${difficulties[difficultyIdx]}`;
+                if (showActivity) startGame();
+            });
+            resetBtn.addEventListener('click', startGame);
+            window.addEventListener('resize', updateLayout);
+
+            updateLayout();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Geometry Shape Challenge</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* --- CORE TEMPLATE & GLOBAL STYLES (Light Theme) --- */
+        :root {
+            --header-bg: #ffffff;
+            --page-bg: #f4f7f9;
+            --panel-bg: #ffffff;
+            --border-color: #e0e0e0;
+            --text-dark: #1e293b;
+            --text-light: #475569;
+            --accent-pink: #d946ef;
+            --accent-green: #22c55e;
+            --accent-red: #ef4444;
+            --primary-blue: #007bff;
+            --secondary-gray: #6c757d;
+        }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--page-bg);
+            color: var(--text-dark);
+            margin: 0;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .page-container { display: flex; flex-direction: column; height: 100vh; }
+        .header {
+            position: fixed; top: 0; left: 0; width: 100%; height: 60px;
+            background-color: var(--header-bg);
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 24px;
+            border-bottom: 1px solid var(--border-color);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            z-index: 1000;
+            box-sizing: border-box;
+        }
+        .header-section { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .header-section.center { text-align: center; font-size: 1.2em; font-weight: bold; }
+        .header-section.right { display: flex; justify-content: flex-end; }
+        .button {
+            padding: 8px 16px; margin-left: 10px; cursor: pointer;
+            border: none; border-radius: 6px; font-weight: 600; color: white;
+            transition: transform 0.1s;
+        }
+        .button:active { transform: scale(0.95); }
+        .main-content {
+            margin-top: 60px; padding: 24px; display: flex;
+            flex-grow: 1; overflow: hidden; box-sizing: border-box;
+            gap: 24px; justify-content: center;
+        }
+        .panel {
+            background-color: var(--panel-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            border: 1px solid var(--border-color);
+            box-sizing: border-box;
+            overflow-y: auto; padding: 24px 32px;
+            height: calc(100vh - 108px);
+        }
+        #info-panel { flex-shrink: 0; transition: width 400ms ease-in-out, margin 400ms ease-in-out; }
+        #activity-panel { display: none; flex-grow: 1; padding: 0; flex-direction: column; }
+        .main-content.activity-visible { justify-content: flex-start; }
+        .main-content.activity-visible #info-panel { width: 340px; min-width: 340px; }
+        .main-content.activity-visible #activity-panel { display: flex; }
+
+        /* --- ACTIVITY-SPECIFIC STYLES --- */
+        .activity-area {
+            flex-grow: 1; position: relative; display: flex;
+            flex-direction: column; align-items: center; justify-content: center;
+            gap: 1rem; padding: 24px;
+        }
+        .bottom-control-bar { height: 60px; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; background-color: var(--page-bg); border-top: 1px solid var(--border-color); flex-shrink: 0; }
+        .status-bar { font-weight: bold; color: var(--text-dark); }
+        .reset-button { padding: 8px 16px; cursor: pointer; background-color: var(--accent-red); color: white; border: none; border-radius: 6px; font-weight: 600; }
+        .game-header { display: flex; justify-content: space-between; align-items: flex-start; width: 100%; }
+        .question-text { color: var(--text-light); text-align: left; font-size: 1.25rem; }
+        
+        .stat-box-container { display: flex; gap: 0.75rem; }
+        .stat-box { padding: 0.5rem 1.25rem; border-radius: 8px; text-align: center; }
+        .stat-box-label { font-size: 0.75rem; font-weight: 500; opacity: 0.8; }
+        .stat-box-value { font-size: 1.5rem; font-weight: 700; }
+        #score-box { background-color: #dbeafe; color: #1e40af; }
+        #timer-box { background-color: #fee2e2; color: #991b1b; }
+
+        #options-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-top: 2rem; width: 100%; max-width: 600px; }
+        .shape-option { background-color: #f3f4f6; border-radius: 0.75rem; padding: 1rem; transition: transform 0.2s, box-shadow 0.2s; cursor: pointer; border: 2px solid var(--border-color); }
+        .shape-option:hover { transform: scale(1.05); box-shadow: 0 0 15px rgba(217, 70, 239, 0.2); }
+        .shape-option.correct { border-color: var(--accent-green); background-color: rgba(34, 197, 94, 0.1); }
+        .shape-option.incorrect { border-color: var(--accent-red); background-color: rgba(239, 68, 68, 0.1); }
+        .shape-option svg text { font-size: 16px; font-weight: 600; fill: var(--text-dark); pointer-events: none; }
+        .shape-option svg polygon, .shape-option svg path, .shape-option svg circle, .shape-option svg rect { stroke: var(--accent-pink); stroke-width: 8; fill: none; }
+        .feedback-text { margin-top: 1rem; font-weight: 600; font-size: 1.1rem; min-height: 24px; }
+        .level-complete-container { text-align: center; }
+        .level-complete-container h3 { font-size: 1.875rem; font-weight: bold; color: var(--accent-green); }
+        .level-complete-container p { font-size: 1.25rem; margin-top: 0.5rem; }
+    </style>
+</head>
+<body class="page-container">
+    
+    <header class="header">
+        <div class="header-section">Class 6 - Geometry</div>
+        <div id="header-title" class="header-section center">Information</div>
+        <div class="header-section right">
+            <button id="back-btn" class="button" style="background-color: var(--secondary-gray);">Back</button>
+            <button id="toggle-view-btn" class="button" style="background-color: var(--primary-blue);">Activity</button>
+            <button id="difficulty-btn" class="button" style="background-color: var(--accent-green);">Difficulty: Easy</button>
+        </div>
+    </header>
+
+    <main class="main-content" id="main-content">
+        <section id="info-panel" class="panel">
+            <h1 class="text-3xl font-bold mb-4" style="color: var(--accent-pink);">Welcome to Geometry!</h1>
+            <div style="display:flex; flex-direction:column; gap:1.5rem;">
+                <div>
+                    <h2 class="text-xl font-semibold">What are Polygons?</h2>
+                    <p class="mt-2 text-gray-600">A polygon is any flat, 2D shape that is fully closed and made up of straight sides. The word "Polygon" comes from Greek, with "Poly" meaning "many" and "gon" meaning "angle".</p>
+                </div>
+                <div>
+                    <h2 class="text-xl font-semibold">Naming Polygons</h2>
+                    <p class="mt-2 text-gray-600">We name polygons based on how many sides they have:</p>
+                    <ul class="list-disc list-inside mt-3 space-y-2 text-gray-600">
+                        <li><b>Triangle:</b> 3 sides</li>
+                        <li><b>Quadrilateral:</b> 4 sides</li>
+                        <li><b>Pentagon:</b> 5 sides</li>
+                        <li><b>Hexagon:</b> 6 sides</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="activity-panel" class="panel">
+            <div class="activity-area" id="activity-area">
+                </div>
+            <footer class="bottom-control-bar">
+                <div id="status-bar" class="status-bar">Select the correct shape!</div>
+                <button id="reset-btn" class="reset-button">Reset</button>
+            </footer>
+        </section>
+    </main>
+
+    <script src="./neutralino.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            try { Neutralino.init(); } catch (e) { console.error("Neutralino not found."); }
+            
+            const problems = {
+                easy: [{ q: "Which shape has 3 sides?", cs: "triangle", o: ["square", "circle", "triangle", "pentagon"] }, { q: "Which shape has 4 equal sides?", cs: "square", o: ["hexagon", "square", "triangle", "star"] }, { q: "What is a shape with 5 sides?", cs: "pentagon", o: ["hexagon", "pentagon", "square", "triangle"] }, { q: "Which shape has no corners?", cs: "circle", o: ["circle", "square", "pentagon", "hexagon"] }, { q: "A door is usually what shape?", cs: "rectangle", o: ["square", "rectangle", "triangle", "circle"] } ],
+                medium: [{ q: "A STOP sign is which shape?", cs: "octagon", o: ["hexagon", "octagon", "heptagon", "pentagon"] }, { q: "What is a 6-sided shape?", cs: "hexagon", o: ["pentagon", "heptagon", "octagon", "hexagon"] }, { q: "Find the shape with 7 sides.", cs: "heptagon", o: ["heptagon", "star", "octagon", "hexagon"] }, { q: "A pizza slice is often what shape?", cs: "triangle", o: ["triangle", "square", "circle", "rectangle"] }, { q: "Which shape is named after a toy?", cs: "kite", o: ["rhombus", "kite", "trapezoid", "star"] } ],
+                hard: [{ q: "Which is a quadrilateral?", cs: "rhombus", o: ["rhombus", "pentagon", "triangle", "hexagon"] }, { q: "A honeycomb uses which shape?", cs: "hexagon", o: ["pentagon", "octagon", "star", "hexagon"] }, { q: "Find the 5-pointed shape.", cs: "star", o: ["star", "pentagon", "hexagon", "rhombus"] }, { q: "Which shape has one pair of parallel sides?", cs: "trapezoid", o: ["trapezoid", "kite", "rhombus", "pentagon"] }, { q: "A diamond shape is also a...", cs: "rhombus", o: ["square", "rhombus", "kite", "trapezoid"] } ]
+            };
+            const difficulties = ['easy', 'medium', 'hard'];
+            const timeSettings = { easy: 10, medium: 8, hard: 5 };
+            
+            let showActivity = false, score = 0, currentProblemSet = [], difficultyIdx = 0, timer, timerInterval, isAnswered;
+            
+            const mainContent = document.getElementById('main-content');
+            const infoPanel = document.getElementById('info-panel');
+            const activityArea = document.getElementById('activity-area');
+            const headerTitle = document.getElementById('header-title');
+            const toggleViewBtn = document.getElementById('toggle-view-btn');
+            const difficultyBtn = document.getElementById('difficulty-btn');
+            const backBtn = document.getElementById('back-btn');
+            const resetBtn = document.getElementById('reset-btn');
+
+            function updateLayout() {
+                if (showActivity) mainContent.classList.add('activity-visible');
+                else mainContent.classList.remove('activity-visible');
+                infoPanel.style.width = showActivity ? '340px' : `${Math.min(700, window.innerWidth - 48)}px`;
+                headerTitle.textContent = showActivity ? 'Activity' : 'Information';
+                toggleViewBtn.textContent = showActivity ? 'Information' : 'Activity';
+            }
+
+            function createShapeSVG(shape, text) {
+                const svgNS = "http://www.w3.org/2000/svg";
+                const svg = document.createElementNS(svgNS, "svg");
+                svg.setAttribute("viewBox", "0 0 100 100");
+                let shapeEl;
+                switch (shape) {
+                    case 'triangle': shapeEl = document.createElementNS(svgNS, "polygon"); shapeEl.setAttribute("points", "50,15 90,85 10,85"); break;
+                    case 'square': shapeEl = document.createElementNS(svgNS, "rect"); shapeEl.setAttribute("x", "15"); shapeEl.setAttribute("y", "15"); shapeEl.setAttribute("width", "70"); shapeEl.setAttribute("height", "70"); break;
+                    case 'pentagon': shapeEl = document.createElementNS(svgNS, "polygon"); shapeEl.setAttribute("points", "50,10 95,45 80,95 20,95 5,45"); break;
+                    case 'hexagon': shapeEl = document.createElementNS(svgNS, "polygon"); shapeEl.setAttribute("points", "50,10 93,30 93,70 50,90 7,70 7,30"); break;
+                    case 'heptagon': shapeEl = document.createElementNS(svgNS, "polygon"); shapeEl.setAttribute("points", "50,10 89,30 99,68 68,95 32,95 1,68 11,30"); break;
+                    case 'octagon': shapeEl = document.createElementNS(svgNS, "polygon"); shapeEl.setAttribute("points", "30,10 70,10 90,30 90,70 70,90 30,90 10,70 10,30"); break;
+                    case 'rhombus': shapeEl = document.createElementNS(svgNS, "polygon"); shapeEl.setAttribute("points", "50,10 90,50 50,90 10,50"); break;
+                    case 'star': shapeEl = document.createElementNS(svgNS, "path"); shapeEl.setAttribute("d", "M50 10 L61 40 L95 40 L68 60 L78 90 L50 70 L22 90 L32 60 L5 40 L39 40 Z"); break;
+                    case 'circle': shapeEl = document.createElementNS(svgNS, "circle"); shapeEl.setAttribute("cx", "50"); shapeEl.setAttribute("cy", "50"); shapeEl.setAttribute("r", "40"); break;
+                    case 'rectangle': shapeEl = document.createElementNS(svgNS, "rect"); shapeEl.setAttribute("x", "10"); shapeEl.setAttribute("y", "25"); shapeEl.setAttribute("width", "80"); shapeEl.setAttribute("height", "50"); break;
+                    case 'trapezoid': shapeEl = document.createElementNS(svgNS, "polygon"); shapeEl.setAttribute("points", "20,20 80,20 90,80 10,80"); break;
+                    case 'kite': shapeEl = document.createElementNS(svgNS, "polygon"); shapeEl.setAttribute("points", "50,10 90,40 50,90 10,40"); break;
+                }
+                svg.appendChild(shapeEl);
+                const textEl = document.createElementNS(svgNS, "text");
+                textEl.setAttribute("x", "50"); textEl.setAttribute("y", "55"); textEl.setAttribute("text-anchor", "middle");
+                textEl.textContent = text.charAt(0).toUpperCase() + text.slice(1);
+                svg.appendChild(textEl);
+                return svg;
+            }
+
+            function startGame() {
+                score = 0;
+                const difficulty = difficulties[difficultyIdx];
+                const originalProblems = problems[difficulty];
+                currentProblemSet = [...originalProblems].sort(() => 0.5 - Math.random()).slice(0, 3);
+                loadProblem(0);
+            }
+
+            function loadProblem(problemIndex) {
+                if (problemIndex >= currentProblemSet.length) {
+                    showLevelComplete();
+                    return;
+                }
+                isAnswered = false;
+                const problem = currentProblemSet[problemIndex];
+                
+                // MODIFIED: This wrapper div now takes the width constraints
+                activityArea.innerHTML = `
+                    <div style="width:100%; max-width:600px;">
+                        <div class="game-header">
+                            <div>
+                                <h2 class="text-2xl font-bold text-left">${difficulties[difficultyIdx].charAt(0).toUpperCase() + difficulties[difficultyIdx].slice(1)} Challenge</h2>
+                                <p class="question-text">${problem.q}</p>
+                            </div>
+                            <div class="stat-box-container">
+                                <div id="timer-box" class="stat-box">
+                                    <div class="stat-box-label">TIME</div>
+                                    <div id="timer" class="stat-box-value">${timeSettings[difficulties[difficultyIdx]]}</div>
+                                </div>
+                                <div id="score-box" class="stat-box">
+                                    <div class="stat-box-label">SCORE</div>
+                                    <div id="score" class="stat-box-value">${score}</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="options-container"></div>
+                        <p id="feedback-text" class="feedback-text"></p>
+                        <div id="level-complete-container" class="level-complete-container" style="display:none;"></div>
+                    </div>`;
+
+                const optionsContainer = document.getElementById('options-container');
+                const shapeNames = ["Triangle", "Square", "Pentagon", "Hexagon", "Circle", "Star", "Rhombus", "Octagon"];
+                const shuffledOptions = [...problem.o].sort(() => 0.5 - Math.random());
+
+                shuffledOptions.forEach(shapeName => {
+                    const optionDiv = document.createElement('div');
+                    optionDiv.className = 'shape-option';
+                    optionDiv.dataset.shape = shapeName;
+                    
+                    let randomName;
+                    do { randomName = shapeNames[Math.floor(Math.random() * shapeNames.length)]; } 
+                    while (randomName.toLowerCase() === shapeName);
+                    
+                    optionDiv.appendChild(createShapeSVG(shapeName, randomName));
+                    optionDiv.onclick = (e) => handleAnswerClick(e, problem, problemIndex);
+                    optionsContainer.appendChild(optionDiv);
+                });
+                
+                startTimer(problem, problemIndex);
+            }
+            
+            function handleAnswerClick(e, problem, problemIndex) {
+                if (isAnswered) return;
+                isAnswered = true;
+                clearInterval(timerInterval);
+
+                const clickedShape = e.currentTarget.dataset.shape;
+                
+                if (clickedShape === problem.cs) {
+                    score += 10;
+                    e.currentTarget.classList.add('correct');
+                    document.getElementById('feedback-text').textContent = "Correct!";
+                    document.getElementById('feedback-text').style.color = 'var(--accent-green)';
+                } else {
+                    e.currentTarget.classList.add('incorrect');
+                    document.getElementById('feedback-text').textContent = `The correct shape was ${problem.cs}.`;
+                    document.getElementById('feedback-text').style.color = 'var(--accent-red)';
+                    const correctOption = document.querySelector(`[data-shape="${problem.cs}"]`);
+                    if (correctOption) correctOption.classList.add('correct');
+                }
+                document.getElementById('score').textContent = score;
+                setTimeout(() => { loadProblem(problemIndex + 1); }, 2000);
+            }
+
+            function startTimer(problem, problemIndex) {
+                clearInterval(timerInterval);
+                let timeLeft = timeSettings[difficulties[difficultyIdx]];
+                const timerDisplay = document.getElementById('timer');
+                timerDisplay.textContent = timeLeft;
+                timerDisplay.style.color = 'var(--text-dark)';
+
+                timerInterval = setInterval(() => {
+                    timeLeft--;
+                    timerDisplay.textContent = timeLeft;
+                    if (timeLeft <= 3) timerDisplay.style.color = 'var(--accent-red)';
+                    if (timeLeft < 0) {
+                        clearInterval(timerInterval);
+                        if (!isAnswered) handleTimeUp(problem, problemIndex);
+                    }
+                }, 1000);
+            }
+            
+            function handleTimeUp(problem, problemIndex) {
+                isAnswered = true;
+                document.getElementById('feedback-text').textContent = "Time's up!";
+                document.getElementById('feedback-text').style.color = 'var(--accent-red)';
+                const correctOption = document.querySelector(`[data-shape="${problem.cs}"]`);
+                if (correctOption) correctOption.classList.add('correct');
+                setTimeout(() => { loadProblem(problemIndex + 1); }, 2000);
+            }
+            
+            function showLevelComplete() {
+                const difficulty = difficulties[difficultyIdx];
+                activityArea.innerHTML = `
+                    <div class="level-complete-container">
+                        <h3>Level ${difficulty.charAt(0).toUpperCase() + difficulty.slice(1)} Complete!</h3>
+                        <p>Your final score is ${score}.</p>
+                    </div>`;
+            }
+            
+            backBtn.addEventListener('click', () => { window.history.back(); });
+            toggleViewBtn.addEventListener('click', () => {
+                showActivity = !showActivity;
+                if (showActivity) startGame();
+                updateLayout();
+            });
+            difficultyBtn.addEventListener('click', () => {
+                difficultyIdx = (difficultyIdx + 1) % difficulties.length;
+                const newDifficulty = difficulties[difficultyIdx];
+                difficultyBtn.textContent = `Difficulty: ${newDifficulty.charAt(0).toUpperCase() + newDifficulty.slice(1)}`;
+                if (showActivity) startGame();
+            });
+            resetBtn.addEventListener('click', startGame);
+            window.addEventListener('resize', updateLayout);
+
+            updateLayout();
+        });
+    </script>
+</body>
+</html>

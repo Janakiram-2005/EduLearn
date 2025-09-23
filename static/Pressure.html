@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pressure Educational Module</title>
+    <style>
+        :root {
+            --header-bg: #ffffff;
+            --page-bg: #f5f7fa;
+            --panel-bg: #ffffff;
+            --border-color: #e0e0e0;
+            --text-dark: #2c3e50;
+            --text-light: #475569;
+            --accent-red: #D32F2F;
+            --accent-red-dark: #B71C1C;
+            --primary-blue: #007bff;
+            --secondary-gray: #6c757d;
+        }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body { background-color: var(--page-bg); color: var(--text-dark); margin: 0; height: 100vh; overflow: hidden; }
+        .page-container { display: flex; flex-direction: column; height: 100vh; }
+        .header {
+            position: fixed; top: 0; left: 0; width: 100%; height: 60px;
+            background-color: var(--header-bg); display: flex; align-items: center; justify-content: space-between;
+            padding: 0 24px; border-bottom: 1px solid var(--border-color); box-shadow: 0 2px 4px rgba(0,0,0,0.05); z-index: 1000; box-sizing: border-box;
+        }
+        .header-section { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .header-section.center { text-align: center; font-size: 1.2em; font-weight: bold; }
+        .header-section.right { display: flex; justify-content: flex-end; }
+        .button {
+            padding: 8px 16px; margin-left: 10px; cursor: pointer;
+            border: none; border-radius: 6px; font-weight: 600; color: white;
+            transition: transform 0.1s, background-color 0.2s;
+        }
+        .button:active { transform: scale(0.95); }
+        .main-content {
+            margin-top: 60px; padding: 24px; display: flex;
+            flex-grow: 1; overflow: hidden; box-sizing: border-box;
+            gap: 24px; justify-content: center;
+        }
+        .panel {
+            background-color: var(--panel-bg); border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: 1px solid var(--border-color);
+            box-sizing: border-box; overflow-y: auto;
+            height: calc(100vh - 108px);
+            transition: width 400ms ease-in-out, min-width 400ms ease-in-out, margin 400ms ease-in-out;
+        }
+        #info-panel {
+            padding: 24px 32px;
+            width: 100%;
+            max-width: 700px;
+            margin: 0 auto;
+            flex-shrink: 0;
+        }
+        #activity-panel { display: none; flex-grow: 1; min-width: 400px; padding: 0; flex-direction: column; background-color: #f0f4f8; }
+        
+        .main-content.activity-visible { justify-content: flex-start; }
+        .main-content.activity-visible #info-panel { width: 340px; min-width: 340px; margin: 0; }
+        .main-content.activity-visible #activity-panel { display: flex; }
+
+        /* General Info Styles */
+        #info-panel h1 { color: var(--accent-red); margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid var(--accent-red-dark); }
+        #info-panel h2 { color: var(--accent-red-dark); margin: 20px 0 10px; }
+        #info-panel table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        #info-panel th, #info-panel td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+        #info-panel th { background-color: #fbe9e7; color: var(--accent-red); }
+        #info-panel ul { list-style-position: inside; }
+
+        /* Game Styles */
+        .activity-area { flex-grow: 1; padding: 20px; overflow-y: auto; }
+        .game-container { max-width: 800px; margin: 0 auto; }
+        .game-card { background-color: white; border-radius: 8px; padding: 20px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); }
+        .riddle-container { background-color: #f9f9f9; border-radius: 10px; padding: 25px; margin-bottom: 20px; border-left: 5px solid var(--accent-red); }
+        .riddle-text { font-size: 1.3rem; font-style: italic; text-align: center; margin-bottom: 20px; }
+        .options-container { display: grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 20px; }
+        .option { padding: 15px; background-color: #f0f4f8; border: 2px solid #dbe1e8; border-radius: 6px; cursor: pointer; transition: all 0.2s; text-align: left; font-size: 1.1rem; }
+        .option:hover { background-color: #e0e6ed; }
+        .option.selected { border-color: var(--accent-red); background-color: #ffebee; }
+        .option.correct { border-color: #4caf50; background-color: #e8f5e9; }
+        .option.incorrect { border-color: #f44336; background-color: #ffebee; }
+        .submit-button { padding: 12px 20px; background-color: var(--accent-red); color: white; border: none; border-radius: 6px; cursor: pointer; width: 100%; font-size: 1rem; transition: background-color 0.3s; margin-top: 15px; }
+        .submit-button:hover:not(:disabled) { background-color: var(--accent-red-dark); }
+        .submit-button:disabled { background-color: #bdc3c7; cursor: not-allowed; }
+        .game-feedback { padding: 15px; border-radius: 6px; margin-top: 20px; text-align: center; font-weight: bold; }
+        .feedback-correct { background-color: #e8f5e9; color: #2e7d32; }
+        .feedback-incorrect { background-color: #ffebee; color: #c62828; }
+        .bottom-control-bar { height: 60px; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; background-color: white; border-top: 1px solid #ddd; }
+        .status-bar { font-weight: bold; }
+        .reset-button { background-color: var(--accent-red); }
+    </style>
+</head>
+<body class="page-container">
+    <header class="header">
+        <div class="header-section">Class 8 - Pressure</div>
+        <div id="header-title" class="header-section center">Information</div>
+        <div class="header-section right">
+            <button id="back-btn" class="button" style="background-color: var(--secondary-gray);">Back</button>
+            <button id="toggle-view-btn" class="button" style="background-color: var(--primary-blue);">Activity</button>
+            <button id="difficulty-btn" class="button" style="background-color: var(--accent-red);">Mode: Easy</button>
+        </div>
+    </header>
+
+    <main class="main-content" id="main-content">
+        <section id="info-panel" class="panel">
+            <h1>Pressure: Force and Area</h1>
+            <p>Pressure is the force applied perpendicular to an object's surface per unit area. It explains why sharp knives cut better and how hydraulic systems work.</p>
+            
+            <h2>The Pressure Formula</h2>
+            <p style="text-align: center; font-size: 1.5rem; margin: 20px 0;">
+                <strong>Pressure = Force ÷ Area</strong>
+            </p>
+
+            <h2>Types of Pressure</h2>
+            <ul>
+                <li><strong>Atmospheric Pressure:</strong> Exerted by the weight of the atmosphere.</li>
+                <li><strong>Fluid Pressure:</strong> Pressure in liquids and gases that increases with depth.</li>
+            </ul>
+        </section>
+
+        <section id="activity-panel" class="panel">
+            <div class="activity-area">
+                <div class="game-container">
+                    <h2 class="text-2xl font-bold text-center">Pressure Riddles Challenge</h2>
+                    <p class="text-center text-gray-500 mb-4">Solve these pressure-related riddles!</p>
+                    <div class="game-card" id="game-card">
+                        </div>
+                </div>
+            </div>
+            <footer class="bottom-control-bar">
+                <div id="status-bar" class="status-bar">Score: 0 | Riddle: 1/5</div>
+                <button id="reset-btn" class="button reset-button">Reset</button>
+            </footer>
+        </section>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const mainContent = document.getElementById('main-content');
+            const infoPanel = document.getElementById('info-panel');
+            const activityPanel = document.getElementById('activity-panel');
+            const headerTitle = document.getElementById('header-title');
+            const toggleViewBtn = document.getElementById('toggle-view-btn');
+            const difficultyBtn = document.getElementById('difficulty-btn');
+            const backBtn = document.getElementById('back-btn');
+            const resetBtn = document.getElementById('reset-btn');
+            const gameArea = document.getElementById('game-area');
+            const gameCard = document.getElementById('game-card');
+            const statusBar = document.getElementById('status-bar');
+
+            let showActivity = false;
+            let difficultyIdx = 0;
+            const difficulties = ['easy', 'medium', 'hard'];
+            
+            let state = {};
+
+            const gameData = {
+                easy: [
+                    { r: "I'm greater when area is small, for the same force. What am I?", o: ["Pressure", "Density", "Volume"], a: "Pressure", ex: "Pressure increases when force is applied over a smaller area." },
+                    { r: "I push on everything, decreasing as you go up. What am I?", o: ["Atmospheric Pressure", "Water Pressure", "Blood Pressure"], a: "Atmospheric Pressure", ex: "Atmospheric pressure is the weight of the air above us." },
+                    { r: "I'm the reason sharp knives cut so well. What am I?", o: ["High Pressure", "Low Pressure", "Equal Pressure"], a: "High Pressure", ex: "Sharp knives create high pressure on a small area." }
+                ],
+                medium: [
+                    { r: "I am the principle behind hydraulic lifts. Who am I?", o: ["Pascal's Principle", "Bernoulli's Principle", "Archimedes' Principle"], a: "Pascal's Principle", ex: "Pascal's principle states that pressure in a fluid is transmitted equally." },
+                    { r: "I measure atmospheric pressure for weather forecasts. What am I?", o: ["Barometer", "Thermometer", "Hygrometer"], a: "Barometer", ex: "A barometer is used to measure atmospheric pressure." },
+                    { r: "I explain why airplane wings generate lift. What am I?", o: ["Bernoulli's Principle", "Newton's Third Law", "Pascal's Principle"], a: "Bernoulli's Principle", ex: "Bernoulli's principle relates fluid speed to pressure." }
+                ],
+                hard: [
+                    { r: "I am the pressure measured relative to the atmosphere, like in a tire. What am I?", o: ["Gauge Pressure", "Absolute Pressure", "Vacuum Pressure"], a: "Gauge Pressure", ex: "Gauge pressure is the pressure above atmospheric pressure." },
+                    { r: "I am the pressure exerted by a fluid at rest due to gravity. What am I?", o: ["Hydrostatic Pressure", "Dynamic Pressure", "Osmotic Pressure"], a: "Hydrostatic Pressure", ex: "Hydrostatic pressure increases with depth." },
+                    { r: "I am the pressure required to prevent the inward flow of water across a semipermeable membrane. What am I?", o: ["Osmotic Pressure", "Turgor Pressure", "Vapor Pressure"], a: "Osmotic Pressure", ex: "Osmotic pressure is crucial in biology and chemistry." }
+                ]
+            };
+            
+            function updateLayout() {
+                mainContent.classList.toggle('activity-visible', showActivity);
+                headerTitle.textContent = showActivity ? 'Activity' : 'Information';
+                toggleViewBtn.textContent = showActivity ? 'Information' : 'Activity';
+            }
+
+            function startGame() {
+                const difficulty = difficulties[difficultyIdx];
+                const riddles = gameData[difficulty];
+                
+                state = {
+                    riddles: [...riddles].sort(() => 0.5 - Math.random()),
+                    currentRiddleIndex: 0,
+                    score: 0,
+                    correctAnswers: 0,
+                    gameOver: false,
+                    selectedOption: null
+                };
+                
+                loadRiddle();
+            }
+            
+            function loadRiddle() {
+                if (state.currentRiddleIndex >= state.riddles.length) {
+                    showFinalResults();
+                    return;
+                }
+                
+                const riddleData = state.riddles[state.currentRiddleIndex];
+                state.selectedOption = null;
+
+                gameCard.innerHTML = `
+                    <div class="riddle-container">
+                        <div class="riddle-text">${riddleData.r}</div>
+                    </div>
+                    <div class="options-container" id="options-container-inner"></div>
+                    <button class="submit-button" id="submit-button" disabled>Submit Answer</button>
+                    <div id="game-feedback" class="game-feedback"></div>
+                `;
+
+                const optionsContainer = document.getElementById('options-container-inner');
+                riddleData.o.forEach((option, index) => {
+                    const optionEl = document.createElement('div');
+                    optionEl.className = 'option';
+                    optionEl.textContent = option;
+                    optionEl.onclick = () => selectOption(optionEl, index);
+                    optionsContainer.appendChild(optionEl);
+                });
+                
+                document.getElementById('submit-button').addEventListener('click', checkAnswer);
+                updateStatus();
+            }
+
+            function selectOption(el, index) {
+                if (state.gameOver) return;
+                document.querySelectorAll('.option').forEach(opt => opt.classList.remove('selected'));
+                el.classList.add('selected');
+                state.selectedOption = index;
+                document.getElementById('submit-button').disabled = false;
+            }
+
+            function checkAnswer() {
+                if (state.selectedOption === null) return;
+                state.gameOver = true;
+                
+                const riddleData = state.riddles[state.currentRiddleIndex];
+                const selectedAnswer = riddleData.o[state.selectedOption];
+                const isCorrect = selectedAnswer === riddleData.a;
+                
+                if (isCorrect) {
+                    state.score += (difficultyIdx + 1) * 10;
+                    state.correctAnswers++;
+                }
+                
+                document.querySelectorAll('.options-container .option').forEach((el, index) => {
+                    if (riddleData.o[index] === riddleData.a) el.classList.add('correct');
+                    if (index === state.selectedOption && !isCorrect) el.classList.add('incorrect');
+                });
+                
+                const feedbackEl = document.getElementById('game-feedback');
+                feedbackEl.textContent = isCorrect ? "Correct! " + riddleData.ex : "Incorrect. " + riddleData.ex;
+                feedbackEl.className = isCorrect ? "game-feedback feedback-correct" : "game-feedback feedback-incorrect";
+                feedbackEl.style.display = "block";
+
+                setTimeout(() => {
+                    state.currentRiddleIndex++;
+                    state.gameOver = false;
+                    loadRiddle();
+                }, 3000);
+            }
+
+            function showFinalResults() {
+                gameCard.innerHTML = `<div class="text-center">
+                    <h2 class="text-2xl font-bold">Game Over!</h2>
+                    <p class="text-xl my-4">Final Score: ${state.score}</p>
+                    <p>${state.correctAnswers} out of ${state.riddles.length} riddles correct.</p>
+                </div>`;
+            }
+
+            function updateStatus() {
+                statusBar.textContent = `Score: ${state.score} | Riddle: ${state.currentRiddleIndex + 1}/${state.riddles.length}`;
+            }
+
+            // --- Event Listeners ---
+            toggleViewBtn.addEventListener('click', () => {
+                showActivity = !showActivity;
+                updateLayout();
+                if (showActivity) {
+                    startGame();
+                }
+            });
+
+            difficultyBtn.addEventListener('click', () => {
+                difficultyIdx = (difficultyIdx + 1) % difficulties.length;
+                const newDifficulty = difficulties[difficultyIdx];
+                difficultyBtn.textContent = `Mode: ${newDifficulty.charAt(0).toUpperCase() + newDifficulty.slice(1)}`;
+                if (showActivity) {
+                    startGame();
+                }
+            });
+            
+            resetBtn.addEventListener('click', () => {
+                if (showActivity) {
+                    startGame();
+                }
+            });
+            
+            backBtn.addEventListener('click', () => {
+                window.history.back();
+            });
+            
+            updateLayout();
+        });
+    </script>
+</body>
+</html>

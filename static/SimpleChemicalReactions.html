@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chemistry Game Hub - Simple Reactions</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* --- CORE TEMPLATE & GLOBAL STYLES (Light Theme) --- */
+        :root {
+            --header-bg: #ffffff;
+            --page-bg: #f4f7f9;
+            --panel-bg: #ffffff;
+            --border-color: #e0e0e0;
+            --text-dark: #1e293b;
+            --text-light: #475569;
+            --accent-cyan: #0891b2;
+            --accent-green: #22c55e;
+            --accent-red: #ef4444;
+            --accent-yellow: #f59e0b;
+            --primary-blue: #007bff;
+            --secondary-gray: #6c757d;
+        }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--page-bg);
+            color: var(--text-dark);
+            margin: 0;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .page-container { display: flex; flex-direction: column; height: 100vh; }
+        .header {
+            position: fixed; top: 0; left: 0; width: 100%; height: 60px;
+            background-color: var(--header-bg);
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 24px;
+            border-bottom: 1px solid var(--border-color);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            z-index: 1000;
+            box-sizing: border-box;
+        }
+        .header-section { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .header-section.center { text-align: center; font-size: 1.2em; font-weight: bold; }
+        .header-section.right { display: flex; justify-content: flex-end; }
+        .button {
+            padding: 8px 16px; margin-left: 10px; cursor: pointer;
+            border: none; border-radius: 6px; font-weight: 600; color: white;
+            transition: transform 0.1s;
+        }
+        .button:active { transform: scale(0.95); }
+        .main-content {
+            margin-top: 60px; padding: 24px; display: flex;
+            flex-grow: 1; overflow: hidden; box-sizing: border-box;
+            gap: 24px; justify-content: center;
+        }
+        .panel {
+            background-color: var(--panel-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            border: 1px solid var(--border-color);
+            box-sizing: border-box;
+            overflow-y: auto; padding: 24px 32px;
+            height: calc(100vh - 108px);
+        }
+        #info-panel { flex-shrink: 0; transition: width 400ms ease-in-out, margin 400ms ease-in-out; }
+        #activity-panel { display: none; flex-grow: 1; padding: 0; flex-direction: column; }
+        .main-content.activity-visible { justify-content: flex-start; }
+        .main-content.activity-visible #info-panel { width: 340px; min-width: 340px; }
+        .main-content.activity-visible #activity-panel { display: flex; }
+
+        /* --- ACTIVITY-SPECIFIC STYLES --- */
+        .activity-area { flex-grow: 1; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; padding: 1.5rem; }
+        .bottom-control-bar { height: 60px; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; background-color: var(--page-bg); border-top: 1px solid var(--border-color); flex-shrink: 0; }
+        .status-bar { font-weight: bold; color: var(--text-dark); }
+        .reset-button { padding: 8px 16px; cursor: pointer; background-color: var(--accent-red); color: white; border: none; border-radius: 6px; font-weight: 600; }
+        .game-header { display: flex; justify-content: space-between; align-items: flex-start; width: 100%; }
+        .correct { background-color: var(--accent-green) !important; border-color: var(--accent-green) !important; color: white; }
+        .incorrect { background-color: var(--accent-red) !important; border-color: var(--accent-red) !important; color: white; }
+        .shake { animation: shake 0.5s ease-in-out; }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 20%, 60% { transform: translateX(-8px); } 40%, 80% { transform: translateX(8px); } }
+
+        /* Quiz Styles */
+        .quiz-question { font-size: 1.5rem; font-weight: 600; margin-bottom: 25px; min-height: 70px; text-align: center; }
+        .quiz-options { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; width: 100%; max-width: 550px; }
+        .quiz-option { background-color: #e2e8f0; border: 2px solid #cbd5e1; padding: 20px; font-size: 1.1rem; font-weight: 700; border-radius: 12px; cursor: pointer; transition: transform 0.2s; }
+        .quiz-option:hover:not(:disabled) { transform: translateY(-5px); }
+        .quiz-option:disabled { cursor: not-allowed; }
+
+        /* Balance Equation Styles */
+        .equation-container { display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-size: 1.8rem; font-weight: 600; margin: 2rem 0; flex-wrap: wrap; }
+        .equation-slot { width: 60px; height: 60px; background: #e2e8f0; border: 2px dashed #94a3b8; border-radius: 8px; display: flex; justify-content: center; align-items: center; font-size: 1.5rem; }
+        .equation-slot.drag-over { border-color: var(--accent-cyan); background: #f0f9ff; }
+        .number-pool { display: flex; gap: 1rem; justify-content: center; margin-top: 1.5rem; }
+        .number-tile { width: 50px; height: 50px; background: var(--panel-bg); border: 1px solid var(--border-color); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 700; cursor: grab; }
+        .number-tile:active { cursor: grabbing; }
+
+        /* Simulator Styles */
+        .reactant-pool { display: flex; justify-content: center; flex-wrap: wrap; gap: 15px; background: #e2e8f0; padding: 15px; border-radius: 12px; margin-top: 1.5rem; }
+        .reactant { padding: 10px 20px; background: var(--panel-bg); border: 1px solid var(--border-color); border-radius: 8px; font-weight: 600; cursor: grab; user-select: none; }
+        .beaker { width: 150px; height: 200px; border: 5px solid #9ca3af; border-top: none; border-radius: 0 0 20px 20px; position: relative; background: rgba(100, 116, 139, 0.2); margin-top: 1rem; }
+        .beaker-liquid { width: 100%; height: 20%; background: var(--primary-blue); position: absolute; bottom: 0; border-radius: 0 0 15px 15px; transition: height 0.5s, background-color 0.5s; }
+        .beaker.drag-over { border-color: var(--accent-cyan); }
+        .reaction-animation { position: absolute; bottom: 20%; left: 50%; transform: translateX(-50%); }
+        .bubble { position: absolute; width: 10px; height: 10px; background: white; border-radius: 50%; animation: bubble-rise 2s infinite; }
+        @keyframes bubble-rise { from { bottom: 0; opacity: 1; } to { bottom: 100px; opacity: 0; } }
+        .product-display { margin-top: 20px; min-height: 50px; font-size: 1.2rem; font-weight: 600; color: var(--accent-green); text-align: center;}
+
+        /* Modal */
+        .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); justify-content: center; align-items: center; }
+        .modal.active { display: flex; }
+        .modal-content { background: var(--panel-bg); padding: 40px 50px; border-radius: 20px; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.2); position: relative; }
+    </style>
+</head>
+<body class="page-container">
+    
+    <header class="header">
+        <div class="header-section">Class 6 - Chemistry</div>
+        <div id="header-title" class="header-section center">Information</div>
+        <div class="header-section right">
+            <button id="back-btn" class="button" style="background-color: var(--secondary-gray);">Back</button>
+            <button id="toggle-view-btn" class="button" style="background-color: var(--primary-blue);">Activity</button>
+            <button id="difficulty-btn" class="button" style="background-color: var(--accent-cyan);">Difficulty: Easy</button>
+        </div>
+    </header>
+
+    <main class="main-content" id="main-content">
+        <section id="info-panel" class="panel">
+            <h1 style="color: var(--accent-cyan);">Simple Chemical Reactions</h1>
+            <div style="display:flex; flex-direction:column; gap:1.5rem;">
+                <div>
+                    <h2>What is a Chemical Reaction? 🧪</h2>
+                    <p>A chemical reaction is a process that transforms one set of chemical substances (reactants) to another (products).</p>
+                </div>
+                <div>
+                    <h2>Example: Making Water</h2>
+                    <p>The reaction 2H₂ + O₂ ⟶ 2H₂O shows how hydrogen and oxygen combine. Here's what the molecules look like:</p>
+                    <div style="margin-top: 1rem; text-align: center;">
+                         <img src="https://chem.libretexts.org/@api/deki/files/56889/synthesis_of_water_from_hydrogen_and_oxygen.jpg?revision=1" alt="Diagram showing the atoms of Hydrogen and Oxygen rearranging to form Water" style="max-width: 100%; border-radius: 8px;">
+                    </div>
+                </div>
+                <div>
+                    <h2>Common Types of Reactions</h2>
+                    <ul style="list-style-position: inside;">
+                        <li><b>Combination:</b> Two reactants combine to form one product. (A + B ⟶ AB)</li>
+                        <li><b>Decomposition:</b> One compound breaks down. (AB ⟶ A + B)</li>
+                        <li><b>Single Displacement:</b> An element swaps places with another in a compound.</li>
+                         <li><b>Double Displacement:</b> Parts of two compounds swap places to form new compounds.</li>
+                    </ul>
+                </div>
+                <div>
+                    <h2>How to Play</h2>
+                    <ul style="list-style-position: inside;">
+                        <li><b>Easy (Quiz):</b> Identify the type of reaction.</li>
+                        <li><b>Medium (Balance):</b> Drag numbers to balance the equations.</li>
+                        <li><b>Hard (Simulator):</b> Drag reactants to see what they create!</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="activity-panel" class="panel">
+            <div class="activity-area" id="activity-area"></div>
+            <footer class="bottom-control-bar">
+                <div id="status-bar" class="status-bar">Good luck!</div>
+                <button id="reset-btn" class="reset-button">Reset</button>
+            </footer>
+        </section>
+    </main>
+
+    <div class="modal" id="end-game-modal">
+        <div class="modal-content">
+            <h2 id="modal-title"></h2>
+            <p id="modal-score"></p>
+            <button class="button" id="modal-close-btn" style="background-color: var(--primary-blue);">Play Again</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            const difficulties = ['Easy', 'Medium', 'Hard'];
+            let showActivity = false, difficultyIdx = 0;
+
+            const mainContent = document.getElementById('main-content');
+            const infoPanel = document.getElementById('info-panel');
+            const activityArea = document.getElementById('activity-area');
+            const headerTitle = document.getElementById('header-title');
+            const toggleViewBtn = document.getElementById('toggle-view-btn');
+            const difficultyBtn = document.getElementById('difficulty-btn');
+            const backBtn = document.getElementById('back-btn');
+            const resetBtn = document.getElementById('reset-btn');
+            const modal = document.getElementById('end-game-modal');
+            const modalCloseBtn = document.getElementById('modal-close-btn');
+
+            function updateLayout() {
+                if (showActivity) mainContent.classList.add('activity-visible');
+                else mainContent.classList.remove('activity-visible');
+                infoPanel.style.width = showActivity ? '340px' : `${Math.min(700, window.innerWidth - 48)}px`;
+                headerTitle.textContent = showActivity ? 'Activity' : 'Information';
+                toggleViewBtn.textContent = showActivity ? 'Information' : 'Activity';
+            }
+
+            function startGame() {
+                const difficulty = difficulties[difficultyIdx];
+                if (difficulty === 'Easy') initQuizGame();
+                else if (difficulty === 'Medium') initBalanceGame();
+                else if (difficulty === 'Hard') initSimulatorGame();
+            }
+            
+            function showEndModal(title, scoreText) {
+                document.getElementById('modal-title').textContent = title;
+                document.getElementById('modal-score').textContent = scoreText;
+                modal.classList.add('active');
+            }
+            
+            let initQuizGame = () => {}, initBalanceGame = () => {}, initSimulatorGame = () => {};
+
+            // --- Game 1: Quiz Battle (Easy) ---
+            (() => {
+                const quizProblems = [
+                    { q: "2H₂ + O₂ ⟶ 2H₂O", a: "Combination" }, 
+                    { q: "2H₂O₂ ⟶ 2H₂O + O₂", a: "Decomposition" }, 
+                    { q: "Zn + CuSO₄ ⟶ ZnSO₄ + Cu", a: "Single Displacement" }, 
+                    { q: "HCl + NaOH ⟶ NaCl + H₂O", a: "Double Displacement" },
+                    { q: "C + O₂ ⟶ CO₂", a: "Combination"},
+                    { q: "CaCO₃ ⟶ CaO + CO₂", a: "Decomposition"},
+                    { q: "Fe + 2HCl ⟶ FeCl₂ + H₂", a: "Single Displacement"},
+                    { q: "AgNO₃ + NaCl ⟶ AgCl + NaNO₃", a: "Double Displacement"}
+                ];
+                const reactionTypes = ["Combination", "Decomposition", "Single Displacement", "Double Displacement"];
+                let quizLevel, quizScore;
+
+                initQuizGame = () => {
+                    quizLevel = 0; quizScore = 0;
+                    quizProblems.sort(() => Math.random() - 0.5);
+                    loadQuizProblem();
+                };
+
+                function loadQuizProblem() {
+                    if (quizLevel >= quizProblems.length) {
+                        showEndModal("Chemistry Master! 🧪", `Your final score is ${quizScore}.`);
+                        return;
+                    }
+                    const problem = quizProblems[quizLevel];
+                    activityArea.innerHTML = `<div class="game-header w-full max-w-lg"><h2>Identify the Reaction (${quizLevel + 1}/${quizProblems.length})</h2><div class="stat-display">Score: <span>${quizScore}</span></div></div><div class="quiz-question">${problem.q.replace(/\$/g, '')}</div><div class="quiz-options" id="quiz-options"></div>`;
+                    const optionsEl = document.getElementById('quiz-options');
+                    reactionTypes.forEach(type => {
+                        const btn = document.createElement('button');
+                        btn.className = 'quiz-option';
+                        btn.textContent = type;
+                        btn.onclick = () => handleQuizAnswer(type === problem.a, btn);
+                        optionsEl.appendChild(btn);
+                    });
+                }
+
+                function handleQuizAnswer(isCorrect, btn) {
+                    Array.from(activityArea.querySelectorAll('.quiz-option')).forEach(b => b.disabled = true);
+                    if (isCorrect) {
+                        quizScore += 10;
+                        btn.classList.add('correct');
+                    } else {
+                        btn.classList.add('incorrect');
+                        const correctBtn = Array.from(activityArea.querySelectorAll('.quiz-option')).find(b => b.textContent === quizProblems[quizLevel].a);
+                        if (correctBtn) correctBtn.classList.add('correct');
+                    }
+                    quizLevel++;
+                    setTimeout(loadQuizProblem, 1500);
+                }
+            })();
+
+            // --- Game 2: Balance the Equation (Medium) ---
+            (() => {
+                const equations = [
+                    { parts: ['H₂ + ', 'O₂ ⟶ ', 'H₂O'], coeffs: [2, 1, 2] }, 
+                    { parts: ['Na + ', 'Cl₂ ⟶ ', 'NaCl'], coeffs: [2, 1, 2] }, 
+                    { parts: ['CH₄ + ', 'O₂ ⟶ ', 'CO₂ + ', 'H₂O'], coeffs: [1, 2, 1, 2] },
+                    { parts: ['N₂ + ', 'H₂ ⟶ ', 'NH₃'], coeffs: [1, 3, 2] },
+                    { parts: ['Fe + ', 'O₂ ⟶ ', 'Fe₂O₃'], coeffs: [4, 3, 2] }
+                ];
+                let balanceLevel, balanceScore;
+
+                initBalanceGame = () => {
+                    balanceLevel = 0; balanceScore = 0;
+                    equations.sort(() => Math.random() - 0.5);
+                    loadBalanceProblem();
+                };
+
+                function loadBalanceProblem() {
+                    if (balanceLevel >= equations.length) {
+                        showEndModal("Equation Expert! ⚖️", `Your final score is ${balanceScore}.`);
+                        return;
+                    }
+                    const problem = equations[balanceLevel];
+                    activityArea.innerHTML = `
+                        <div class="game-header w-full max-w-2xl"><h2>Balance the Equation</h2><div class="stat-display">Score: <span>${balanceScore}</span></div></div>
+                        <div id="equation-container" class="equation-container"></div>
+                        <div id="number-pool" class="number-pool"></div>
+                        <button id="check-balance-btn" class="button" style="background-color:var(--accent-green); margin-top: 1rem;">Check Answer</button>`;
+                    
+                    const equationContainer = document.getElementById('equation-container');
+                    problem.coeffs.forEach((coeff, i) => {
+                        const slot = document.createElement('div');
+                        slot.className = 'equation-slot';
+                        slot.dataset.correct = coeff;
+                        slot.addEventListener('dragover', e => { e.preventDefault(); slot.classList.add('drag-over'); });
+                        slot.addEventListener('dragleave', e => e.target.classList.remove('drag-over'));
+                        slot.addEventListener('drop', handleDrop);
+                        equationContainer.appendChild(slot);
+                        
+                        const text = document.createElement('span');
+                        text.innerHTML = problem.parts[i];
+                        equationContainer.appendChild(text);
+                    });
+
+                    const numberPool = document.getElementById('number-pool');
+                    [1, 2, 3, 4].forEach(num => {
+                        const tile = document.createElement('div');
+                        tile.className = 'number-tile';
+                        tile.textContent = num;
+                        tile.draggable = true;
+                        tile.addEventListener('dragstart', e => e.dataTransfer.setData('text/number', num));
+                        numberPool.appendChild(tile);
+                    });
+
+                    document.getElementById('check-balance-btn').addEventListener('click', checkBalance);
+                }
+
+                function handleDrop(e) {
+                    e.preventDefault();
+                    e.target.classList.remove('drag-over');
+                    const num = e.dataTransfer.getData('text/number');
+                    e.target.textContent = num;
+                }
+
+                function checkBalance() {
+                    const slots = activityArea.querySelectorAll('.equation-slot');
+                    let allCorrect = true;
+                    slots.forEach(slot => {
+                        if (!slot.textContent || slot.textContent != slot.dataset.correct) {
+                           allCorrect = false;
+                        }
+                    });
+                    if (allCorrect) {
+                        balanceScore += 10;
+                        slots.forEach(slot => slot.classList.add('correct'));
+                        setTimeout(() => { balanceLevel++; loadBalanceProblem(); }, 1500);
+                    } else {
+                        activityArea.querySelector('.equation-container').classList.add('shake');
+                        setTimeout(() => activityArea.querySelector('.equation-container').classList.remove('shake'), 500);
+                    }
+                }
+            })();
+
+            // --- Game 3: Reaction Simulator (Hard) ---
+            (() => {
+                const reactants = ["Zinc", "HCl", "Vinegar", "Baking Soda", "Oxygen", "Hydrogen", "Iron", "Copper Sulfate", "Lead Nitrate", "Potassium Iodide"];
+                const reactions = { 
+                    "HCl,Zinc": { p: "H₂ Gas + Zinc Chloride", anim: "bubbles", color: "#a7f3d0" }, 
+                    "Baking Soda,Vinegar": { p: "CO₂ Gas + Sodium Acetate", anim: "bubbles", color: "#e0e7ff" }, 
+                    "Hydrogen,Oxygen": { p: "Water (H₂O)", anim: "flame", color: "#bfdbfe" },
+                    "Copper Sulfate,Iron": { p: "Iron Sulfate + Copper", anim: "none", color: "#d1fae5" },
+                    "Lead Nitrate,Potassium Iodide": { p: "Lead Iodide (Yellow Precipitate)", anim: "none", color: "#fef08a" }
+                };
+                let reactantsInBeaker;
+
+                initSimulatorGame = () => {
+                    activityArea.innerHTML = `
+                        <div class="game-header w-full max-w-lg"><h2>Virtual Lab</h2><button id="sim-reset-btn" class="button" style="background-color:var(--accent-red)">Clear Beaker</button></div>
+                        <div class="reactant-pool" id="reactant-pool"></div>
+                        <div class="lab-bench"><div class="beaker" id="beaker"><div class="beaker-liquid"></div><div class="reaction-animation"></div></div></div>
+                        <div class="product-display" id="product-display">Drag reactants into the beaker!</div>`;
+                    
+                    const reactantPool = document.getElementById('reactant-pool');
+                    reactants.forEach(r => {
+                        const el = document.createElement('div');
+                        el.className = 'reactant';
+                        el.textContent = r;
+                        el.draggable = true;
+                        el.addEventListener('dragstart', e => e.dataTransfer.setData('text/reactant', r));
+                        reactantPool.appendChild(el);
+                    });
+                    
+                    const beaker = document.getElementById('beaker');
+                    beaker.addEventListener('dragover', e => { e.preventDefault(); beaker.classList.add('drag-over'); });
+                    beaker.addEventListener('dragleave', () => beaker.classList.remove('drag-over'));
+                    beaker.addEventListener('drop', handleDrop);
+                    document.getElementById('sim-reset-btn').addEventListener('click', resetSimulator);
+                    resetSimulator();
+                };
+
+                function resetSimulator() {
+                    reactantsInBeaker = new Set();
+                    document.getElementById('product-display').textContent = "Drag reactants into the beaker!";
+                    document.getElementById('product-display').style.color = 'var(--text-light)';
+                    document.querySelector('.beaker-liquid').style.height = '20%';
+                    document.querySelector('.beaker-liquid').style.backgroundColor = 'var(--primary-blue)';
+                    document.querySelector('.reaction-animation').innerHTML = '';
+                }
+
+                function handleDrop(e) {
+                    const beaker = e.currentTarget;
+                    beaker.classList.remove('drag-over');
+                    const reactant = e.dataTransfer.getData('text/reactant');
+                    if (reactantsInBeaker.has(reactant) || reactantsInBeaker.size >= 2) return;
+                    
+                    reactantsInBeaker.add(reactant);
+                    document.querySelector('.beaker-liquid').style.height = `${20 + reactantsInBeaker.size * 15}%`;
+
+                    const sortedReactants = [...reactantsInBeaker].sort().join(',');
+                    const productDisplay = document.getElementById('product-display');
+                    const reactionAnimation = document.querySelector('.reaction-animation');
+
+                    if (reactantsInBeaker.size === 2 && reactions[sortedReactants]) {
+                        const reaction = reactions[sortedReactants];
+                        productDisplay.textContent = `Products: ${reaction.p}`;
+                        productDisplay.style.color = 'var(--accent-green)';
+                        document.querySelector('.beaker-liquid').style.backgroundColor = reaction.color;
+                        if (reaction.anim === 'bubbles') {
+                            reactionAnimation.innerHTML = Array(10).fill('<div class="bubble"></div>').join('');
+                            reactionAnimation.querySelectorAll('.bubble').forEach(b => {
+                                b.style.left = `${Math.random() * 80 + 10}%`;
+                                b.style.animationDuration = `${Math.random() * 1 + 1.5}s`;
+                            });
+                        } else if (reaction.anim === 'flame') {
+                            reactionAnimation.innerHTML = '<div style="font-size: 3rem;">🔥</div>';
+                        }
+                    } else if (reactantsInBeaker.size > 1) {
+                        productDisplay.textContent = "No reaction ⚠️";
+                        productDisplay.style.color = 'var(--accent-red)';
+                    }
+                }
+            })();
+            
+            // --- Main Event Listeners ---
+            backBtn.addEventListener('click', () => { window.history.back(); });
+            toggleViewBtn.addEventListener('click', () => {
+                showActivity = !showActivity;
+                if (showActivity) startGame();
+                updateLayout();
+            });
+            difficultyBtn.addEventListener('click', () => {
+                difficultyIdx = (difficultyIdx + 1) % difficulties.length;
+                const newDifficulty = difficulties[difficultyIdx];
+                difficultyBtn.textContent = `Difficulty: ${newDifficulty}`;
+                if (showActivity) startGame();
+            });
+            resetBtn.addEventListener('click', startGame);
+            modalCloseBtn.addEventListener('click', () => {
+                modal.classList.remove('active');
+                startGame();
+            });
+            
+            updateLayout();
+        });
+    </script>
+</body>
+</html>

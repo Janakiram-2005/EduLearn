@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cybersecurity Challenge</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --header-bg: #ffffff; --page-bg: #f4f7f9; --panel-bg: #ffffff;
+            --border-color: #e0e0e0; --text-dark: #1e293b; --text-light: #475569;
+            --accent-blue: #3b82f6; --accent-green: #22c55e; --accent-red: #ef4444;
+            --primary-blue: #007bff; --secondary-gray: #6c757d;
+        }
+        body { font-family: 'Poppins', sans-serif; background-color: var(--page-bg); color: var(--text-dark); margin: 0; height: 100vh; overflow: hidden; }
+        .page-container { display: flex; flex-direction: column; height: 100vh; }
+        .header {
+            position: fixed; top: 0; left: 0; width: 100%; height: 60px;
+            background-color: var(--header-bg); display: flex; align-items: center; justify-content: space-between;
+            padding: 0 24px; border-bottom: 1px solid var(--border-color); box-shadow: 0 2px 4px rgba(0,0,0,0.05); z-index: 1000; box-sizing: border-box;
+        }
+        .header-section { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .header-section.center { text-align: center; font-size: 1.2em; font-weight: bold; }
+        .header-section.right { display: flex; justify-content: flex-end; }
+        .button { padding: 8px 16px; margin-left: 10px; cursor: pointer; border: none; border-radius: 6px; font-weight: 600; color: white; transition: transform 0.1s; }
+        .button:disabled { opacity: 0.6; cursor: not-allowed; }
+        .button:active:not(:disabled) { transform: scale(0.95); }
+        .main-content { margin-top: 60px; padding: 24px; display: flex; flex-grow: 1; overflow: hidden; box-sizing: border-box; gap: 24px; justify-content: center; }
+        .panel { background-color: var(--panel-bg); border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: 1px solid var(--border-color); box-sizing: border-box; overflow-y: auto; padding: 24px 32px; height: calc(100vh - 108px); }
+        #info-panel { flex-shrink: 0; transition: width 400ms ease-in-out, margin 400ms ease-in-out; }
+        #activity-panel { display: none; flex-grow: 1; padding: 0; flex-direction: column; }
+        .main-content.activity-visible { justify-content: flex-start; }
+        .main-content.activity-visible #info-panel { width: 340px; min-width: 340px; }
+        .main-content.activity-visible #activity-panel { display: flex; }
+        .activity-area { flex-grow: 1; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 1rem; padding: 24px; overflow-y: auto; }
+        .bottom-control-bar { height: 60px; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; background-color: var(--page-bg); border-top: 1px solid var(--border-color); flex-shrink: 0; }
+        .status-bar { font-weight: bold; color: var(--text-dark); }
+        .reset-button { padding: 8px 16px; cursor: pointer; background-color: var(--accent-red); color: white; border: none; border-radius: 6px; font-weight: 600; }
+        
+        /* General Activity Styles */
+        .badges-container { margin-top: auto; padding-top: 1rem; text-align: center; }
+        .badge { display: inline-block; padding: 4px 10px; background-color: #e5e7eb; color: #6b7280; border-radius: 12px; font-size: 0.9rem; font-weight: 500; margin: 0 4px; }
+        .badge.unlocked { background-color: #fef08a; color: #854d0e; }
+        .feedback { font-size: 1.2rem; font-weight: 600; min-height: 2rem; margin-top: 1rem; }
+
+        /* Easy Mode: Cyber Match */
+        .memory-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; width: 100%; max-width: 600px; }
+        .memory-card { background-color: #94a3b8; color: var(--text-dark); border-radius: 8px; height: 100px; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; text-align: center; cursor: pointer; transition: transform 0.4s; transform-style: preserve-3d; }
+        .memory-card.flipped { transform: rotateY(180deg); background-color: #e2e8f0; }
+        .card-face { backface-visibility: hidden; position: absolute; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; padding: 0.5rem; }
+        .card-back { transform: rotateY(180deg); }
+        .memory-card.matched { background-color: var(--accent-green); cursor: default; }
+
+        /* Medium Mode: Safe Message Detective */
+        .message-box { background-color: #eef2ff; border: 1px solid #c7d2fe; padding: 1.5rem; border-radius: 12px; width: 100%; max-width: 600px; text-align: left; }
+        .message-box .suspicious { color: var(--accent-red); font-weight: 600; text-decoration: underline; }
+        .decision-buttons { display: flex; gap: 1rem; margin-top: 1.5rem; }
+
+        /* Hard Mode: Cyber Defense */
+        .network-map { width: 100%; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; align-items: center; text-align: center; }
+        .network-node { font-size: 4rem; }
+        .defense-tools, .threat-container { margin-top: 2rem; display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap; }
+        .tool, .threat { font-size: 1.2rem; padding: 0.75rem 1.25rem; border-radius: 8px; font-weight: 600; }
+        .tool { background-color: #dbeafe; color: #1e40af; cursor: grab; border: 2px solid #93c5fd; }
+        .threat { background-color: #fee2e2; color: #991b1b; }
+        .threat-container { border: 2px dashed #9ca3af; padding: 2rem; border-radius: 12px; min-height: 80px; }
+    </style>
+</head>
+<body class="page-container">
+    
+    <header class="header">
+        <div class="header-section">Cybersecurity</div>
+        <div id="header-title" class="header-section center">Information</div>
+        <div class="header-section right">
+            <button id="back-btn" class="button" style="background-color: var(--secondary-gray);">Back</button>
+            <button id="toggle-view-btn" class="button" style="background-color: var(--primary-blue);">Activity</button>
+            <button id="difficulty-btn" class="button" style="background-color: var(--accent-blue);">Mode: Easy</button>
+        </div>
+    </header>
+
+    <main class="main-content" id="main-content">
+        <section id="info-panel" class="panel">
+            <h1 class="text-3xl font-bold mb-4" style="color: var(--accent-blue);">Cybersecurity Basics</h1>
+            <div style="display:flex; flex-direction:column; gap:1.5rem;">
+                <div>
+                    <h2 class="text-xl font-semibold">Internet Terms</h2>
+                    <ul class="list-disc list-inside mt-2 text-gray-600">
+                        <li><b>IP Address:</b> A unique address for your device on the internet.</li>
+                        <li><b>Firewall:</b> A security guard for your network that blocks unauthorized access.</li>
+                        <li><b>Encryption:</b> Scrambling data so only authorized parties can read it.</li>
+                    </ul>
+                </div>
+                <div>
+                    <h2 class="text-xl font-semibold">Common Threats</h2>
+                    <p class="mt-2 text-gray-600">Be aware of these common cyber threats:</p>
+                    <ul class="list-disc list-inside mt-3 space-y-2 text-gray-600">
+                        <li><b>Malware/Virus:</b> Harmful software designed to damage your computer.</li>
+                        <li><b>Phishing:</b> Fake emails or messages designed to trick you into giving away personal information.</li>
+                        <li><b>DDoS Attack:</b> Overloading a website with traffic to make it crash.</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="activity-panel" class="panel">
+            <div class="activity-area" id="activity-area"></div>
+            <footer class="bottom-control-bar">
+                <div id="status-bar" class="status-bar">Score: 0</div>
+                <button id="reset-btn" class="reset-button">Reset</button>
+            </footer>
+        </section>
+    </main>
+
+    <script src="./neutralino.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            try { Neutralino.init(); } catch (e) { console.error("Neutralino not found."); }
+            
+            const difficulties = ['Easy', 'Medium', 'Hard'];
+            let showActivity = false, score = 0, difficultyIdx = 0;
+            let badges = { cyberLearner: false, cyberDetective: false, cyberWarrior: false };
+
+            const mainContent = document.getElementById('main-content');
+            const infoPanel = document.getElementById('info-panel');
+            const activityArea = document.getElementById('activity-area');
+            const headerTitle = document.getElementById('header-title');
+            const toggleViewBtn = document.getElementById('toggle-view-btn');
+            const difficultyBtn = document.getElementById('difficulty-btn');
+            const backBtn = document.getElementById('back-btn');
+            const resetBtn = document.getElementById('reset-btn');
+            const statusBar = document.getElementById('status-bar');
+
+            function updateLayout() {
+                if (showActivity) mainContent.classList.add('activity-visible');
+                else mainContent.classList.remove('activity-visible');
+                infoPanel.style.width = showActivity ? '340px' : `${Math.min(700, window.innerWidth - 48)}px`;
+                headerTitle.textContent = showActivity ? 'Activity' : 'Information';
+                toggleViewBtn.textContent = showActivity ? 'Information' : 'Activity';
+                statusBar.textContent = `Score: ${score}`;
+            }
+
+            function renderActivity() {
+                const difficulty = difficulties[difficultyIdx].toLowerCase();
+                if (difficulty === 'easy') renderEasyMode();
+                else if (difficulty === 'medium') renderMediumMode();
+                else if (difficulty === 'hard') renderHardMode();
+                renderBadges();
+            }
+
+            function renderBadges() {
+                let badgesHTML = `<div class="badges-container"><b>Badges:</b> `;
+                if(badges.cyberLearner) badgesHTML += `<span class="badge unlocked">🧑‍💻 Cyber Learner</span>`;
+                if(badges.cyberDetective) badgesHTML += `<span class="badge unlocked">🔍 Cyber Detective</span>`;
+                if(badges.cyberWarrior) badgesHTML += `<span class="badge unlocked">🛡️ Cyber Warrior</span>`;
+                if(!badges.cyberLearner && !badges.cyberDetective && !badges.cyberWarrior) badgesHTML += `<span class="badge">None yet</span>`;
+                badgesHTML += `</div>`;
+                activityArea.insertAdjacentHTML('beforeend', badgesHTML);
+            }
+
+            // --- EASY MODE: CYBER MATCH ---
+            function renderEasyMode() {
+                const terms = [
+                    { id: 1, content: 'Phishing' }, { id: 1, content: 'Fake email to steal info' },
+                    { id: 2, content: 'Firewall' }, { id: 2, content: 'Network security guard' },
+                    { id: 3, content: 'IP Address' }, { id: 3, content: 'Device\'s internet address' },
+                    { id: 4, content: 'Malware' }, { id: 4, content: 'Harmful software' },
+                    { id: 5, content: 'Encryption' }, { id: 5, content: 'Scrambling data for safety' },
+                    { id: 6, content: 'DNS' }, { id: 6, content: 'The internet\'s phonebook' },
+                    { id: 7, content: 'Virus' }, { id: 7, content: 'Self-replicating malware' },
+                    { id: 8, content: 'ISP' }, { id: 8, content: 'Provides internet access' }
+                ];
+                let flippedCards = [];
+                let matchedPairs = 0;
+                
+                activityArea.innerHTML = `
+                    <h3>🧑‍💻 Cyber Match</h3>
+                    <p>Find the matching terms and definitions.</p>
+                    <div id="memory-grid" class="memory-grid"></div>`;
+
+                const grid = document.getElementById('memory-grid');
+                terms.sort(() => 0.5 - Math.random()).forEach(item => {
+                    const card = document.createElement('div');
+                    card.className = 'memory-card';
+                    card.dataset.id = item.id;
+                    card.innerHTML = `<div class="card-face card-front"></div><div class="card-face card-back">${item.content}</div>`;
+                    card.onclick = () => {
+                        if (flippedCards.length < 2 && !card.classList.contains('flipped')) {
+                            card.classList.add('flipped');
+                            flippedCards.push(card);
+                            if (flippedCards.length === 2) {
+                                if (flippedCards[0].dataset.id === flippedCards[1].dataset.id) {
+                                    score += 10;
+                                    matchedPairs++;
+                                    badges.cyberLearner = true;
+                                    flippedCards[0].classList.add('matched');
+                                    flippedCards[1].classList.add('matched');
+                                    flippedCards = [];
+                                } else {
+                                    setTimeout(() => {
+                                        flippedCards[0].classList.remove('flipped');
+                                        flippedCards[1].classList.remove('flipped');
+                                        flippedCards = [];
+                                    }, 1200);
+                                }
+                                updateLayout();
+                            }
+                        }
+                    };
+                    grid.appendChild(card);
+                });
+            }
+
+            // --- MEDIUM MODE: SAFE MESSAGE DETECTIVE ---
+            function renderMediumMode() {
+                const messages = [
+                    { text: 'URGENT: Your account is suspended! Click here: <span class="suspicious">www.gooogle-login.com</span>', safe: false },
+                    { text: 'Hi, here is the document we discussed. Let me know what you think. -Jane', safe: true },
+                    { text: 'You WON! Claim your prize now by entering details at <span class="suspicious">www.free-prize.xyz</span>', safe: false },
+                    { text: 'Meeting reminder: Project discussion at 3 PM today.', safe: true },
+                    { text: 'A package is waiting. Track it: <span class="suspicious">bit.ly/track-now</span>', safe: false },
+                    { text: 'Your monthly e-statement is ready. Please log in to your secure portal to view.', safe: true },
+                    { text: 'We detected unusual activity. Please verify your password immediately.', safe: false },
+                    { text: 'Thanks for your feedback! We\'ve received your support ticket #58291.', safe: true }
+                ];
+                const problem = messages[Math.floor(Math.random() * messages.length)];
+                
+                activityArea.innerHTML = `
+                    <h3>🔍 Safe Message Detective</h3>
+                    <p>Is this message safe or suspicious?</p>
+                    <div class="message-box">${problem.text}</div>
+                    <div class="decision-buttons">
+                        <button id="safe-btn" class="button" style="background-color:var(--accent-green)">✅ Safe</button>
+                        <button id="phishing-btn" class="button" style="background-color:var(--accent-red)">❌ Suspicious</button>
+                    </div>
+                    <p id="medium-feedback" class="feedback"></p>`;
+
+                const feedback = document.getElementById('medium-feedback');
+                document.getElementById('safe-btn').onclick = () => checkAnswer(true);
+                document.getElementById('phishing-btn').onclick = () => checkAnswer(false);
+                function checkAnswer(isSafeClicked) {
+                    if (isSafeClicked === problem.safe) {
+                        score += 15;
+                        badges.cyberDetective = true;
+                        feedback.textContent = "Correct Detection!";
+                        feedback.style.color = 'var(--accent-green)';
+                    } else {
+                        score -= 5;
+                        feedback.textContent = "Incorrect! That was a risky one.";
+                        feedback.style.color = 'var(--accent-red)';
+                    }
+                    updateLayout();
+                    setTimeout(renderMediumMode, 2000);
+                }
+            }
+
+            // --- HARD MODE: CYBER DEFENSE ---
+            function renderHardMode() {
+                const threats = [
+                    { name: 'Malware', defense: 'Antivirus' }, 
+                    { name: 'DDoS Attack', defense: 'Firewall' }, 
+                    { name: 'Password Attack', defense: 'Strong Password' },
+                    { name: 'Spyware', defense: 'Antivirus' },
+                    { name: 'Data Interception', defense: 'Encryption' }
+                ];
+                const defenses = ['Antivirus', 'Firewall', 'Strong Password', 'Encryption'];
+                const problem = threats[Math.floor(Math.random() * threats.length)];
+
+                activityArea.innerHTML = `
+                    <h3>🛡️ Cyber Defense Simulator</h3>
+                    <p>A threat is attacking the network! Drag the correct defense to stop it.</p>
+                    <div class="network-map">
+                        <span class="network-node">💻</span><span class="text-3xl">↔️</span><span class="network-node">🌐</span>
+                    </div>
+                    <div id="threat-container" class="threat-container"><div class="threat">${problem.name}</div></div>
+                    <div id="defense-tools" class="defense-tools"></div>`;
+
+                const toolsContainer = document.getElementById('defense-tools');
+                defenses.sort(() => 0.5 - Math.random()).forEach(toolName => {
+                    const tool = document.createElement('div');
+                    tool.className = 'tool';
+                    tool.textContent = toolName;
+                    tool.draggable = true;
+                    tool.dataset.defense = toolName;
+                    tool.addEventListener('dragstart', e => e.dataTransfer.setData('text/plain', toolName));
+                    toolsContainer.appendChild(tool);
+                });
+
+                const threatContainer = document.getElementById('threat-container');
+                threatContainer.addEventListener('dragover', e => e.preventDefault());
+                threatContainer.addEventListener('drop', e => {
+                    e.preventDefault();
+                    const droppedDefense = e.dataTransfer.getData('text/plain');
+                    if(droppedDefense === problem.defense) {
+                        score += 20;
+                        badges.cyberWarrior = true;
+                        threatContainer.innerHTML = `<span style="color: var(--accent-green);">Threat Blocked! +20 points</span>`;
+                    } else {
+                        score -= 10;
+                        threatContainer.innerHTML = `<span style="color: var(--accent-red);">Wrong Defense! System Compromised.</span>`;
+                    }
+                    updateLayout();
+                    setTimeout(renderHardMode, 2000);
+                });
+            }
+            
+            backBtn.addEventListener('click', () => { window.history.back(); });
+            toggleViewBtn.addEventListener('click', () => {
+                showActivity = !showActivity;
+                if (showActivity) renderActivity();
+                updateLayout();
+            });
+            difficultyBtn.addEventListener('click', () => {
+                difficultyIdx = (difficultyIdx + 1) % difficulties.length;
+                difficultyBtn.textContent = `Mode: ${difficulties[difficultyIdx]}`;
+                if (showActivity) renderActivity();
+            });
+            resetBtn.addEventListener('click', () => {
+                score = 0;
+                if(showActivity) renderActivity();
+                updateLayout();
+            });
+            window.addEventListener('resize', updateLayout);
+
+            updateLayout();
+        });
+    </script>
+</body>
+</html>

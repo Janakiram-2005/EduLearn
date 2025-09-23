@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Combustion & Flame Game Hub</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --header-bg: #ffffff;
+            --page-bg: #f4f7f9;
+            --panel-bg: #ffffff;
+            --border-color: #e0e0e0;
+            --text-dark: #1e293b;
+            --text-light: #475569;
+            --accent-orange: #f97316;
+            --accent-blue: #3b82f6;
+            --accent-green: #22c55e;
+            --accent-red: #ef4444;
+            --primary-blue: #007bff;
+            --secondary-gray: #6c757d;
+        }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--page-bg);
+            color: var(--text-dark);
+            margin: 0;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .page-container { display: flex; flex-direction: column; height: 100vh; }
+        .header {
+            position: fixed; top: 0; left: 0; width: 100%; height: 60px;
+            background-color: var(--header-bg);
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 24px;
+            border-bottom: 1px solid var(--border-color);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            z-index: 1000;
+            box-sizing: border-box;
+        }
+        .header-section { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .header-section.center { text-align: center; font-size: 1.2em; font-weight: bold; }
+        .header-section.right { display: flex; justify-content: flex-end; }
+        .button {
+            padding: 8px 16px; margin-left: 10px; cursor: pointer;
+            border: none; border-radius: 6px; font-weight: 600; color: white;
+            transition: transform 0.1s;
+        }
+        .button:active { transform: scale(0.95); }
+        .main-content {
+            margin-top: 60px; padding: 24px; display: flex;
+            flex-grow: 1; overflow: hidden; box-sizing: border-box;
+            gap: 24px; justify-content: center;
+        }
+        .panel {
+            background-color: var(--panel-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            border: 1px solid var(--border-color);
+            box-sizing: border-box;
+            overflow-y: auto; padding: 24px 32px;
+            height: calc(100vh - 108px);
+        }
+        #info-panel { flex-shrink: 0; transition: width 400ms ease-in-out, margin 400ms ease-in-out; }
+        #activity-panel { display: none; flex-grow: 1; padding: 0; flex-direction: column; }
+        .main-content.activity-visible { justify-content: flex-start; }
+        .main-content.activity-visible #info-panel { width: 340px; min-width: 340px; }
+        .main-content.activity-visible #activity-panel { display: flex; }
+
+        /* --- ACTIVITY-SPECIFIC STYLES --- */
+        .activity-area { flex-grow: 1; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; padding: 1rem; }
+        .bottom-control-bar { height: 60px; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; background-color: var(--page-bg); border-top: 1px solid var(--border-color); flex-shrink: 0; }
+        .status-bar { font-weight: bold; color: var(--text-dark); }
+        .reset-button { padding: 8px 16px; cursor: pointer; background-color: var(--accent-red); color: white; border: none; border-radius: 6px; font-weight: 600; }
+        .game-header { display: flex; justify-content: space-between; align-items: flex-start; width: 100%; }
+        .stat-box-container { display: flex; gap: 0.75rem; }
+        .stat-box { padding: 0.5rem 1.25rem; border-radius: 8px; text-align: center; }
+        .stat-box-label { font-size: 0.75rem; font-weight: 500; opacity: 0.8; }
+        .stat-box-value { font-size: 1.5rem; font-weight: 700; }
+        #score-box { background-color: #dbeafe; color: #1e40af; }
+        
+        /* Game 1: Flame Game */
+        .flame { width: 150px; height: 200px; position: relative; margin: 1rem auto; }
+        .flame-body { position: absolute; bottom: 0; left: 50px; width: 50px; height: 100%; border-radius: 50% 50% 50% 50% / 80% 80% 20% 20%; transform: rotate(-45deg); }
+        .flame-body.blue { background: #38bdf8; box-shadow: 0 0 20px #38bdf8; animation: flicker-stable 1s infinite; }
+        .flame-body.yellow { background: #facc15; box-shadow: 0 0 20px #facc15; animation: flicker-unstable 0.5s infinite; }
+        .flame-body.smoky::after { content: ''; position: absolute; top: -50px; left: 0; width: 20px; height: 60px; background: #9ca3af; border-radius: 50%; opacity: 0.5; animation: smoke 3s infinite linear; }
+        .flame-buttons { display: flex; gap: 1rem; margin-top: 2rem; }
+        
+        /* Game 2: Reaction Builder */
+        .equation-area { display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-size: clamp(1rem, 4vw, 1.8rem); font-weight: 600; padding: 2rem; background-color: #eef2ff; border-radius: 12px; margin: 1rem 0; min-height: 80px; position: relative; flex-wrap: wrap; }
+        .equation-slot { width: 90px; height: 60px; background: #e0e7ff; border: 2px dashed #a5b4fc; border-radius: 8px; display: inline-flex; justify-content: center; align-items: center; transition: background-color 0.2s; }
+        .molecule-bank { display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; padding: 1rem; background-color: var(--page-bg); border-radius: 12px; margin-top: 1rem; }
+        .draggable { background: #4f46e5; color: white; padding: 0.5rem 1rem; border-radius: 8px; cursor: grab; user-select: none; }
+        
+        /* Game 3: Escape Game */
+        .escape-game { width: 100%; max-width: 800px; text-align: center; }
+        .room-display { background: var(--panel-bg); padding: 2rem; border-radius: 12px; border: 2px solid var(--border-color); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .escape-question { font-size: 1.25rem; font-weight: 500; color: var(--text-dark); margin: 1.5rem 0; }
+        .escape-options { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .option-btn.correct { background-color: var(--accent-green); color: white; }
+        .option-btn.incorrect { animation: shake 0.5s; background-color: var(--accent-red); color: white; }
+        
+        .feedback-text { margin-top: 1rem; font-weight: 600; font-size: 1.1rem; min-height: 24px; }
+        .level-complete-container h3 { font-size: 1.875rem; font-weight: bold; color: var(--accent-green); }
+        .level-complete-container p { font-size: 1.25rem; margin-top: 0.5rem; }
+        
+        @keyframes flicker-stable { 50% { transform: scaleY(1.05) rotate(-44deg); } }
+        @keyframes flicker-unstable { 50% { transform: scale(1.05, 0.95) rotate(-48deg); opacity: 0.8; } }
+        @keyframes smoke { to { transform: translateY(-100px) scale(2); opacity: 0; } }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+    </style>
+</head>
+<body class="page-container">
+    
+    <header class="header">
+        <div class="header-section">Grade 8 - Combustion & Flame</div>
+        <div id="header-title" class="header-section center">Information</div>
+        <div class="header-section right">
+            <button id="back-btn" class="button" style="background-color: var(--secondary-gray);">Back</button>
+            <button id="toggle-view-btn" class="button" style="background-color: var(--primary-blue);">Activity</button>
+            <button id="difficulty-btn" class="button" style="background-color: var(--accent-orange);">Difficulty: Easy</button>
+        </div>
+    </header>
+
+    <main class="main-content" id="main-content">
+        <section id="info-panel" class="panel">
+            <h1 class="text-3xl font-bold mb-4" style="color: var(--accent-orange);">Combustion & Flame</h1>
+            <div style="display:flex; flex-direction:column; gap:1.5rem;">
+                <div>
+                    <h2 class="text-xl font-semibold">What is Combustion?</h2>
+                    <p class="mt-2 text-gray-600">Combustion is a chemical process where a substance reacts with oxygen to produce heat and light. The substance that burns is a <b>fuel</b>.</p>
+                </div>
+                <div>
+                    <h2 class="text-xl font-semibold">Types of Combustion</h2>
+                    <ul class="list-disc list-inside mt-2 text-gray-600">
+                        <li><b>Complete Combustion:</b> Occurs with plenty of oxygen. Produces a clean, hot, blue flame (e.g., Gas stove).</li>
+                        <li><b>Incomplete Combustion:</b> Occurs with limited oxygen. Produces a cooler, yellow/orange flame and soot (e.g., Candle flame).</li>
+                    </ul>
+                </div>
+                 <div>
+                    <h2 class="text-xl font-semibold">Fire Safety</h2>
+                    <p class="mt-2 text-gray-600">The Fire Triangle requires: <b>Heat, Fuel, and Oxygen</b>. Removing any one extinguishes the fire.</p>
+                     <ul class="list-disc list-inside mt-3 space-y-2 text-gray-600">
+                        <li><b>CO₂ Extinguishers</b> are best for electrical fires.</li>
+                        <li>Covering a fire with a blanket cuts off the <b>oxygen supply</b>.</li>
+                     </ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="activity-panel" class="panel">
+            <div class="activity-area" id="activity-area"></div>
+            <footer class="bottom-control-bar">
+                <div id="status-bar" class="status-bar">Let's play!</div>
+                <button id="reset-btn" class="reset-button">Reset</button>
+            </footer>
+        </section>
+    </main>
+
+    <script src="./neutralino.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            try {
+                const synth = new Tone.Synth().toDestination();
+                window.sounds = {
+                    click: () => synth.triggerAttackRelease("C4", "16n", Tone.now()),
+                    correct: () => synth.triggerAttackRelease("E5", "16n", Tone.now()),
+                    wrong: () => synth.triggerAttackRelease("C3", "8n", Tone.now()),
+                    win: () => { const n = Tone.now(); synth.triggerAttackRelease("C5", "8n", n); synth.triggerAttackRelease("G5", "8n", n + 0.2); },
+                    alarm: () => { const n = Tone.now(); synth.triggerAttackRelease("A5", "16n", n); synth.triggerAttackRelease("A5", "16n", n + 0.2); }
+                };
+            } catch (e) {
+                window.sounds = { click: ()=>{}, correct: ()=>{}, wrong: ()=>{}, win: ()=>{}, alarm: ()=>{} };
+            }
+
+            const difficulties = ['Easy', 'Medium', 'Hard'];
+            let showActivity = false, difficultyIdx = 0;
+            
+            const mainContent = document.getElementById('main-content');
+            const infoPanel = document.getElementById('info-panel');
+            const activityArea = document.getElementById('activity-area');
+            const headerTitle = document.getElementById('header-title');
+            const toggleViewBtn = document.getElementById('toggle-view-btn');
+            const difficultyBtn = document.getElementById('difficulty-btn');
+            const backBtn = document.getElementById('back-btn');
+            const resetBtn = document.getElementById('reset-btn');
+            const statusBar = document.getElementById('status-bar');
+
+            function updateLayout() {
+                if (showActivity) mainContent.classList.add('activity-visible');
+                else mainContent.classList.remove('activity-visible');
+                infoPanel.style.width = showActivity ? '340px' : `${Math.min(700, window.innerWidth - 48)}px`;
+                headerTitle.textContent = showActivity ? `Activity: ${difficulties[difficultyIdx]}` : 'Information';
+                toggleViewBtn.textContent = showActivity ? 'Information' : 'Activity';
+            }
+
+            function startGame() {
+                const gameType = difficulties[difficultyIdx];
+                if (gameType === 'Easy') initFlameGame();
+                if (gameType === 'Medium') initReactionBuilder();
+                if (gameType === 'Hard') initEscapeGame();
+            }
+
+            // --- Game 1: Good vs Bad Flame (EASY) ---
+            function initFlameGame() {
+                let score = 0, streak = 0, questions, qIndex = 0;
+                const questionPool = [ { type: 'blue', isGood: true }, { type: 'yellow', isGood: false }, { type: 'smoky yellow', isGood: false }, { type: 'blue', isGood: true }, { type: 'yellow', isGood: false }, { type: 'smoky yellow', isGood: false }, { type: 'blue', isGood: true }, { type: 'yellow', isGood: false }, { type: 'smoky yellow', isGood: false }, { type: 'blue', isGood: true }, { type: 'yellow', isGood: false }, { type: 'smoky yellow', isGood: false }, { type: 'blue', isGood: true }, { type: 'yellow', isGood: false }, { type: 'smoky yellow', isGood: false }, { type: 'blue', isGood: true }, { type: 'yellow', isGood: false }, { type: 'smoky yellow', isGood: false }, { type: 'blue', isGood: true }, { type: 'yellow', isGood: false } ];
+                
+                function setupRound() {
+                    if (qIndex >= questions.length) {
+                        activityArea.innerHTML = `<div class="text-center"><h2 class="text-3xl font-bold text-green-500">Level Complete!</h2><p class="text-xl mt-4">Final Score: ${score}. You're a Flame Master 🔥!</p></div>`;
+                        return;
+                    }
+                    const q = questions[qIndex];
+                    activityArea.innerHTML = `
+                        <div class="flame-container">
+                            <h2 class="text-2xl font-semibold mb-4">Good Flame or Bad Flame?</h2>
+                            <div class="flame"><div class="flame-body ${q.type}"></div></div>
+                            <div class="flame-buttons">
+                                <button class="button good-btn" style="background-color:var(--accent-green)">✅ Good Flame</button>
+                                <button class="button bad-btn" style="background-color:var(--accent-red)">❌ Bad Flame</button>
+                            </div>
+                            <p id="feedback-text" class="feedback-text"></p>
+                        </div>`;
+                    document.querySelector('.good-btn').onclick = () => checkAnswer(true, q.isGood);
+                    document.querySelector('.bad-btn').onclick = () => checkAnswer(false, q.isGood);
+                    statusBar.textContent = `Score: ${score} | Streak: ${streak}x`;
+                }
+                function checkAnswer(guess, isGood) {
+                    const feedback = document.getElementById('feedback-text');
+                    if (guess === isGood) {
+                        streak++; score += 10 * streak; sounds.correct();
+                        feedback.textContent = `Correct! +${10 * streak} points!`;
+                        feedback.style.color = 'var(--accent-green)';
+                    } else {
+                        streak = 0; sounds.wrong();
+                        feedback.textContent = isGood ? 'Hint: Blue flames are good.' : 'Hint: Yellow/smoky flames are bad.';
+                        feedback.style.color = 'var(--accent-red)';
+                        document.querySelector('.flame').style.opacity = 0;
+                    }
+                    qIndex++;
+                    setTimeout(setupRound, 1500);
+                }
+                questions = [...questionPool].sort(() => 0.5 - Math.random()).slice(0, 5);
+                setupRound();
+            }
+
+            // --- Game 2: Reaction Builder (MEDIUM) ---
+            function initReactionBuilder() {
+                let score = 0, questions, qIndex = 0;
+                const questionPool = [
+                    { r: ['CH₄', '2O₂'], p: ['CO₂', '2H₂O'], o: ['CH₄', 'O₂', 'CO₂', 'H₂O', 'C', 'H₂', '2O₂', '2H₂O'] },
+                    { r: ['C', 'O₂'], p: ['CO₂'], o: ['C', 'O₂', 'CO₂', 'CO', 'C₂'] },
+                    { r: ['2H₂', 'O₂'], p: ['2H₂O'], o: ['H₂', 'O₂', 'H₂O', '2H₂', '2H₂O'] },
+                    { r: ['2Mg', 'O₂'], p: ['2MgO'], o: ['Mg', 'O₂', 'MgO', '2Mg', '2MgO'] },
+                ];
+
+                function setupRound() {
+                    if (qIndex >= questions.length) {
+                        activityArea.innerHTML = `<div class="text-center"><h2 class="text-3xl font-bold text-green-500">Level Complete!</h2><p class="text-xl mt-4">Final Score: ${score}. You're a Reaction Builder ⚡!</p></div>`;
+                        return;
+                    }
+                    const q = questions[qIndex];
+                    activityArea.innerHTML = `
+                        <div class="reaction-builder-game">
+                            <h2 class="text-xl font-semibold">Build the Balanced Combustion Reaction!</h2>
+                            <div class="equation-area">
+                                <div class="reactant-slots"></div>
+                                <span class="mx-4 text-4xl">→</span>
+                                <div class="product-slots"></div>
+                            </div>
+                            <div class="molecule-bank"></div>
+                            <button id="check-btn" class="button mt-4" style="background-color: var(--accent-blue)">Check Reaction</button>
+                            <p id="feedback-text" class="feedback-text"></p>
+                        </div>`;
+
+                    const reactantSlots = activityArea.querySelector('.reactant-slots');
+                    const productSlots = activityArea.querySelector('.product-slots');
+                    q.r.forEach(() => reactantSlots.innerHTML += '<div class="equation-slot"></div> + ');
+                    q.p.forEach(() => productSlots.innerHTML += '<div class="equation-slot"></div> + ');
+                    reactantSlots.lastChild.remove(); productSlots.lastChild.remove();
+                    
+                    const bank = activityArea.querySelector('.molecule-bank');
+                    q.o.sort(() => 0.5 - Math.random()).forEach(mol => {
+                        const el = document.createElement('div');
+                        el.className = 'draggable';
+                        el.textContent = mol;
+                        el.draggable = true;
+                        el.ondragstart = e => e.dataTransfer.setData('text', mol);
+                        bank.appendChild(el);
+                    });
+
+                    activityArea.querySelectorAll('.equation-slot').forEach(slot => {
+                        slot.ondragover = e => e.preventDefault();
+                        slot.ondrop = e => {
+                            e.preventDefault();
+                            slot.textContent = e.dataTransfer.getData('text');
+                            slot.style.borderColor = 'var(--accent-green)';
+                        };
+                    });
+
+                    document.getElementById('check-btn').onclick = () => checkReaction(q);
+                    statusBar.textContent = `Score: ${score}`;
+                }
+                function checkReaction(q) {
+                    const userReactants = [...activityArea.querySelectorAll('.reactant-slots .equation-slot')].map(s => s.textContent).sort();
+                    const userProducts = [...activityArea.querySelectorAll('.product-slots .equation-slot')].map(s => s.textContent).sort();
+                    const correctReactants = [...q.r].sort();
+                    const correctProducts = [...q.p].sort();
+
+                    if (JSON.stringify(userReactants) === JSON.stringify(correctReactants) && JSON.stringify(userProducts) === JSON.stringify(correctProducts)) {
+                        score += 25; sounds.correct();
+                        document.getElementById('feedback-text').textContent = 'Correct Reaction!';
+                        document.getElementById('feedback-text').style.color = 'var(--accent-green)';
+                        qIndex++;
+                        setTimeout(setupRound, 1500);
+                    } else {
+                        sounds.wrong();
+                        document.getElementById('feedback-text').textContent = 'Not quite balanced. Try again!';
+                        document.getElementById('feedback-text').style.color = 'var(--accent-red)';
+                    }
+                }
+                questions = [...questionPool].sort(() => 0.5 - Math.random()).slice(0, 2);
+                setupRound();
+            }
+
+            // --- Game 3: Fire Safety Escape (HARD) ---
+            function initEscapeGame() {
+                let currentRoom = 0;
+                const rooms = [
+                    { s: "You see a fire on a computer!", q: "Which extinguisher is best for electrical fires?", o: ["Water", "CO₂", "Foam", "Sand"], a: "CO₂"},
+                    { s: "The fire is spreading across the floor.", q: "What is the first thing you should do?", o: ["Find an extinguisher", "Sound the alarm", "Open a window", "Hide under a desk"], a: "Sound the alarm"},
+                    { s: "You need to smother a small flame.", q: "What happens when you cut off oxygen supply?", o: ["It gets bigger", "It changes color", "It goes out", "It explodes"], a: "It goes out"},
+                    { s: "You see two flames.", q: "Which flame is hotter?", o: ["The yellow flame", "The blue flame", "They are the same", "The smoky flame"], a: "The blue flame"},
+                    { s: "A pan of cooking oil is on fire.", q: "What should you NOT use?", o: ["Fire Blanket", "Wet Towel", "Water", "Baking Soda"], a: "Water" }
+                ];
+                let questions = [...rooms].sort(() => 0.5 - Math.random()).slice(0, 3);
+                
+                function setupRoom() {
+                    if (currentRoom >= questions.length) {
+                        sounds.win();
+                        activityArea.innerHTML = `<div class="text-center"><h2 class="text-4xl text-green-500">You Escaped!</h2><p class="text-2xl mt-4">You are a Fire Safety Champion 🔥🧯</p></div>`;
+                        return;
+                    }
+                    const room = questions[currentRoom];
+                    statusBar.textContent = `Room: ${currentRoom + 1}/${questions.length}`;
+                    activityArea.innerHTML = `
+                        <div class="escape-game">
+                            <div class="room-display">
+                                <h3 class="text-2xl font-bold" style="color: var(--accent-orange)">Room ${currentRoom + 1}: ${room.s}</h3>
+                                <p class="escape-question">${room.q}</p>
+                                <div class="escape-options"></div>
+                            </div>
+                        </div>`;
+                    
+                    const optionsContainer = activityArea.querySelector('.escape-options');
+                    room.o.forEach(opt => {
+                        const btn = document.createElement('button');
+                        btn.className = 'button';
+                        btn.style.backgroundColor = 'var(--primary-blue)';
+                        btn.textContent = opt;
+                        btn.onclick = () => checkEscapeAnswer(btn, opt === room.a);
+                        optionsContainer.appendChild(btn);
+                    });
+                }
+
+                function checkEscapeAnswer(btn, isCorrect) {
+                    document.querySelectorAll('.escape-options button').forEach(b => b.disabled = true);
+                    if (isCorrect) {
+                        sounds.correct();
+                        btn.classList.add('correct');
+                        setTimeout(() => { currentRoom++; setupRoom(); }, 1000);
+                    } else {
+                        sounds.alarm();
+                        btn.classList.add('incorrect');
+                        setTimeout(() => {
+                             document.querySelectorAll('.escape-options button').forEach(b => b.disabled = false);
+                             btn.classList.remove('incorrect');
+                        }, 1500);
+                    }
+                }
+                setupRoom();
+            }
+            
+            // --- Event Listeners ---
+            backBtn.addEventListener('click', () => { window.history.back(); });
+            toggleViewBtn.addEventListener('click', () => {
+                showActivity = !showActivity;
+                if (showActivity) startGame();
+                updateLayout();
+            });
+            difficultyBtn.addEventListener('click', () => {
+                difficultyIdx = (difficultyIdx + 1) % difficulties.length;
+                difficultyBtn.textContent = `Difficulty: ${difficulties[difficultyIdx]}`;
+                if (showActivity) startGame();
+            });
+            resetBtn.addEventListener('click', startGame);
+            window.addEventListener('resize', updateLayout);
+
+            updateLayout();
+        });
+    </script>
+</body>
+</html>

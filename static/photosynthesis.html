@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Photosynthesis Power-Up</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --header-bg: #ffffff; --page-bg: #f0fdf4; --panel-bg: #ffffff; --border: #dcfce7;
+            --text: #14532d; --muted: #475569; --accent: #22c55e; --accent-light: #dcfce7;
+            --primary-blue: #007bff; --secondary-gray: #6c757d; --accent-red: #ef4444;
+            --font-family: 'Inter', sans-serif;
+        }
+        * { box-sizing: border-box; }
+        body {
+            font-family: var(--font-family); background: var(--page-bg); margin: 0;
+            height: 100vh; overflow: hidden; color: var(--text); -webkit-font-smoothing: antialiased;
+        }
+        .page-container { display: flex; flex-direction: column; height: 100vh; }
+        .header {
+            position: fixed; top: 0; left: 0; width: 100%; height: 60px;
+            background-color: var(--header-bg); display: flex; align-items: center; justify-content: space-between;
+            padding: 0 24px; border-bottom: 1px solid var(--border); box-shadow: 0 2px 4px rgba(20, 83, 45, 0.05); z-index: 1000;
+        }
+        .header-section { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .header-section.center { text-align: center; font-size: 1.2em; font-weight: bold; }
+        .header-section.right { display: flex; justify-content: flex-end; }
+        .button {
+            padding: 8px 16px; margin-left: 10px; cursor: pointer;
+            border: none; border-radius: 6px; font-weight: 600; color: white;
+            transition: transform 0.1s;
+        }
+        .button:active { transform: scale(0.95); }
+        .main-content { margin-top: 60px; padding: 24px; display: flex; gap: 24px; flex-grow: 1; overflow: hidden; justify-content: center; }
+        .panel {
+            background: var(--panel-bg); border-radius: 12px;
+            box-shadow: 0 6px 20px rgba(20, 83, 45, 0.08);
+            overflow: auto; height: calc(100vh - 108px); flex-shrink: 0;
+            transition: width 400ms ease-in-out, margin 400ms ease-in-out;
+        }
+        #info-panel { padding: 32px 48px; }
+        #activity-panel { display: none; flex-direction: column; flex-grow: 1; padding: 0; }
+        .main-content.activity-visible { justify-content: flex-start; }
+        .main-content.activity-visible #info-panel { width: 340px; min-width: 340px; padding: 24px 32px; }
+        .main-content.activity-visible #activity-panel { display: flex; }
+
+        .activity-area {
+            display: grid; grid-template-rows: 1fr auto;
+            align-items: center; gap: 16px; padding: 22px; flex-grow: 1; overflow: auto;
+        }
+        .bottom-control-bar { height: 60px; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; background-color: var(--page-bg); border-top: 1px solid var(--border); flex-shrink: 0; }
+        .status-bar { font-weight: bold; color: var(--text); }
+        .reset-button { padding: 8px 16px; cursor: pointer; background-color: var(--accent-red); color: white; border: none; border-radius: 6px; font-weight: 600; }
+        
+        .game-board { width: 100%; display: flex; align-items: center; justify-content: center; gap: 16px; }
+        .reaction-zone {
+            flex: 1; height: 100%; border: 3px dashed var(--accent-light);
+            border-radius: 12px; padding: 16px; background: #f0fdf4;
+            transition: background-color 0.2s, border-color 0.2s, box-shadow 0.2s;
+        }
+        .reaction-zone__title { text-align: center; font-weight: 700; font-size: 1.2rem; color: #166534; margin: 0 0 16px 0; }
+        .reaction-zone__items { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; min-height: 50px; }
+        .reaction-arrow { font-size: clamp(2rem, 5vw, 4rem); font-weight: 700; color: var(--accent); padding: 0 20px; text-align: center; opacity: 0.5; transition: opacity 0.3s, transform 0.3s; }
+        .reaction-arrow--ready { opacity: 1; transform: scale(1.1); }
+        .reaction-zone--drag-over { border-color: var(--accent); background-color: #dcfce7; box-shadow: 0 0 20px rgba(34, 197, 94, 0.3); }
+        .reaction-zone--incorrect-drop { border-color: #fca5a5; background-color: #fee2e2; animation: shake 0.45s; }
+        
+        .items-pool { background: #fff; padding: 16px; border-radius: 12px; width: 100%; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        .items-pool__title { font-weight: 700; text-align: center; margin: 0 0 10px 0; }
+        .items-pool__container { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+        .item { padding: 8px 14px; background: #fef3c7; border-radius: 8px; cursor: grab; font-weight: 600; transition: all 0.2s; border: 2px solid #fde68a; font-size: 0.9rem; }
+        .item:active { cursor: grabbing; }
+        .item--placed { background: var(--accent); color: white; border-color: #15803d; cursor: default; }
+        .item--dragging { opacity: 0.5; transform: scale(1.1); box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+        
+        .completion-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; animation: fadeIn 0.5s; }
+        .final-equation { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 10px; margin: 20px 0; }
+        .final-equation .item { font-size: 1.1rem; padding: 10px 18px; }
+        .final-equation .op { font-size: 2rem; font-weight: bold; color: var(--muted); }
+        
+        @keyframes shake { 0%, 100% {transform:translateX(0)} 20%, 60% {transform:translateX(-6px)} 40%, 80% {transform:translateX(6px)} }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @media (max-width:920px){ .main-content.activity-visible .info-panel{display:none} .game-board{flex-direction:column;} }
+    </style>
+</head>
+<body class="page-container">
+    <header class="header">
+        <div class="header-section">Class 7: Photosynthesis</div>
+        <div id="header-title" class="header-section center">Information</div>
+        <div class="header-section right">
+            <button id="back-btn" class="button" style="background-color: var(--secondary-gray);">Back</button>
+            <button id="toggle-view-btn" class="button" style="background-color: var(--primary-blue);">Activity</button>
+            <button id="difficulty-btn" class="button" style="background-color: var(--accent);">Difficulty: Easy</button>
+        </div>
+    </header>
+
+    <main class="main-content" id="main-content">
+        <section id="info-panel" class="panel">
+            <h1 style="margin:0 0 8px 0; color:var(--accent);">How Plants Make Food</h1>
+            <p style="color:var(--muted)">Plants are amazing chemists! This game explores the key chemical reactions that allow plants to live and grow.</p>
+            <h3 style="color: #14532d;">1. Photosynthesis (Making Food)</h3>
+            <p style="background:var(--accent-light); padding:15px; border-radius:8px; font-weight:600; text-align:center; font-size:1.1rem;">
+                ☀️ Sunlight + 💧 Water + 💨 CO₂ → 🍬 Glucose + 🫁 Oxygen
+            </p>
+            <h3 style="color: #14532d; margin-top: 20px;">2. Respiration (Using Food)</h3>
+            <p style="color:var(--muted)">Just like us, plants need to break down their food (glucose) to get energy for growth. This is cellular respiration.</p>
+            <p style="background: #fffbeB; padding:15px; border-radius:8px; font-weight:600; text-align:center; font-size:1.1rem; border: 1px solid #fef9c3;">
+                🍬 Glucose + 🫁 Oxygen → ⚡ Energy (ATP) + 💨 CO₂ + 💧 Water
+            </p>
+        </section>
+
+        <section id="activity-panel" class="panel">
+            <div class="activity-area" id="game-area"></div>
+            <footer class="bottom-control-bar">
+                <div id="status-bar" class="status-bar">Score: 0</div>
+                <div>
+                    <button id="next-reaction-btn" class="button" style="background-color:#16a34a; display:none;">Next Reaction</button>
+                    <button id="reset-btn" class="reset-button">Reset</button>
+                </div>
+            </footer>
+        </section>
+    </main>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const gameData = {
+        easy: [ /* ... same data ... */ ],
+        medium: [ /* ... same data ... */ ],
+        hard: [ /* ... same data ... */ ]
+    };
+    Object.assign(gameData, {easy:[{title:"Reaction 1: Photosynthesis",reactants:["☀️ Sunlight","💧 Water","💨 Carbon Dioxide"],products:["🍬 Glucose","🫁 Oxygen"],distractors:["흙 Soil"]},{title:"Reaction 2: Plant Respiration",reactants:["🍬 Glucose","🫁 Oxygen"],products:["⚡ Energy","💨 Carbon Dioxide"],distractors:["☀️ Sunlight"]},{title:"Reaction 3: Making Chlorophyll",reactants:["☀️ Sunlight","Mg (Magnesium)"],products:["🌿 Chlorophyll"],distractors:["💧 Water","🪨 Rock"]}],medium:[{title:"Reaction 1: Photosynthesis",reactants:["☀️ Sunlight","💧 Water","💨 Carbon Dioxide","🌿 Chlorophyll"],products:["🍬 Glucose","🫁 Oxygen"],distractors:["💨 Nitrogen","🪨 Rock"],timeLimit:45},{title:"Reaction 2: Plant Respiration",reactants:["🍬 Glucose","🫁 Oxygen","🌱 Plant Cell"],products:["⚡ ATP Energy","💨 Carbon Dioxide","💧 Water"],distractors:["☀️ Sunlight"],timeLimit:40},{title:"Reaction 3: Storing Energy",reactants:["🍬 Glucose","🍬 Glucose"],products:["📦 Starch (Storage)"],distractors:["🫁 Oxygen","💧 Water"],timeLimit:30}],hard:[{title:"Reaction 1: Photosynthesis Formula",reactants:["☀️ Light Energy","6H₂O (Water)","6CO₂ (CO₂)"],products:["C₆H₁₂O₆ (Glucose)","6O₂ (Oxygen)"],distractors:["🔥 Heat Energy","N₂ (Nitrogen)"],timeLimit:40},{title:"Reaction 2: Respiration Formula",reactants:["C₆H₁₂O₆ (Glucose)","6O₂ (Oxygen)"],products:["⚡ ATP (Energy)","6CO₂ (Carbon Dioxide)","6H₂O (Water)"],distractors:["☀️ Light Energy","N₂ (Nitrogen)"],timeLimit:45},{title:"Reaction 3: Transpiration",reactants:["💧 Water (Roots)","☀️ Sunlight (Heat)"],products:["💧 Water Vapor (Leaves)"],distractors:["6O₂ (Oxygen)","6CO₂ (CO₂)"],timeLimit:30}]});
+
+    const difficulties = ['easy', 'medium', 'hard'];
+    let showActivity = false, difficultyIdx = 0, score = 0, currentLevel = 0, isGameActive = false;
+    let requiredReactants = [], requiredProducts = [];
+    let timerId = null, timeLeft = 0;
+    
+    const mainContent = document.getElementById('main-content'),
+          infoPanel = document.getElementById('info-panel'),
+          gameArea = document.getElementById('game-area'),
+          headerTitle = document.getElementById('header-title'),
+          toggleViewBtn = document.getElementById('toggle-view-btn'),
+          difficultyBtn = document.getElementById('difficulty-btn'),
+          backBtn = document.getElementById('back-btn'),
+          statusBar = document.getElementById('status-bar'),
+          nextReactionBtn = document.getElementById('next-reaction-btn'),
+          resetBtn = document.getElementById('reset-btn');
+
+    function updateLayout() {
+        mainContent.classList.toggle('activity-visible', showActivity);
+        infoPanel.style.width = showActivity ? '340px' : `${Math.min(700, window.innerWidth - 48)}px`;
+        
+        const currentLevelData = gameData[difficulties[difficultyIdx]]?.[currentLevel];
+        headerTitle.textContent = showActivity ? (currentLevelData?.title || "Photosynthesis Power-Up") : 'Information';
+        toggleViewBtn.textContent = showActivity ? 'Information' : 'Activity';
+        statusBar.textContent = `Score: ${score}`;
+
+        const isGameRunning = showActivity && isGameActive;
+        const isAllLevelsDone = showActivity && !currentLevelData;
+        
+        nextReactionBtn.style.display = (isGameRunning || !showActivity || isAllLevelsDone) ? 'none' : 'inline-block';
+        resetBtn.style.display = (isGameRunning || isAllLevelsDone) ? 'inline-block' : 'none';
+    }
+
+    function startGame() {
+        currentLevel = 0;
+        score = 0;
+        loadLevel();
+    }
+
+    function loadLevel() {
+        clearInterval(timerId);
+        isGameActive = true;
+        const difficulty = difficulties[difficultyIdx];
+        const level = gameData[difficulty]?.[currentLevel];
+
+        if (!level) {
+            gameArea.innerHTML = `<div class="completion-screen"><h2 style="color:var(--accent);">🎉 Difficulty Complete!</h2><p>You mastered all reactions for ${difficulty} mode. Final score: ${score}</p></div>`;
+            isGameActive = false;
+            updateLayout();
+            return;
+        }
+
+        requiredReactants = [...level.reactants];
+        requiredProducts = [...level.products];
+        const allItems = [...level.reactants, ...level.products, ...level.distractors].sort(() => 0.5-Math.random());
+
+        gameArea.innerHTML = `
+            <div class="game-board">
+                <div class="reaction-zone" data-zone-type="reactant"><h3 class="reaction-zone__title">Reactants (Inputs)</h3><div class="reaction-zone__items" id="reactants-container"></div></div>
+                <div class="reaction-arrow" id="reaction-arrow">🌿<br>→</div>
+                <div class="reaction-zone" data-zone-type="product"><h3 class="reaction-zone__title">Products (Outputs)</h3><div class="reaction-zone__items" id="products-container"></div></div>
+            </div>
+            <div class="items-pool">
+                <h3 class="items-pool__title">Drag the items to the correct zone</h3>
+                <div class="items-pool__container" id="items-pool-container">
+                    ${allItems.map((item, i) => {
+                        const type = requiredReactants.includes(item) ? 'reactant' : (requiredProducts.includes(item) ? 'product' : 'distractor');
+                        return `<div class="item" id="item-${i}" draggable="true" data-item-name="${item}" data-type="${type}">${item}</div>`
+                    }).join('')}
+                </div>
+            </div>`;
+        
+        addDragDropListeners();
+        if (level.timeLimit) startTimer(level.timeLimit);
+        updateLayout();
+    }
+
+    function addDragDropListeners() {
+        document.querySelectorAll('.item').forEach(item => {
+            item.addEventListener('dragstart', e => {
+                e.dataTransfer.setData('text/plain', e.target.id);
+                setTimeout(() => item.classList.add('item--dragging'), 0);
+            });
+            item.addEventListener('dragend', () => item.classList.remove('item--dragging'));
+        });
+        document.querySelectorAll('.reaction-zone').forEach(zone => {
+            zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('reaction-zone--drag-over'); });
+            zone.addEventListener('dragleave', () => zone.classList.remove('reaction-zone--drag-over'));
+            zone.addEventListener('drop', e => {
+                e.preventDefault();
+                zone.classList.remove('reaction-zone--drag-over');
+                const id = e.dataTransfer.getData('text/plain');
+                const item = document.getElementById(id);
+                if (item.dataset.type === zone.dataset.zoneType) {
+                    score += 5;
+                    statusBar.textContent = `Score: ${score}`;
+                    item.classList.add('item--placed');
+                    item.draggable = false;
+                    zone.querySelector('.reaction-zone__items').appendChild(item);
+                    checkWinCondition();
+                } else {
+                    zone.classList.add('reaction-zone--incorrect-drop');
+                    setTimeout(() => zone.classList.remove('reaction-zone--incorrect-drop'), 500);
+                }
+            });
+        });
+    }
+
+    function checkWinCondition() {
+        const placedReactants = document.querySelectorAll('#reactants-container .item--placed').length;
+        const placedProducts = document.querySelectorAll('#products-container .item--placed').length;
+        document.getElementById('reaction-arrow').classList.toggle('reaction-arrow--ready', placedReactants === requiredReactants.length);
+        
+        if (placedReactants === requiredReactants.length && placedProducts === requiredProducts.length) {
+            clearInterval(timerId);
+            score += timeLeft * 10; // Time bonus
+            statusBar.textContent = `Score: ${score}`;
+            displayCompletionScreen();
+        }
+    }
+
+    function displayCompletionScreen() {
+        isGameActive = false;
+        const level = gameData[difficulties[difficultyIdx]][currentLevel];
+        const reactantsHTML = requiredReactants.map((item, i) => `<div class="item item--placed">${item}</div>` + (i < requiredReactants.length - 1 ? '<div class="op">+</div>' : '')).join('');
+        const productsHTML = requiredProducts.map((item, i) => `<div class="item item--placed">${item}</div>` + (i < requiredProducts.length - 1 ? '<div class="op">+</div>' : '')).join('');
+        gameArea.innerHTML = `
+            <div class="completion-screen">
+                <h2 style="color:var(--accent);">✅ Reaction Complete!</h2>
+                <div class="final-equation">
+                    <div class="reaction-zone__items">${reactantsHTML}</div>
+                    <div class="reaction-arrow reaction-arrow--ready">☀️<br>→</div>
+                    <div class="reaction-zone__items">${productsHTML}</div>
+                </div>
+            </div>`;
+        updateLayout();
+    }
+
+    function startTimer(duration) {
+        timeLeft = duration;
+        timerId = setInterval(() => {
+            timeLeft--;
+            if (timeLeft < 0) {
+                clearInterval(timerId);
+                isGameActive = false;
+                gameArea.innerHTML = `<div class="completion-screen"><h2 style="color:#ef4444;">⌛ Time's Up!</h2><p>Reset and try again!</p></div>`;
+                updateLayout();
+            }
+        }, 1000);
+    }
+    
+    // --- EVENT LISTENERS ---
+    toggleViewBtn.addEventListener('click', () => {
+        showActivity = !showActivity;
+        clearInterval(timerId);
+        if (showActivity) startGame();
+        updateLayout();
+    });
+    difficultyBtn.addEventListener('click', () => {
+        difficultyIdx = (difficultyIdx + 1) % difficulties.length;
+        const diffText = difficulties[difficultyIdx];
+        difficultyBtn.textContent = `Difficulty: ${diffText.charAt(0).toUpperCase() + diffText.slice(1)}`;
+        if (showActivity) startGame();
+    });
+    backBtn.addEventListener('click', () => {
+        if (showActivity) { showActivity = false; updateLayout(); }
+        else { window.history.back(); }
+    });
+    nextReactionBtn.addEventListener('click', () => { currentLevel++; loadLevel(); });
+    resetBtn.addEventListener('click', () => {
+        if(isGameActive) loadLevel();
+        else startGame();
+    });
+      
+    updateLayout();
+});
+</script>
+</body>
+</html>

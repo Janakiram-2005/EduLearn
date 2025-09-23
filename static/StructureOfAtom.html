@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Structure of Atom Game Hub</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --header-bg: #ffffff;
+            --page-bg: #f3f4f6;
+            --panel-bg: #ffffff;
+            --border-color: #e5e7eb;
+            --text-dark: #1f2937;
+            --text-mid: #4b5563;
+            --accent-purple: #8b5cf6;
+            --accent-cyan: #22d3ee;
+            --accent-green: #22c55e;
+            --accent-red: #ef4444;
+            --primary-blue: #007bff;
+            --secondary-gray: #6c757d;
+            --player-health: 100%;
+            --boss-health: 100%;
+        }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--page-bg);
+            color: var(--text-dark);
+            margin: 0;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .page-container { display: flex; flex-direction: column; height: 100vh; }
+        .header {
+            position: fixed; top: 0; left: 0; width: 100%; height: 60px;
+            background-color: var(--header-bg);
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 24px;
+            border-bottom: 1px solid var(--border-color);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            z-index: 1000;
+            box-sizing: border-box;
+        }
+        .header-section { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .header-section.center { text-align: center; font-size: 1.2em; font-weight: bold; }
+        .header-section.right { display: flex; justify-content: flex-end; }
+        .button {
+            padding: 8px 16px; margin-left: 10px; cursor: pointer;
+            border: none; border-radius: 6px; font-weight: 600; color: white;
+            transition: transform 0.1s;
+        }
+        .button:active { transform: scale(0.95); }
+        .main-content {
+            margin-top: 60px; padding: 24px; display: flex;
+            flex-grow: 1; overflow: hidden; box-sizing: border-box;
+            gap: 24px; justify-content: center;
+        }
+        .panel {
+            background-color: var(--panel-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            border: 1px solid var(--border-color);
+            box-sizing: border-box;
+            overflow-y: auto; padding: 24px 32px;
+            height: calc(100vh - 108px);
+        }
+        #info-panel { flex-shrink: 0; transition: width 400ms ease-in-out, margin 400ms ease-in-out; }
+        #activity-panel { display: none; flex-grow: 1; padding: 0; flex-direction: column; }
+        .main-content.activity-visible { justify-content: flex-start; }
+        .main-content.activity-visible #info-panel { width: 340px; min-width: 340px; }
+        .main-content.activity-visible #activity-panel { display: flex; }
+
+        /* --- ACTIVITY-SPECIFIC STYLES --- */
+        .activity-area { flex-grow: 1; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; padding: 1rem; }
+        .bottom-control-bar { height: 60px; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; background-color: var(--page-bg); border-top: 1px solid var(--border-color); flex-shrink: 0; }
+        .status-bar { font-weight: bold; color: var(--text-dark); }
+        .reset-button { padding: 8px 16px; cursor: pointer; background-color: var(--accent-red); color: white; border: none; border-radius: 6px; font-weight: 600; }
+        
+        /* Game 1: Particle Sorter */
+        .sorter-game { display: flex; flex-direction: column; width: 100%; height: 100%; align-items: center; }
+        .particle-spawn-area { height: 120px; display: flex; align-items: center; justify-content: center; }
+        .particle { width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; color: white; cursor: grab; user-select: none; transition: transform 0.2s, box-shadow 0.2s; }
+        .proton { background-color: #ef4444; } .neutron { background-color: #4b5563; } .electron { background-color: #3b82f6; }
+        .sorting-bins { display: flex; flex-grow: 1; gap: 1.5rem; width: 100%; }
+        .bin { flex: 1; background: #eef2ff; border: 2px dashed #a5b4fc; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 600; transition: background-color 0.3s; }
+        .bin.over { background-color: #dbeafe; }
+        
+        /* Game 2: Periodic Table */
+        .periodic-table-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(60px, 1fr)); gap: 4px; width: 100%; }
+        .element-cell { background: #eef2ff; border: 1px solid var(--border-color); aspect-ratio: 1/1; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: 600; cursor: pointer; transition: all 0.3s; }
+        .element-cell.locked:hover { background: #dbeafe; }
+        .element-cell.unlocked { background: var(--accent-green); color: white; transform: scale(1.05); }
+
+        /* Game 3: Quiz Battle */
+        .battle-game { width: 100%; height: 100%; display: flex; flex-direction: column; }
+        .battle-arena { flex-grow: 1; display: flex; justify-content: space-between; align-items: center; padding: 1rem; }
+        .battle-character { text-align: center; }
+        .battle-character .emoji { font-size: 80px; transition: transform 0.2s; }
+        .health-bar-container { width: 150px; height: 20px; background: #e5e7eb; border-radius: 10px; overflow: hidden; margin: 0.5rem auto; border: 1px solid #d1d5db; }
+        .health-bar { height: 100%; transition: width 0.5s ease; }
+        #player-health { background: var(--accent-green); width: var(--player-health); }
+        #boss-health { background: var(--accent-red); width: var(--boss-health); }
+        .quiz-area { padding: 1.5rem; background: var(--page-bg); border-top: 1px solid var(--border-color); }
+        .options-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 1rem; }
+        .option-btn { background-color: var(--panel-bg); color: var(--text-dark); padding: 1rem; font-weight: 600; border-radius: 0.5rem; transition: all 0.2s ease; border: 1px solid var(--border-color); cursor: pointer; }
+        .option-btn.correct { background-color: var(--accent-green); color: white; }
+        .option-btn.incorrect { background-color: var(--accent-red); color: white; animation: shake 0.5s; }
+        
+        .level-complete-container h3 { font-size: 1.875rem; font-weight: bold; color: var(--accent-green); }
+        .level-complete-container p { font-size: 1.25rem; margin-top: 0.5rem; }
+        .modal-overlay { position: fixed; inset: 0; background-color: rgba(17, 24, 39, 0.8); backdrop-filter: blur(5px); display: flex; align-items: center; justify-content: center; z-index: 2000; animation: fadeIn 0.3s; }
+        .modal-box { background: var(--panel-bg); color:var(--text-dark); border-radius: 16px; padding: 2rem; border: 1px solid var(--border-color); max-width: 600px; width: 90%; max-height: 80vh; overflow-y: auto; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+    </style>
+</head>
+<body class="page-container">
+    
+    <header class="header">
+        <div class="header-section">Grade 9 - Structure of Atom</div>
+        <div id="header-title" class="header-section center">Information</div>
+        <div class="header-section right">
+            <button id="back-btn" class="button" style="background-color: var(--secondary-gray);">Back</button>
+            <button id="toggle-view-btn" class="button" style="background-color: var(--primary-blue);">Activity</button>
+            <button id="difficulty-btn" class="button" style="background-color: var(--accent-purple);">Difficulty: Easy</button>
+        </div>
+    </header>
+
+    <main class="main-content" id="main-content">
+        <section id="info-panel" class="panel">
+            <h1 class="text-3xl font-bold mb-4" style="color: var(--accent-purple);">Structure of an Atom</h1>
+            <div style="display:flex; flex-direction:column; gap:1.5rem;">
+                <div>
+                    <h2 class="text-xl font-semibold">Sub-atomic Particles</h2>
+                    <ul class="list-disc list-inside mt-2 text-gray-600">
+                        <li><b>Protons (p⁺):</b> Positively charged, in the nucleus.</li>
+                        <li><b>Neutrons (n⁰):</b> Neutral, in the nucleus.</li>
+                        <li><b>Electrons (e⁻):</b> Negatively charged, orbit the nucleus in shells.</li>
+                    </ul>
+                </div>
+                <div>
+                    <h2 class="text-xl font-semibold">Atomic & Mass Number</h2>
+                    <ul class="list-disc list-inside mt-2 text-gray-600">
+                        <li><b>Atomic Number (Z):</b> Number of protons. Defines the element.</li>
+                        <li><b>Mass Number (A):</b> Total protons and neutrons.</li>
+                    </ul>
+                </div>
+                 <div>
+                    <h2 class="text-xl font-semibold">Electron Shells (Bohr's Model)</h2>
+                     <p class="mt-2 text-gray-600">Electrons fill shells in a specific order (2, 8, 18...).</p>
+                     <ul class="list-disc list-inside mt-3 space-y-2 text-gray-600">
+                         <li><b>K Shell (1st):</b> Max 2 electrons</li>
+                         <li><b>L Shell (2nd):</b> Max 8 electrons</li>
+                         <li><b>M Shell (3rd):</b> Fills to 8 before the next shell.</li>
+                     </ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="activity-panel" class="panel">
+            <div class="activity-area" id="activity-area"></div>
+            <footer class="bottom-control-bar">
+                <div id="status-bar" class="status-bar">Let's begin!</div>
+                <button id="reset-btn" class="reset-button">Reset</button>
+            </footer>
+        </section>
+    </main>
+
+    <script src="./neutralino.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            try { Neutralino.init(); } catch (e) { console.error("Neutralino not found."); }
+            
+            const difficulties = ['Easy', 'Medium', 'Hard'];
+            let showActivity = false, difficultyIdx = 0, score = 0;
+
+            const mainContent = document.getElementById('main-content');
+            const infoPanel = document.getElementById('info-panel');
+            const activityArea = document.getElementById('activity-area');
+            const headerTitle = document.getElementById('header-title');
+            const toggleViewBtn = document.getElementById('toggle-view-btn');
+            const difficultyBtn = document.getElementById('difficulty-btn');
+            const backBtn = document.getElementById('back-btn');
+            const resetBtn = document.getElementById('reset-btn');
+            const statusBar = document.getElementById('status-bar');
+            
+            const elements = { H: { name: 'Hydrogen', p: 1, n: 0, s: [1] }, He: { name: 'Helium', p: 2, n: 2, s: [2] }, Li: { name: 'Lithium', p: 3, n: 4, s: [2, 1] }, Be: { name: 'Beryllium', p: 4, n: 5, s: [2, 2] }, B: { name: 'Boron', p: 5, n: 6, s: [2, 3] }, C: { name: 'Carbon', p: 6, n: 6, s: [2, 4] }, N: { name: 'Nitrogen', p: 7, n: 7, s: [2, 5] }, O: { name: 'Oxygen', p: 8, n: 8, s: [2, 6] }, F: { name: 'Fluorine', p: 9, n: 10, s: [2, 7] }, Ne: { name: 'Neon', p: 10, n: 10, s: [2, 8] }, Na: { name: 'Sodium', p: 11, n: 12, s: [2, 8, 1] }, Mg: { name: 'Magnesium', p: 12, n: 12, s: [2, 8, 2] }, Al: { name: 'Aluminium', p: 13, n: 14, s: [2, 8, 3] }, Si: { name: 'Silicon', p: 14, n: 14, s: [2, 8, 4] }, P: { name: 'Phosphorus', p: 15, n: 16, s: [2, 8, 5] }, S: { name: 'Sulfur', p: 16, n: 16, s: [2, 8, 6] }, Cl: { name: 'Chlorine', p: 17, n: 18, s: [2, 8, 7] }, Ar: { name: 'Argon', p: 18, n: 22, s: [2, 8, 8] } };
+            const elementSymbols = Object.keys(elements);
+            const bosses = [ { name: "Dalton Bot", img: "🤖", q: [{ q: "Who proposed the first atomic theory?", a: "Dalton", o: ["Thomson", "Rutherford", "Bohr"] }, { q: "Dalton's theory stated atoms are...", a: "Indivisible", o: ["Empty space", "Charged", "Complex"] }] }, { name: "Plum-Pudding Ghost", img: "👻", q: [{ q: "Who discovered the electron?", a: "Thomson", o: ["Dalton", "Chadwick", "Bohr"] }, { q: "Thomson's model described the atom as a...", a: "Positive sphere with electrons embedded", o: ["Tiny solar system", "Solid ball", "Central nucleus"] }] }, { name: "Rutherford Archer", img: "🏹", q: [{ q: "Who discovered the nucleus via the gold foil experiment?", a: "Rutherford", o: ["Thomson", "Dalton", "Bohr"] }, { q: "Rutherford concluded the atom is mostly...", a: "Empty space", o: ["Dense", "Positive", "Negative"] }] }, { name: "Bohr Wizard", img: "🧙", q: [{ q: "Who proposed that electrons orbit in specific shells?", a: "Bohr", o: ["Rutherford", "Thomson", "Dalton"] }, { q: "According to Bohr, electrons can...", a: "Jump between shells", o: ["Stop moving", "Enter the nucleus", "Orbit anywhere"] }] } ];
+            const particleSorterProblems = [ { p: 'Proton', t: 'proton', z: 'nucleus' }, { p: 'Neutron', t: 'neutron', z: 'nucleus' }, { p: 'Electron', t: 'electron', z: 'shell' }, { p: 'Proton', t: 'proton', z: 'nucleus' }, { p: 'Neutron', t: 'neutron', z: 'nucleus' }, { p: 'Electron', t: 'electron', z: 'shell' }, { p: 'Proton', t: 'proton', z: 'nucleus' }, { p: 'Neutron', t: 'neutron', z: 'nucleus' }, { p: 'Electron', t: 'electron', z: 'shell' }, { p: 'Proton', t: 'proton', z: 'nucleus' }, { p: 'Neutron', t: 'neutron', z: 'nucleus' }, { p: 'Electron', t: 'electron', z: 'shell' } ];
+
+            function updateLayout() {
+                if (showActivity) mainContent.classList.add('activity-visible');
+                else mainContent.classList.remove('activity-visible');
+                infoPanel.style.width = showActivity ? '340px' : `${Math.min(700, window.innerWidth - 48)}px`;
+                headerTitle.textContent = showActivity ? `Activity: ${difficulties[difficultyIdx]}` : 'Information';
+                toggleViewBtn.textContent = showActivity ? 'Information' : 'Activity';
+            }
+
+            function startGame() {
+                score = 0;
+                statusBar.textContent = `Score: ${score}`;
+                // Clean up any modals from the previous game
+                document.querySelector('.modal-overlay')?.remove();
+                
+                const gameType = difficulties[difficultyIdx];
+                if (gameType === 'Easy') initParticleSorter();
+                if (gameType === 'Medium') initPeriodicTable();
+                if (gameType === 'Hard') initQuizBattle();
+            }
+            
+            // --- Game 1: Particle Sorter (EASY) ---
+            function initParticleSorter() {
+                let currentProblemSet = [...particleSorterProblems].sort(() => 0.5 - Math.random()).slice(0, 5);
+                let qIndex = 0;
+
+                function setupRound() {
+                    if(qIndex >= currentProblemSet.length) {
+                        activityArea.innerHTML = `<div class="level-complete-container"><h3>Level Complete!</h3><p>Your score: ${score}</p></div>`;
+                        return;
+                    }
+                    const problem = currentProblemSet[qIndex];
+                    activityArea.innerHTML = `
+                        <div class="sorter-game">
+                            <h2 class="text-2xl font-bold text-center">Where does this belong?</h2>
+                            <div class="particle-spawn-area">
+                                <div class="particle ${problem.t}" draggable="true">
+                                    ${problem.t === 'proton' ? 'p⁺' : problem.t === 'neutron' ? 'n⁰' : 'e⁻'}
+                                </div>
+                            </div>
+                            <div class="sorting-bins">
+                                <div class="bin" data-zone="nucleus">🔬<br>Nucleus</div>
+                                <div class="bin" data-zone="shell">💫<br>Electron Shells</div>
+                            </div>
+                        </div>`;
+                    
+                    const draggable = activityArea.querySelector('.particle');
+                    draggable.ondragstart = e => e.dataTransfer.setData('zone', problem.z);
+                    activityArea.querySelectorAll('.bin').forEach(bin => {
+                        bin.ondragover = e => { e.preventDefault(); bin.classList.add('over'); };
+                        bin.ondragleave = () => bin.classList.remove('over');
+                        bin.ondrop = e => { e.preventDefault(); bin.classList.remove('over'); checkAnswer(e.dataTransfer.getData('zone'), bin.dataset.zone); };
+                    });
+                }
+                function checkAnswer(correctZone, droppedZone) {
+                    if (correctZone === droppedZone) {
+                        score += 10;
+                    } else {
+                        score -= 5;
+                    }
+                    statusBar.textContent = `Score: ${score}`;
+                    qIndex++;
+                    setupRound();
+                }
+                setupRound();
+            }
+
+            // --- Game 2: Periodic Table Unlock (MEDIUM) ---
+            function initPeriodicTable() {
+                let unlockedElements = new Set();
+                let questions = [...elementSymbols].sort(() => 0.5 - Math.random()).slice(0, 5);
+                let qIndex = 0;
+                
+                activityArea.innerHTML = `
+                    <div style="width:100%; text-align:center;">
+                        <h2 class="text-2xl font-bold mb-4">Periodic Table Unlock</h2>
+                        <div class="periodic-table-grid"></div>
+                    </div>`;
+                const grid = activityArea.querySelector('.periodic-table-grid');
+                
+                elementSymbols.forEach(symbol => {
+                    const cell = document.createElement('div');
+                    cell.className = 'element-cell locked';
+                    cell.textContent = '?';
+                    cell.dataset.symbol = symbol;
+                    grid.appendChild(cell);
+                });
+
+                function askQuestion() {
+                    if (qIndex >= questions.length) {
+                        activityArea.innerHTML = `<div class="level-complete-container"><h3>Level Complete!</h3><p>Your score: ${score}</p></div>`;
+                        return;
+                    }
+                    const symbol = questions[qIndex];
+                    const element = elements[symbol];
+                    const question = `What is the atomic number of ${element.name}?`;
+                    const correctAnswer = element.p;
+                    
+                    let options = new Set([correctAnswer]);
+                    while(options.size < 4) {
+                        const randEl = elements[elementSymbols[Math.floor(Math.random()*elementSymbols.length)]];
+                        if(randEl.p !== correctAnswer) options.add(randEl.p);
+                    }
+                    
+                    const modal = document.createElement('div');
+                    modal.className = 'modal-overlay';
+                    modal.innerHTML = `
+                        <div class="modal-box">
+                            <h3 class="text-xl font-bold mb-4">${question}</h3>
+                            <div class="options-grid">
+                                ${[...options].sort(() => 0.5-Math.random()).map(opt => `<button class="control-button option-btn">${opt}</button>`).join('')}
+                            </div>
+                        </div>`;
+                    document.body.appendChild(modal);
+                    
+                    modal.querySelectorAll('button').forEach(btn => {
+                        btn.onclick = () => {
+                            if (parseInt(btn.textContent) === correctAnswer) {
+                                score += 20;
+                                statusBar.textContent = `Score: ${score}`;
+                                unlockedElements.add(symbol);
+                                const cell = grid.querySelector(`[data-symbol="${symbol}"]`);
+                                cell.classList.remove('locked');
+                                cell.classList.add('unlocked');
+                                cell.innerHTML = `<strong>${symbol}</strong><span style="font-size:0.7rem;">${element.p}</span>`;
+                            }
+                            qIndex++;
+                            modal.remove();
+                            setTimeout(askQuestion, 500);
+                        };
+                    });
+                }
+                askQuestion();
+            }
+
+            // --- Game 3: Atomic Adventure (HARD) ---
+            function initQuizBattle() {
+                let playerHealth = 100, currentBossIndex = 0;
+                let currentProblemSet = [...bosses].sort(() => 0.5 - Math.random()).slice(0,3);
+
+                function setupBattle() {
+                    if(currentBossIndex >= currentProblemSet.length) {
+                         activityArea.innerHTML = `<div class="level-complete-container"><h3>Victory!</h3><p>You are an Atomic Genius ⚡! Final score: ${score}</p></div>`;
+                         return;
+                    }
+                    let bossHealth = 100;
+                    const boss = currentProblemSet[currentBossIndex];
+                    
+                    activityArea.innerHTML = `
+                        <div class="battle-game">
+                            <div class="battle-arena">
+                                <div class="battle-character"><div class="emoji">🧑‍🔬</div><h3>You</h3><div class="health-bar-container"><div id="player-health" class="health-bar"></div></div></div>
+                                <div class="battle-character"><div class="emoji">${boss.img}</div><h3>${boss.name}</h3><div class="health-bar-container"><div id="boss-health" class="health-bar"></div></div></div>
+                            </div>
+                            <div id="quiz-area" class="quiz-area"></div>
+                        </div>`;
+                    updateHealthBars(playerHealth, bossHealth);
+                    nextQuestion(boss, playerHealth, bossHealth);
+                }
+
+                function nextQuestion(boss, pHealth, bHealth) {
+                    const q = boss.q[Math.floor(Math.random() * boss.q.length)];
+                    const options = [...q.o, q.a].sort(() => 0.5 - Math.random());
+                    document.getElementById('quiz-area').innerHTML = `<p class="font-semibold">${q.q}</p><div class="options-grid">${options.map(o => `<button class="control-button option-btn">${o}</button>`).join('')}</div>`;
+                    document.querySelectorAll('.options-grid button').forEach(btn => {
+                        btn.onclick = () => checkAnswer(btn.textContent === q.a, pHealth, bHealth, boss);
+                    });
+                }
+
+                function checkAnswer(isCorrect, pHealth, bHealth, boss) {
+                    if (isCorrect) {
+                        bHealth -= 34;
+                        score += 10;
+                        activityArea.querySelector('.battle-character:last-child .emoji').classList.add('attack-anim');
+                    } else {
+                        pHealth -= 25;
+                        activityArea.querySelector('.battle-character:first-child .emoji').classList.add('attack-anim');
+                    }
+                    updateHealthBars(pHealth, bHealth);
+                    statusBar.textContent = `Score: ${score}`;
+                    
+                    setTimeout(() => {
+                        activityArea.querySelectorAll('.emoji').forEach(e => e.classList.remove('attack-anim'));
+                        if (bHealth <= 0) {
+                            currentBossIndex++;
+                            setupBattle();
+                        } else if (pHealth <= 0) {
+                            activityArea.innerHTML = `<div class="level-complete-container"><h3 style="color:var(--accent-red)">Defeated!</h3><p>Keep practicing! 🔬</p></div>`;
+                        } else {
+                            nextQuestion(boss, pHealth, bHealth);
+                        }
+                    }, 500);
+                }
+
+                function updateHealthBars(p, b) {
+                    document.documentElement.style.setProperty('--player-health', `${p}%`);
+                    document.documentElement.style.setProperty('--boss-health', `${b}%`);
+                }
+                setupBattle();
+            }
+            
+            backBtn.addEventListener('click', () => { window.history.back(); });
+            toggleViewBtn.addEventListener('click', () => {
+                showActivity = !showActivity;
+                if (showActivity) startGame();
+                updateLayout();
+            });
+            difficultyBtn.addEventListener('click', () => {
+                difficultyIdx = (difficultyIdx + 1) % difficulties.length;
+                difficultyBtn.textContent = `Difficulty: ${difficulties[difficultyIdx]}`;
+                if (showActivity) startGame();
+            });
+            resetBtn.addEventListener('click', startGame);
+            window.addEventListener('resize', updateLayout);
+            updateLayout();
+        });
+    </script>
+</body>
+</html>
+

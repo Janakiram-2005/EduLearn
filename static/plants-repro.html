@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Plant Kingdom Chronicles</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --header-bg: #ffffff; --page-bg: #f0fdf4; --panel-bg: #ffffff; --border: #dcfce7;
+            --text: #14532d; --muted: #475569; --accent: #22c55e; --accent-dark: #15803d;
+            --primary-blue: #007bff; --secondary-gray: #6c757d; --accent-red: #ef4444;
+            --font-family: 'Inter', sans-serif;
+        }
+        * { box-sizing: border-box; }
+        body {
+            font-family: var(--font-family); background: var(--page-bg); margin: 0;
+            height: 100vh; overflow: hidden; color: var(--text); -webkit-font-smoothing: antialiased;
+        }
+        .page-container { display: flex; flex-direction: column; height: 100vh; }
+        .header {
+            position: fixed; top: 0; left: 0; width: 100%; height: 60px;
+            background-color: var(--header-bg); display: flex; align-items: center; justify-content: space-between;
+            padding: 0 24px; border-bottom: 1px solid var(--border); box-shadow: 0 2px 4px rgba(20, 83, 45, 0.05); z-index: 1000;
+        }
+        .header-section { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .header-section.center { text-align: center; font-size: 1.2em; font-weight: bold; }
+        .header-section.right { display: flex; justify-content: flex-end; }
+        .button {
+            padding: 8px 16px; margin-left: 10px; cursor: pointer;
+            border: none; border-radius: 6px; font-weight: 600; color: white;
+            transition: transform 0.1s;
+        }
+        .button:active { transform: scale(0.95); }
+        .main-content { margin-top: 60px; padding: 24px; display: flex; gap: 24px; flex-grow: 1; overflow: hidden; justify-content: center; }
+        .panel {
+            background: var(--panel-bg); border-radius: 12px;
+            box-shadow: 0 6px 20px rgba(20, 83, 45, 0.08);
+            overflow: auto; height: calc(100vh - 108px); flex-shrink: 0;
+            transition: width 400ms ease-in-out, min-width 400ms ease-in-out, margin 400ms ease-in-out;
+        }
+        #info-panel {
+            width: 100%;
+            max-width: 700px; /* Centered max-width for info-only view */
+            margin: 0 auto;
+            padding: 24px 32px;
+        }
+        #activity-panel { display: none; flex-direction: column; flex-grow: 1; padding: 0; }
+        .main-content.activity-visible { justify-content: flex-start; }
+        .main-content.activity-visible #info-panel { width: 340px; min-width: 340px; margin: 0; }
+        .main-content.activity-visible #activity-panel { display: flex; }
+
+        .activity-area {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            gap: 16px; padding: 22px; flex-grow: 1; overflow: auto;
+        }
+        
+        /* Chapter Select & Completion Screens */
+        .screen-overlay { display: flex; flex-direction: column; gap: 20px; flex-wrap: wrap; justify-content: center; align-items: center; animation: fadeIn 0.3s; text-align: center; }
+        .chapter-select { display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center;}
+        .card {
+            background: #fff; border: 2px solid var(--border); border-radius: 12px;
+            padding: 20px; text-align: center; cursor: pointer; transition: all 0.2s;
+            width: 200px;
+        }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.08); border-color: var(--accent); }
+        .card__icon { font-size: 3rem; margin-bottom: 10px; }
+        .card__title { font-size: 1.2rem; font-weight: 700; color: var(--accent-dark); }
+        
+        .game-board { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: space-around; gap: 20px; }
+        .info-box { font-weight: 600; text-align: center; }
+        .draggable { cursor: grab; } .draggable:active { cursor: grabbing; }
+
+        /* Flower Game */
+        .flower-container, .agent-pool { display:flex; gap: 20px; justify-content: center; align-items: center; width: 100%;}
+        .flower { width: 120px; height: 120px; position: relative; background-color: #f9a8d4; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 4px solid #ec4899; cursor: pointer; transition: all 0.2s;}
+        .flower--grass { background-color: #a7f3d0; border-color: #10b981;}
+        .flower:hover { transform: scale(1.05); }
+        .flower--pollinated { border-color: var(--accent); opacity: 0.7; }
+        .agent { font-size: 3rem; padding: 10px; border-radius: 50%; transition: all 0.2s; cursor: pointer; }
+        .agent:hover { background-color: #fef9c3; }
+        .agent--selected { transform: scale(1.2); box-shadow: 0 0 15px #fde047;}
+
+        /* Spore Surfer Game */
+        .spore-game { width: 100%; text-align: center;}
+        .wind-meter { width: 80%; height: 30px; background: #e0f2f1; margin: 10px auto; border: 2px solid #a7f3d0; border-radius: 15px; position: relative; overflow: hidden; }
+        .wind-indicator { position: absolute; top: 0; left: 0; width: 10px; height: 100%; background: #2dd4bf; }
+        .spore-source { font-size: 4rem; cursor: pointer; }
+        .fertile-ground { width: 100px; height: 50px; background: #654321; margin: 20px auto; border-top: 5px solid var(--accent); }
+
+        /* Clone Colony Game */
+        .parent-plants, .plant-parts { display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; margin-top: 20px;}
+        .parent-plant { width: 120px; height: 120px; background: #dcfce7; border: 2px dashed #4ade80; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 3rem; transition: all 0.3s;}
+        .plant-part { background: #fef9c3; padding: 15px; border-radius: 8px; font-size: 1.2rem; }
+        .parent-plant--filled { background: var(--accent); border-style: solid; color: white; animation: grow 0.5s; }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+        @keyframes grow { from { transform: scale(1); } to { transform: scale(1.1); } }
+    </style>
+</head>
+<body class="page-container">
+    <header class="header">
+        <div class="header-section">Grade 7 - Chapter: Reproduction in Plants</div>
+        <div id="header-title" class="header-section center">Information</div>
+        <div class="header-section right">
+            <button id="back-btn" class="button" style="background-color: var(--secondary-gray);">Back</button>
+            <button id="toggle-view-btn" class="button" style="background-color: var(--primary-blue);">Activity</button>
+            <button id="difficulty-btn" class="button" style="background-color: var(--accent);">Easy</button>
+        </div>
+    </header>
+
+    <main class="main-content" id="main-content">
+        <section id="info-panel" class="panel">
+            <div style="padding: 0 20px;">
+                <h1 style="margin:0 0 8px 0; color:var(--accent-dark);">Plant Reproduction</h1>
+                <p style="color:var(--muted)">Plants have developed incredible ways to create new life. This activity explores three major strategies used in the plant kingdom.</p>
+                
+                <h3 style="color: #14532d; margin-top: 20px;">🌸 Sexual Reproduction (Flowers)</h3>
+                <p style="color:var(--muted)">Flowering plants use <strong>pollination</strong> to mix genes. Pollen from one flower travels to another via pollinators like bees or the wind. This leads to fertilization and the creation of seeds.</p>
+
+                <h3 style="color: #14532d; margin-top: 20px;">🍄 Spore Reproduction (Ferns & Fungi)</h3>
+                <p style="color:var(--muted)">Some organisms, like ferns and mushrooms, release thousands of tiny <strong>spores</strong> that travel on the wind to find a new place to grow.</p>
+                
+                <h3 style="color: #14532d; margin-top: 20px;">🥔 Asexual Reproduction (Clones)</h3>
+                <p style="color:var(--muted)">This method creates a new plant from a part of the parent plant. The new plant is an exact copy, or <strong>clone</strong> (vegetative propagation).</p>
+            </div>
+        </section>
+
+        <section id="activity-panel" class="panel">
+            <div class="activity-area" id="game-area"></div>
+        </section>
+    </main>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const gameData = {
+        flowerGame: {
+            easy: { title: "The Pollinators' Quest", instruction: 'Click the 🐝, then click the flower to pollinate.', flowers: [{type: 'bee', id: 'A'}], pollinators: [{type: 'bee', symbol: '🐝'}] },
+            medium: { title: "The Pollinators' Quest", instruction: 'Choose the correct pollinator for each flower.', flowers: [{type: 'bee', id: 'A'}, {type: 'wind', id: 'B'}], pollinators: [{type: 'bee', symbol: '🐝'}, {type: 'wind', symbol: '🌬️'}] },
+            hard: { title: "The Pollinators' Quest", instruction: 'Pollinate all the flowers correctly!', flowers: [{type: 'bee', id: 'A'}, {type: 'wind', id: 'B'}, {type: 'bee', id: 'C'}], pollinators: [{type: 'bee', symbol: '🐝'}, {type: 'wind', symbol: '🌬️'}] }
+        },
+        sporeGame: {
+            easy: { title: 'Spore Surfers', instruction: 'Click the mushroom when the wind is in the middle!', windSpeed: 2, targetWidth: 120 },
+            medium: { title: 'Spore Surfers', instruction: 'The wind is faster. Time your spore release!', windSpeed: 4, targetWidth: 80 },
+            hard: { title: 'Spore Surfers', instruction: 'Unpredictable wind! Hit the narrow target.', windSpeed: 6.5, targetWidth: 50 }
+        },
+        cloneGame: {
+            easy: { title: 'The Clone Colony', instruction: 'Drag the plant part to its parent.', parents: [{name: 'Potato', symbol: '🥔', part: 'Tuber'}], parts: ['Tuber', 'Flower'] },
+            medium: { title: 'The Clone Colony', instruction: 'Match all the parts to their parents.', parents: [{name: 'Potato', symbol: '🥔', part: 'Tuber'}, {name: 'Strawberry', symbol: '🍓', part: 'Runner'}], parts: ['Tuber', 'Runner', 'Seed'] },
+            hard: { title: 'The Clone Colony', instruction: 'Quickly match all the parts!', parents: [{name: 'Potato', symbol: '🥔', part: 'Tuber'}, {name: 'Strawberry', symbol: '🍓', part: 'Runner'}, {name: 'Spider Plant', symbol: '🪴', part: 'Plantlet'}], parts: ['Tuber', 'Runner', 'Plantlet', 'Pollen'] }
+        }
+    };
+    const difficulties = ['easy', 'medium', 'hard'];
+    let showActivity = false, difficultyIdx = 0, activeChapter = null, animationFrameId = null;
+    
+    const mainContent = document.getElementById('main-content'),
+          infoPanel = document.getElementById('info-panel'),
+          gameArea = document.getElementById('game-area'),
+          headerTitle = document.getElementById('header-title'),
+          toggleViewBtn = document.getElementById('toggle-view-btn'),
+          difficultyBtn = document.getElementById('difficulty-btn'),
+          backBtn = document.getElementById('back-btn');
+
+    const audio = { click: new Audio(), success: new Audio(), error: new Audio() };
+    const playSound = (sound) => { try { audio[sound].currentTime=0; audio[sound].play(); } catch (e) {} };
+
+    function updateLayout() {
+        mainContent.classList.toggle('activity-visible', showActivity);
+        
+        let title = 'Information';
+        if (showActivity) {
+            if (activeChapter) {
+                const game = gameData[activeChapter];
+                const diff = difficulties[difficultyIdx];
+                title = game[diff]?.title || 'Game';
+            } else {
+                title = 'Choose a Chapter';
+            }
+        }
+        headerTitle.textContent = title;
+        toggleViewBtn.textContent = showActivity ? 'Information' : 'Activity';
+    }
+    
+    function renderChapterSelect() {
+        activeChapter = null;
+        if (animationFrameId) cancelAnimationFrame(animationFrameId);
+        gameArea.innerHTML = `
+            <div class="screen-overlay">
+                <div class="chapter-select">
+                    <div class="card" data-chapter="flowerGame"><div class="card__icon">🌸</div><div class="card__title">Pollinators' Quest</div><p>Sexual Reproduction</p></div>
+                    <div class="card" data-chapter="sporeGame"><div class="card__icon">🍄</div><div class="card__title">Spore Surfers</div><p>Spore Formation</p></div>
+                    <div class="card" data-chapter="cloneGame"><div class="card__icon">🥔</div><div class="card__title">Clone Colony</div><p>Asexual Reproduction</p></div>
+                </div>
+            </div>`;
+        document.querySelectorAll('.card').forEach(card => {
+            card.onclick = () => {
+                playSound('click');
+                activeChapter = card.dataset.chapter;
+                loadGame();
+            };
+        });
+        updateLayout();
+    }
+
+    function loadGame() {
+        const difficulty = difficulties[difficultyIdx];
+        const levelData = gameData[activeChapter]?.[difficulty];
+        if(!levelData) return;
+        
+        const gameLoaders = { flowerGame, sporeGame, cloneGame };
+        gameLoaders[activeChapter]?.(levelData);
+        updateLayout();
+    }
+    
+    function showCompletionScreen(chapterTitle) {
+        if (animationFrameId) cancelAnimationFrame(animationFrameId);
+        playSound('success');
+        gameArea.innerHTML = `
+            <div class="screen-overlay">
+                <div class="card" style="width: 300px; cursor: default;">
+                    <div class="card__icon">✅</div><div class="card__title">Chapter Complete!</div>
+                    <p>You mastered "${chapterTitle}" on ${difficulties[difficultyIdx]} mode!</p>
+                    <button id="continue-btn" class="button" style="background-color: var(--accent); margin-top: 1rem;">Continue</button>
+                </div>
+            </div>`;
+        document.getElementById('continue-btn').onclick = () => { playSound('click'); renderChapterSelect(); };
+    }
+
+    // --- GAME IMPLEMENTATIONS ---
+    function flowerGame(level) {
+        let state = { selectedPollinator: null, carryingPollen: false, pollinatedCount: 0 };
+        gameArea.innerHTML = `<div class="game-board"><div class="info-box">${level.instruction}</div><div class="flower-container">${level.flowers.map(f => `<div class="flower ${f.type === 'wind' ? 'flower--grass' : ''}" data-type="${f.type}" data-pollinated="false"></div>`).join('')}</div><div class="agent-pool"><h3>Pollinators</h3>${level.pollinators.map(p => `<div class="agent" data-type="${p.type}">${p.symbol}</div>`).join('')}</div></div>`;
+        const agents = gameArea.querySelectorAll('.agent'), flowers = gameArea.querySelectorAll('.flower');
+        agents.forEach(agent => agent.onclick = () => {
+            if (state.carryingPollen) return;
+            playSound('click'); state.selectedPollinator = agent.dataset.type;
+            agents.forEach(a => a.classList.remove('agent--selected')); agent.classList.add('agent--selected');
+        });
+        flowers.forEach(flower => flower.onclick = () => {
+            if (!state.selectedPollinator) { playSound('error'); return; }
+            if (state.carryingPollen) {
+                if (state.pollenFromType === flower.dataset.type && flower.dataset.pollinated === 'false') {
+                    flower.dataset.pollinated = 'true'; flower.classList.add('flower--pollinated');
+                    agents.forEach(a => a.classList.remove('agent--selected'));
+                    state.selectedPollinator = null; state.carryingPollen = false; state.pollinatedCount++; playSound('success');
+                    if (state.pollinatedCount === level.flowers.length) setTimeout(() => showCompletionScreen(level.title), 500);
+                } else { playSound('error'); }
+            } else {
+                if (state.selectedPollinator === flower.dataset.type) {
+                    state.carryingPollen = true; state.pollenFromType = flower.dataset.type;
+                    flower.style.opacity = '0.5'; playSound('click');
+                } else { playSound('error'); }
+            }
+        });
+    }
+    function sporeGame(level) {
+        gameArea.innerHTML = `<div class="spore-game"><p class="info-box">${level.instruction}</p><div class="wind-meter"><div class="wind-indicator" id="wind-indicator"></div></div><div><span class="spore-source draggable" id="spore-source">🍄</span></div><div class="fertile-ground" id="fertile-ground"></div></div>`;
+        const windIndicator = document.getElementById('wind-indicator'), sporeSource = document.getElementById('spore-source'), fertileGround = document.getElementById('fertile-ground');
+        fertileGround.style.width = `${level.targetWidth}px`;
+        let windPosition = 0, windDirection = 1;
+        function animateWind() {
+            windPosition += windDirection * level.windSpeed;
+            const meterWidth = windIndicator.parentElement.offsetWidth;
+            if (windPosition > meterWidth - 10 || windPosition < 0) windDirection *= -1;
+            windIndicator.style.left = `${windPosition}px`;
+            animationFrameId = requestAnimationFrame(animateWind);
+        }
+        sporeSource.onclick = () => {
+            if(!animationFrameId) return;
+            cancelAnimationFrame(animationFrameId); animationFrameId = null;
+            const power = windPosition / windIndicator.parentElement.offsetWidth;
+            const success = power > 0.45 && power < 0.55;
+            if(success) {
+                playSound('success'); fertileGround.style.background = '#4ade80'; sporeSource.textContent = '✅';
+                setTimeout(() => showCompletionScreen(level.title), 1000);
+            } else {
+                playSound('error'); fertileGround.style.background = '#f87171'; sporeSource.textContent = '❌';
+                setTimeout(() => loadGame(), 1500);
+            }
+        };
+        animationFrameId = requestAnimationFrame(animateWind);
+    }
+    function cloneGame(level) {
+        const parts = [...level.parts].sort(() => 0.5 - Math.random());
+        gameArea.innerHTML = `<div class="game-board"><p class="info-box">${level.instruction}</p><div class="parent-plants">${level.parents.map(p => `<div class="parent-plant" data-plant-part="${p.part}">${p.symbol}</div>`).join('')}</div><div class="plant-parts">${parts.map(p => `<div class="plant-part draggable" draggable="true" data-part-name="${p}">${p}</div>`).join('')}</div></div>`;
+        document.querySelectorAll('.plant-part').forEach(part => {
+            part.addEventListener('dragstart', e => { e.dataTransfer.setData('part', part.dataset.partName); playSound('click'); });
+        });
+        document.querySelectorAll('.parent-plant').forEach(plant => {
+            plant.addEventListener('dragover', e => e.preventDefault());
+            plant.addEventListener('drop', e => {
+                if (plant.classList.contains('parent-plant--filled')) return;
+                const partName = e.dataTransfer.getData('part');
+                if(plant.dataset.plantPart === partName) {
+                    playSound('success'); plant.classList.add('parent-plant--filled'); plant.innerHTML += '🌱';
+                    document.querySelector(`[data-part-name="${partName}"]`).style.display = 'none';
+                    const filledCount = document.querySelectorAll('.parent-plant--filled').length;
+                    const totalParents = gameData.cloneGame[difficulties[difficultyIdx]].parents.length;
+                    if (filledCount === totalParents) setTimeout(() => showCompletionScreen(level.title), 500);
+                } else { playSound('error'); }
+            });
+        });
+    }
+
+    // --- EVENT LISTENERS ---
+    toggleViewBtn.addEventListener('click', () => {
+        showActivity = !showActivity;
+        if (showActivity) renderChapterSelect();
+        updateLayout();
+    });
+    difficultyBtn.addEventListener('click', () => {
+        playSound('click');
+        difficultyIdx = (difficultyIdx + 1) % difficulties.length;
+        difficultyBtn.textContent = difficulties[difficultyIdx].charAt(0).toUpperCase() + difficulties[difficultyIdx].slice(1);
+        if (activeChapter) loadGame();
+    });
+    backBtn.addEventListener('click', () => { 
+        playSound('click'); 
+        if (activeChapter) {
+            renderChapterSelect();
+        } else {
+            window.history.back();
+        }
+    });
+
+    updateLayout();
+});
+</script>
+</body>
+</html>

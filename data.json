@@ -1,0 +1,254 @@
+[
+    {
+        "class": "Grade 6",
+        "subject": "Biology",
+        "topic": "Cell Structure",
+        "htmlFile": "cell_structure.html"
+    },
+    {
+        "class": "Grade 6",
+        "subject": "Biology",
+        "topic": "Food and Nutrition",
+        "htmlFile": "nutrition.html"
+    },
+    {
+        "class": "Grade 6",
+        "subject": "Biology",
+        "topic": "Plants",
+        "htmlFile": "plant.html"
+    },
+    {
+        "class": "Grade 6",
+        "subject": "Chemistry",
+        "topic": "States of Matter",
+        "htmlFile": "state.html"
+    },
+    {
+        "class": "Grade 6",
+        "subject": "Chemistry",
+        "topic": "Elements & Compounds",
+        "htmlFile": "ElementsCompounds.html"
+    },
+    {
+        "class": "Grade 6",
+        "subject": "Physics",
+        "topic": "Motion",
+        "htmlFile": "motion.html"
+    },
+    {
+        "class": "Grade 6",
+        "subject": "Physics",
+        "topic": "Light Basics",
+        "htmlFile": "Light.html"
+    },
+    {
+        "class": "Grade 6",
+        "subject": "Physics",
+        "topic": "Magnetism",
+        "htmlFile": "Magnetism.html"
+    },
+    {
+        "class": "Grade 6",
+        "subject": "Computer Science",
+        "topic": "Basics of Computers",
+        "htmlFile": "computers.html"
+    },
+    {
+        "class": "Grade 6",
+        "subject": "Computer Science",
+        "topic": "Introduction to Scratch/Python",
+        "htmlFile": "coding_basics.html"
+    },
+    {
+        "class": "Grade 6",
+        "subject": "Maths",
+        "topic": "Number Systems",
+        "htmlFile": "numbersystem.html"
+    },
+    {
+        "class": "Grade 6",
+        "subject": "Maths",
+        "topic": "Fractions & Decimals",
+        "htmlFile": "fractions.html"
+    },
+    {
+        "class": "Grade 7",
+        "subject": "Chemistry",
+        "topic": "Acids, Bases & Salts",
+        "htmlFile": "AcidsBasesSalts.html"
+    },
+    {
+        "class": "Grade 7",
+        "subject": "Chemistry",
+        "topic": "Atomic Structure",
+        "htmlFile": "AtomicStructure.html"
+    },
+    {
+        "class": "Grade 7",
+        "subject": "Biology",
+        "topic": "Reproduction in Plants",
+        "htmlFile": "plants-repro.html"
+    },
+    {
+        "class": "Grade 7",
+        "subject": "Biology",
+        "topic": "Human Digestion",
+        "htmlFile": "digestion.html"
+    },
+    {
+        "class": "Grade 7",
+        "subject": "Maths",
+        "topic": "Data Handling",
+        "htmlFile": "DataHandling.html"
+    },
+    {
+        "class": "Grade 7",
+        "subject": "Physics",
+        "topic": "Heat",
+        "htmlFile": "Heat.html"
+    },
+    {
+        "class": "Grade 7",
+        "subject": "Physics",
+        "topic": "Sound",
+        "htmlFile": "Sound.html"
+    },
+    {
+        "class": "Grade 8",
+        "subject": "Maths",
+        "topic": "Direct & Inverse Proportions",
+        "htmlFile": "Direct_Inverse.html"
+    },
+    {
+        "class": "Grade 8",
+        "subject": "Maths",
+        "topic": "Mensuration",
+        "htmlFile": "Mensuration.html"
+    },
+    {
+        "class": "Grade 8",
+        "subject": "Chemistry",
+        "topic": "Metals & Non-Metals",
+        "htmlFile": "metal_Nonmetal.html"
+    },
+    {
+        "class": "Grade 8",
+        "subject": "Biology",
+        "topic": "Reproduction in Animals",
+        "htmlFile": "reproduction.html"
+    },
+    {
+        "class": "Grade 8",
+        "subject": "Biology",
+        "topic": "Microorganisms",
+        "htmlFile": "micro.html"
+    },
+    {
+        "class": "Grade 8",
+        "subject": "Computer Science",
+        "topic": "Flow charts",
+        "htmlFile": "flowcharts1.html"
+    },
+    {
+        "class": "Grade 8",
+        "subject": "Computer Science",
+        "topic": "Python Basics",
+        "htmlFile": "Pythonbasics.html"
+    },
+    {
+        "class": "Grade 8",
+        "subject": "Physics",
+        "topic": "Pressure",
+        "htmlFile": "Pressure.html"
+    },
+    {
+        "class": "Grade 8",
+        "subject": "Physics",
+        "topic": "Friction",
+        "htmlFile": "Friction.html"
+    },
+    {
+        "class": "Grade 9",
+        "subject": "Chemistry",
+        "topic": "Periodic Table",
+        "htmlFile": "periodicTable.html"
+    },
+    {
+        "class": "Grade 9",
+        "subject": "Physics",
+        "topic": "Laws of Motion",
+        "htmlFile": "LawsofMotion.html"
+    },
+    {
+        "class": "Grade 9",
+        "subject": "Biology",
+        "topic": "Tissues",
+        "htmlFile": "Tissues.html"
+    },
+    {
+        "class": "Grade 9",
+        "subject": "Maths",
+        "topic": "Geometry (Circles)",
+        "htmlFile": "GeometryCircle.html"
+    },
+    {
+        "class": "Grade 9",
+        "subject": "Maths",
+        "topic": "Statistics",
+        "htmlFile": "Statistics.html"
+    },
+    {
+        "class": "Grade 9",
+        "subject": "Maths",
+        "topic": "Algebraic Identities",
+        "htmlFile": "AlgebraicIdentities.html"
+    },
+    {
+        "class": "Grade 10",
+        "subject": "Computer Science",
+        "topic": "Internet & CyberSecurity",
+        "htmlFile": "cybersecurity.html"
+    },
+    {
+        "class": "Grade 10",
+        "subject": "Chemistry",
+        "topic": "Carbon Compounds",
+        "htmlFile": "CarbonCompounds.html"
+    },
+    {
+        "class": "Grade 10",
+        "subject": "Biology",
+        "topic": "Life Processes",
+        "htmlFile": "life.html"
+    },
+    {
+        "class": "Grade 10",
+        "subject": "Maths",
+        "topic": "Quadratic Equations",
+        "htmlFile": "QuadraticEquations.html"
+    },
+    {
+        "class": "Grade 10",
+        "subject": "Maths",
+        "topic": "Arithmetic Progressions",
+        "htmlFile": "AP.html"
+    },
+    {
+        "class": "Grade 11",
+        "subject": "Chemistry",
+        "topic": "Chemical Equilibrium",
+        "htmlFile": "ChemicalEquilibrium.html"
+    },
+    {
+        "class": "Grade 11",
+        "subject": "Physics",
+        "topic": "Kinematics",
+        "htmlFile": "kinematics.html"
+    },
+    {
+        "class": "Grade 12",
+        "subject": "Chemistry",
+        "topic": "Biomolecules & Polymers",
+        "htmlFile": "Biomolecules_Polymers.html"
+    }
+]

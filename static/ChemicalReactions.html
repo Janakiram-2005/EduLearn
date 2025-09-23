@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grade 10: Chemical Reactions - Game Hub</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
+    <style>
+        :root {
+            --header-bg: #ffffff;
+            --page-bg: #f3f4f6;
+            --panel-bg: #ffffff;
+            --border-color: #e5e7eb;
+            --text-dark: #1f2937;
+            --text-mid: #4b5563;
+            --accent-blue: #38bdf8;
+            --accent-green: #34d399;
+            --accent-red: #fb7185;
+            --accent-orange: #f97316;
+            --primary-blue: #007bff;
+            --secondary-gray: #6c757d;
+        }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--page-bg);
+            color: var(--text-dark);
+            margin: 0;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .page-container { display: flex; flex-direction: column; height: 100vh; }
+        .header {
+            position: fixed; top: 0; left: 0; width: 100%; height: 60px;
+            background-color: var(--header-bg);
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 24px;
+            border-bottom: 1px solid var(--border-color);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            z-index: 1000;
+            box-sizing: border-box;
+        }
+        .header-section { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .header-section.center { text-align: center; font-size: 1.2em; font-weight: bold; }
+        .header-section.right { display: flex; justify-content: flex-end; }
+        .button {
+            padding: 8px 16px; margin-left: 10px; cursor: pointer;
+            border: none; border-radius: 6px; font-weight: 600; color: white;
+            transition: transform 0.1s;
+        }
+        .button:active { transform: scale(0.95); }
+        .main-content {
+            margin-top: 60px; padding: 24px; display: flex;
+            flex-grow: 1; overflow: hidden; box-sizing: border-box;
+            gap: 24px; justify-content: center;
+        }
+        .panel {
+            background-color: var(--panel-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            border: 1px solid var(--border-color);
+            box-sizing: border-box;
+            overflow-y: auto; padding: 24px 32px;
+            height: calc(100vh - 108px);
+        }
+        #info-panel { flex-shrink: 0; transition: width 400ms ease-in-out, margin 400ms ease-in-out; }
+        #activity-panel { display: none; flex-grow: 1; padding: 0; flex-direction: column; }
+        .main-content.activity-visible { justify-content: flex-start; }
+        .main-content.activity-visible #info-panel { width: 340px; min-width: 340px; }
+        .main-content.activity-visible #activity-panel { display: flex; }
+
+        /* --- ACTIVITY-SPECIFIC STYLES --- */
+        .activity-area { flex-grow: 1; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; padding: 1rem; }
+        .bottom-control-bar { height: 60px; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; background-color: var(--page-bg); border-top: 1px solid var(--border-color); flex-shrink: 0; }
+        .status-bar { font-weight: bold; color: var(--text-dark); }
+        .reset-button { padding: 8px 16px; cursor: pointer; background-color: var(--accent-red); color: white; border: none; border-radius: 6px; font-weight: 600; }
+        .game-header { display: flex; justify-content: space-between; align-items: flex-start; width: 100%; }
+        .stat-box-container { display: flex; gap: 0.75rem; }
+        .stat-box { padding: 0.5rem 1.25rem; border-radius: 8px; text-align: center; }
+        .stat-box-label { font-size: 0.75rem; font-weight: 500; opacity: 0.8; }
+        .stat-box-value { font-size: 1.5rem; font-weight: 700; }
+        #score-box { background-color: #dbeafe; color: #1e40af; }
+        #timer-box { background-color: #fee2e2; color: #991b1b; }
+        
+        /* Game 1: Reaction Balancer */
+        .balancer-game { width: 100%; max-width: 800px; text-align: center; }
+        .equation-display { display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-size: clamp(1rem, 4vw, 1.8rem); font-weight: 600; padding: 2rem; background-color: #eef2ff; border-radius: 12px; }
+        .coeff-input { width: 45px; height: 45px; text-align: center; background: var(--panel-bg); border: 2px solid var(--border-color); border-radius: 8px; color: var(--text-dark); font-size: 1.2rem; font-weight:bold; }
+        .coeff-input:focus { border-color: var(--accent-blue); outline: none; }
+        
+        /* Game 2: Identify Reaction */
+        .identifier-game { width: 100%; max-width: 800px; text-align: center; }
+        .reaction-card { background: #eef2ff; padding: 2rem; border-radius: 12px; margin-bottom: 2rem; font-size: 1.5rem; font-weight: bold; border: 1px solid var(--border-color); }
+        .type-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }
+        .type-btn { background: #e2e8f0; padding: 1rem; border-radius: 8px; cursor: pointer; transition: all 0.2s; border: 1px solid var(--border-color); font-weight: 600; }
+        
+        /* Game 3: Virtual Lab */
+        .lab-game { display: flex; width: 100%; height:100%; align-items: center; justify-content: center; gap: 2rem; flex-wrap: wrap; }
+        .beaker-area { flex: 1; display: flex; justify-content: center; align-items: center; min-width: 300px; }
+        .beaker-svg { width: 250px; height: 250px; }
+        .chemical-shelf { flex-basis: 300px; display: flex; flex-direction: column; gap: 1rem; background: var(--page-bg); padding: 1.5rem; border-radius: 12px; }
+        .chemical { background: #4b5563; color: white; padding: 1rem; border-radius: 8px; text-align: center; font-weight: 600; cursor: grab; }
+
+        .feedback-text { margin-top: 1rem; font-weight: 600; font-size: 1.1rem; min-height: 24px; text-align: center; }
+        .level-complete-container h3 { font-size: 1.875rem; font-weight: bold; color: var(--accent-green); }
+        .level-complete-container p { font-size: 1.25rem; margin-top: 0.5rem; }
+        .option-btn.correct { background-color: var(--accent-green); color: white; }
+        .option-btn.incorrect { animation: shake 0.5s; background-color: var(--accent-red); color: white; }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+    </style>
+</head>
+<body class="page-container">
+    
+    <header class="header">
+        <div class="header-section">Grade 10 - Chemical Reactions</div>
+        <div id="header-title" class="header-section center">Information</div>
+        <div class="header-section right">
+            <button id="back-btn" class="button" style="background-color: var(--secondary-gray);">Back</button>
+            <button id="toggle-view-btn" class="button" style="background-color: var(--primary-blue);">Activity</button>
+            <button id="difficulty-btn" class="button" style="background-color: var(--accent-orange);">Difficulty: Easy</button>
+        </div>
+    </header>
+
+    <main class="main-content" id="main-content">
+        <section id="info-panel" class="panel">
+            <h1 class="text-3xl font-bold mb-4" style="color: var(--accent-orange);">Chemical Reactions</h1>
+            <div style="display:flex; flex-direction:column; gap:1.5rem;">
+                <div>
+                    <h2 class="text-xl font-semibold">What is a Chemical Reaction?</h2>
+                    <p class="mt-2 text-gray-600">A process that transforms one set of chemical substances to another. Signs include color change, gas formation, or precipitate formation.</p>
+                </div>
+                <div>
+                    <h2 class="text-xl font-semibold">Types of Reactions</h2>
+                    <ul class="list-disc list-inside mt-2 text-gray-600">
+                        <li><b>Combination:</b> A + B → AB</li>
+                        <li><b>Decomposition:</b> AB → A + B</li>
+                        <li><b>Displacement:</b> A + BC → AC + B</li>
+                        <li><b>Double Displacement:</b> AB + CD → AD + CB</li>
+                    </ul>
+                </div>
+                 <div>
+                    <h2 class="text-xl font-semibold">Balancing Equations</h2>
+                     <p class="mt-2 text-gray-600">The Law of Conservation of Mass means the number of atoms of each element must be the same on both sides of an equation.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="activity-panel" class="panel">
+            <div class="activity-area" id="activity-area"></div>
+            <footer class="bottom-control-bar">
+                <div id="status-bar" class="status-bar">Let's begin!</div>
+                <button id="reset-btn" class="reset-button">Reset</button>
+            </footer>
+        </section>
+    </main>
+
+    <script src="./neutralino.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            try { Neutralino.init(); } catch (e) { console.error("Neutralino not found."); }
+            
+            const difficulties = ['Easy', 'Medium', 'Hard'];
+            let showActivity = false, difficultyIdx = 0, score = 0;
+
+            const mainContent = document.getElementById('main-content');
+            const infoPanel = document.getElementById('info-panel');
+            const activityArea = document.getElementById('activity-area');
+            const headerTitle = document.getElementById('header-title');
+            const toggleViewBtn = document.getElementById('toggle-view-btn');
+            const difficultyBtn = document.getElementById('difficulty-btn');
+            const backBtn = document.getElementById('back-btn');
+            const resetBtn = document.getElementById('reset-btn');
+            const statusBar = document.getElementById('status-bar');
+            
+            const problems = {
+                easy: [ { u: 'H₂ + O₂ → H₂O', b: [2, 1, 2] }, { u: 'N₂ + H₂ → NH₃', b: [1, 3, 2] }, { u: 'Fe + O₂ → Fe₂O₃', b: [4, 3, 2] }, { u: 'Al + O₂ → Al₂O₃', b: [4, 3, 2] }, { u: 'P + O₂ → P₂O₅', b: [4, 5, 2] }, { u: 'Na + H₂O → NaOH + H₂', b: [2, 2, 2, 1] }, { u: 'C₃H₈ + O₂ → CO₂ + H₂O', b: [1, 5, 3, 4] } ],
+                medium: [ { r: '2H₂ + O₂ → 2H₂O', t: 'Combination' }, { r: 'CaCO₃ → CaO + CO₂', t: 'Decomposition' }, { r: 'Zn + CuSO₄ → ZnSO₄ + Cu', t: 'Displacement' }, { r: 'AgNO₃ + NaCl → AgCl + NaNO₃', t: 'Double Displacement' }, { r: '2Mg + O₂ → 2MgO', t: 'Combination' }, { r: '2H₂O₂ → 2H₂O + O₂', t: 'Decomposition' }, { r: 'Cl₂ + 2KBr → 2KCl + Br₂', t: 'Displacement' }, { r: 'Pb(NO₃)₂ + 2KI → PbI₂ + 2KNO₃', t: 'Double Displacement' } ],
+                hard: [ { r: ['Zinc', 'HCl'], p: 'ZnCl₂ + H₂', anim: 'bubbles' }, { r: ['NaOH', 'HCl'], p: 'NaCl + H₂O', anim: 'neutral' }, { r: ['CuSO₄', 'Fe'], p: 'FeSO₄ + Cu', anim: 'color_change' }, { r: ['AgNO₃', 'NaCl'], p: 'AgCl(s) + NaNO₃', anim: 'precipitate' }, { r: ['Mg', 'O₂'], p: 'MgO', anim: 'combustion' } ]
+            };
+
+            function updateLayout() {
+                if (showActivity) mainContent.classList.add('activity-visible');
+                else mainContent.classList.remove('activity-visible');
+                infoPanel.style.width = showActivity ? '340px' : `${Math.min(700, window.innerWidth - 48)}px`;
+                headerTitle.textContent = showActivity ? `Activity: ${difficulties[difficultyIdx]}` : 'Information';
+                toggleViewBtn.textContent = showActivity ? 'Information' : 'Activity';
+            }
+
+            function startGame() {
+                score = 0;
+                statusBar.textContent = `Score: ${score}`;
+                const gameType = difficulties[difficultyIdx];
+                if (gameType === 'Easy') initReactionBalancer();
+                if (gameType === 'Medium') initIdentifyReaction();
+                if (gameType === 'Hard') initVirtualLab();
+            }
+
+            // Game 1: Reaction Balancer
+            function initReactionBalancer() {
+                let currentProblemSet = [...problems.easy].sort(() => 0.5 - Math.random()).slice(0, 3);
+                let qIndex = 0;
+                function setupRound() {
+                    if(qIndex >= currentProblemSet.length) {
+                        activityArea.innerHTML = `<div class="level-complete-container"><h3>Level Complete!</h3><p>Your score: ${score}</p></div>`;
+                        return;
+                    }
+                    const problem = currentProblemSet[qIndex];
+                    const parts = problem.u.split(' ');
+                    let html = '';
+                    parts.forEach(part => {
+                        if (part === '+' || part === '→') { html += `<span class="mx-2">${part}</span>`; } 
+                        else { html += `<input type="number" class="coeff-input" min="1" max="9"> ${part}`; }
+                    });
+                    activityArea.innerHTML = `
+                        <div class="balancer-game">
+                            <h3 class="text-2xl mb-4">Balance the Equation!</h3>
+                            <div class="equation-display">${html}</div>
+                            <button id="check-balance-btn" class="button mt-8" style="background-color:var(--accent-blue)">Check</button>
+                            <p id="feedback-text" class="feedback-text"></p>
+                        </div>`;
+                    document.getElementById('check-balance-btn').onclick = () => checkBalance(problem);
+                }
+                function checkBalance(problem) {
+                    const inputs = [...activityArea.querySelectorAll('.coeff-input')];
+                    const userCoeffs = inputs.map(inp => parseInt(inp.value) || 1);
+                    const isCorrect = JSON.stringify(userCoeffs) === JSON.stringify(problem.b);
+                    const feedback = document.getElementById('feedback-text');
+                    if (isCorrect) {
+                        score += 20;
+                        feedback.textContent = "Balanced!";
+                        feedback.style.color = "var(--accent-green)";
+                        qIndex++;
+                        setTimeout(setupRound, 1500);
+                    } else {
+                        feedback.textContent = "Not quite balanced. Try again!";
+                        feedback.style.color = "var(--accent-red)";
+                    }
+                    statusBar.textContent = `Score: ${score}`;
+                }
+                setupRound();
+            }
+
+            // Game 2: Identify Reaction
+            function initIdentifyReaction() {
+                let currentProblemSet = [...problems.medium].sort(() => 0.5 - Math.random()).slice(0, 5);
+                let qIndex = 0;
+                function setupRound() {
+                     if(qIndex >= currentProblemSet.length) {
+                        activityArea.innerHTML = `<div class="level-complete-container"><h3>Level Complete!</h3><p>Your score: ${score}</p></div>`;
+                        return;
+                    }
+                    const problem = currentProblemSet[qIndex];
+                    activityArea.innerHTML = `
+                        <div class="identifier-game">
+                            <h2 class="text-2xl mb-4">Identify the Reaction Type</h2>
+                            <div class="reaction-card">${problem.r}</div>
+                            <div class="type-options"></div>
+                        </div>`;
+                    const options = ['Combination', 'Decomposition', 'Displacement', 'Double Displacement'];
+                    const optionsContainer = activityArea.querySelector('.type-options');
+                    options.forEach(opt => {
+                        const btn = document.createElement('button');
+                        btn.className = 'type-btn option-btn';
+                        btn.textContent = opt;
+                        btn.onclick = (e) => checkType(e, opt === problem.t, problem.t);
+                        optionsContainer.appendChild(btn);
+                    });
+                }
+                function checkType(e, isCorrect, correctAns) {
+                    activityArea.querySelectorAll('.type-btn').forEach(b => b.disabled = true);
+                    if(isCorrect) {
+                        score += 10;
+                        e.currentTarget.classList.add('correct');
+                    } else {
+                        e.currentTarget.classList.add('incorrect');
+                    }
+                    statusBar.textContent = `Score: ${score}`;
+                    qIndex++;
+                    setTimeout(setupRound, 2000);
+                }
+                setupRound();
+            }
+
+            // Game 3: Virtual Lab
+            function initVirtualLab() {
+                let currentProblemSet = [...problems.hard].sort(() => 0.5 - Math.random()).slice(0, 3);
+                let qIndex = 0;
+                let droppedChemicals = [];
+                
+                function setupRound() {
+                    if(qIndex >= currentProblemSet.length) {
+                        activityArea.innerHTML = `<div class="level-complete-container"><h3>Lab Session Complete!</h3><p>Your score: ${score}</p></div>`;
+                        return;
+                    }
+                    const problem = currentProblemSet[qIndex];
+                    droppedChemicals = [];
+                    activityArea.innerHTML = `
+                        <div class="lab-game">
+                             <div class="chemical-shelf">
+                                <div class="chemical" draggable="true" data-chem="Zinc">Zinc (Zn)</div>
+                                <div class="chemical" draggable="true" data-chem="HCl">Hydrochloric Acid (HCl)</div>
+                                <div class="chemical" draggable="true" data-chem="NaOH">Sodium Hydroxide (NaOH)</div>
+                                <div class="chemical" draggable="true" data-chem="CuSO₄">Copper Sulfate (CuSO₄)</div>
+                                <div class="chemical" draggable="true" data-chem="Fe">Iron (Fe)</div>
+                             </div>
+                             <div class="beaker-area">
+                                <svg class="beaker-svg" viewBox="0 0 100 100">
+                                    <path d="M10 10 L 10 90 Q 50 110 90 90 L 90 10" stroke="grey" stroke-width="1" fill="#e0f2fe"/>
+                                    <g id="beaker-content"></g>
+                                </svg>
+                             </div>
+                        </div>
+                        <h3 class="text-xl font-bold mt-4">Task: Perform the reaction: ${problem.r.join(' + ')}</h3>`;
+                    
+                    const beaker = activityArea.querySelector('.beaker-svg');
+                    beaker.ondragover = e => e.preventDefault();
+                    beaker.ondrop = e => {
+                        e.preventDefault();
+                        const chem = e.dataTransfer.getData('text');
+                        droppedChemicals.push(chem);
+                        checkReaction(problem);
+                    };
+                    activityArea.querySelectorAll('.chemical').forEach(c => {
+                        c.ondragstart = e => e.dataTransfer.setData('text', c.dataset.chem);
+                    });
+                }
+                
+                function checkReaction(problem) {
+                    if (droppedChemicals.length < problem.r.length) return;
+                    
+                    const key = droppedChemicals.sort().join('+');
+                    const correctKey = problem.r.sort().join('+');
+
+                    if (key === correctKey) {
+                        score += 50;
+                        statusBar.textContent = `Score: ${score}`;
+                        // Add animation based on problem.anim
+                        alert(`Success! Reaction: ${problem.p}`);
+                        qIndex++;
+                        setTimeout(setupRound, 1500);
+                    } else {
+                        alert(`Incorrect combination! Try again.`);
+                        droppedChemicals = [];
+                    }
+                }
+                setupRound();
+            }
+            
+            backBtn.addEventListener('click', () => { window.history.back(); });
+            toggleViewBtn.addEventListener('click', () => {
+                showActivity = !showActivity;
+                if (showActivity) startGame();
+                updateLayout();
+            });
+            difficultyBtn.addEventListener('click', () => {
+                difficultyIdx = (difficultyIdx + 1) % difficulties.length;
+                difficultyBtn.textContent = `Difficulty: ${difficulties[difficultyIdx]}`;
+                if (showActivity) startGame();
+            });
+            resetBtn.addEventListener('click', startGame);
+            window.addEventListener('resize', updateLayout);
+            updateLayout();
+        });
+    </script>
+</body>
+</html>
+

@@ -33,6 +33,7 @@
             position: fixed; top: 0; left: 0; height: 100%; width: 250px;
             background-color: var(--sidebar-bg); color: white;
             display: flex; flex-direction: column;
+            z-index: 10;
         }
         .sidebar h2 {
             text-align: center; padding: 20px 0; font-size: 1.5rem;
@@ -70,110 +71,126 @@
         
         table { width: 100%; border-collapse: collapse; margin-top: 1.5rem; }
         th, td { text-align: left; padding: 12px; border-bottom: 1px solid var(--border-color); }
-        th { background-color: #f8f9fa; }
+        th { background-color: #f8f9fa; font-weight: 600; }
 
         .form-label { display: block; margin-bottom: 8px; font-weight: 600; color: var(--header-text); }
-        .form-input { width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #ced4da; margin-bottom: 15px; font-size: 1rem; }
+        .form-input, textarea.form-input { width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #ced4da; margin-bottom: 15px; font-size: 1rem; }
         .action-button {
             background-color: var(--primary-accent); color: white; padding: 10px 25px; font-weight: 600;
             border: none; border-radius: 6px; cursor: pointer; transition: background-color 0.2s;
         }
-        .action-button:hover { background-color: #0056b3; }
+        .action-button:hover:not(:disabled) { background-color: #0056b3; }
+        .action-button:disabled { background-color: #6c757d; cursor: not-allowed; }
+        
+        .delete-btn {
+            background-color: var(--danger-red); color: white; font-size: 0.8rem;
+            padding: 6px 12px; border: none; border-radius: 5px; cursor: pointer;
+        }
+        .delete-btn:hover { background-color: #c82333; }
         
         .feedback-item { border-bottom: 1px solid var(--border-color); padding: 15px 0; }
-        .feedback-header { display: flex; justify-content: space-between; font-weight: 600; }
-        .feedback-body { margin: 10px 0; }
+        .feedback-header { display: flex; justify-content: space-between; font-weight: 600; color: #495057; }
+        .feedback-body { margin: 10px 0; line-height: 1.6; }
     </style>
 </head>
 <body>
     <div class="sidebar">
         <h2><a href="#" id="logo-btn">EduPlay Admin</a></h2>
-        <ul class="sidebar-nav" id="sidebar-nav">
-            </ul>
+        <ul class="sidebar-nav" id="sidebar-nav"></ul>
     </div>
-    <div class="main-content" id="main-content">
-        </div>
+    <div class="main-content" id="main-content"></div>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const adminAuthToken = localStorage.getItem('adminAuthToken');
             
+            // --- STATE MANAGEMENT ---
             let activeTab = "dashboard";
-            let schools = [], feedback = [], stats = { school_count: 0, feedback_count: 0 };
-            let loading = true, error = null;
+            let state = {
+                schools: [],
+                feedback: [],
+                allStudents: [],
+                allTeachers: [],
+                stats: { school_count: 0, feedback_count: 0 },
+                loading: true,
+                error: null
+            };
             
             const mainContent = document.getElementById('main-content');
             const sidebarNav = document.getElementById('sidebar-nav');
-            const API_BASE_URL = "http://127.0.0.1:5001/api";
+            
+            // CORRECTED: Use a relative path for the API URL
+            const API_BASE_URL = "/api";
 
+            // --- API ABSTRACTION LAYER ---
             async function apiRequest(endpoint, method, body = null) {
                 const options = { method, headers: { 'Authorization': `Bearer ${adminAuthToken}`, 'Content-Type': 'application/json' } };
                 if (body) options.body = JSON.stringify(body);
-                const response = await fetch(`${API_BASE_URL}${endpoint}`, options);
-                if (!response.ok) {
-                    const errorData = await response.json().catch(() => ({ message: 'An unknown error occurred.' }));
-                    if (response.status === 401) {
-                        localStorage.removeItem('adminAuthToken');
-                        window.location.replace('admin_login.html');
+                try {
+                    const response = await fetch(`${API_BASE_URL}${endpoint}`, options);
+                    if (!response.ok) {
+                        const errorData = await response.json().catch(() => ({ message: `HTTP Error: ${response.status}` }));
+                        if (response.status === 401) signOut(); // Token is invalid, log out
+                        throw new Error(errorData.message);
                     }
-                    throw new Error(errorData.message);
+                    return response.status !== 204 ? response.json() : null; // Handle no-content responses (like DELETE)
+                } catch (err) {
+                    throw new Error(err.message || 'Network error, please check connection.');
                 }
-                return response.json().catch(() => ({}));
             }
 
+            // --- DATA FETCHING ---
             async function fetchAllData() {
-                loading = true; error = null; render();
+                state.loading = true; state.error = null; render();
                 try {
-                    const [dashboardData, feedbackData] = await Promise.all([
+                    const [dashboardData, feedbackData, studentsData, teachersData] = await Promise.all([
                         apiRequest('/admin/dashboard-data', 'GET'),
-                        apiRequest('/admin/feedback', 'GET')
+                        apiRequest('/admin/feedback', 'GET'),
+                        apiRequest('/admin/students', 'GET'), // New API call
+                        apiRequest('/admin/teachers', 'GET')  // New API call
                     ]);
-                    stats = dashboardData.stats;
-                    schools = dashboardData.schools;
-                    feedback = feedbackData;
+                    state.stats = dashboardData.stats;
+                    state.schools = dashboardData.schools;
+                    state.feedback = feedbackData;
+                    state.allStudents = studentsData;
+                    state.allTeachers = teachersData;
                 } catch (err) {
-                    error = err.message;
+                    state.error = err.message;
                 } finally {
-                    loading = false;
+                    state.loading = false;
                     render();
                 }
             }
-
+            
+            // --- RENDER FUNCTIONS ---
             function render() {
                 renderSidebar();
                 const viewRenderers = {
                     dashboard: renderDashboard,
+                    students: renderStudents,
+                    teachers: renderTeachers,
                     feedback: renderFeedback,
                     notifications: renderNotifications,
-                    comparison: renderComparison,
                 };
-                if (loading) mainContent.innerHTML = `<h1>Loading...</h1>`;
-                else if (error) mainContent.innerHTML = `<h1>Error</h1><p style="color: red;">${error}</p>`;
+                if (state.loading) mainContent.innerHTML = `<div class="content-card"><h1>Loading...</h1></div>`;
+                else if (state.error) mainContent.innerHTML = `<div class="content-card"><h1>Error</h1><p style="color: red;">${state.error}</p></div>`;
                 else viewRenderers[activeTab]();
             }
 
             function renderSidebar() {
                 const tabs = [
                     { id: "dashboard", name: "Dashboard" },
-                    { id: "feedback", name: "Feedback & Queries" },
+                    { id: "students", name: "Manage Students" },
+                    { id: "teachers", name: "Manage Teachers" },
+                    { id: "feedback", name: "Feedback" },
                     { id: "notifications", name: "Notifications" },
-                    { id: "comparison", name: "Comparison" },
                 ];
                 sidebarNav.innerHTML = tabs.map(tab => `
                     <li><a href="#" class="${activeTab === tab.id ? "active" : ""}" data-tab="${tab.id}">${tab.name}</a></li>`).join('');
-                sidebarNav.querySelectorAll('a').forEach(link => link.addEventListener('click', e => {
-                    e.preventDefault();
-                    activeTab = e.target.dataset.tab;
-                    render();
-                }));
             }
             
             function renderHeader(title) {
-                return `
-                    <div class="header">
-                        <h1>${title}</h1>
-                        <button class="logout-btn" id="sign-out-btn">Logout</button>
-                    </div>`;
+                return `<div class="header"><h1>${title}</h1><button class="logout-btn" id="sign-out-btn">Logout</button></div>`;
             }
 
             function renderDashboard() {
@@ -181,22 +198,59 @@
                     ${renderHeader('Dashboard Overview')}
                     <div class="stats-container">
                         <div class="stat-card">
-                            <div class="label">Total Schools Registered</div>
-                            <div class="value">${stats.school_count}</div>
+                            <div class="label">Total Schools Registered</div><div class="value">${state.stats.school_count}</div>
                         </div>
                         <div class="stat-card">
-                            <div class="label">Feedback Messages</div>
-                            <div class="value">${stats.feedback_count}</div>
+                            <div class="label">Total Students</div><div class="value">${state.allStudents.length}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="label">Total Teachers</div><div class="value">${state.allTeachers.length}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="label">Feedback Messages</div><div class="value">${state.feedback.length}</div>
                         </div>
                     </div>
                     <div class="content-card">
                         <h2>Registered Schools</h2>
                         <table>
                             <thead><tr><th>School Name</th><th>Username</th><th>Email</th></tr></thead>
-                            <tbody>${schools.map(s => `<tr><td>${s.school_name}</td><td>${s.username}</td><td>${s.email}</td></tr>`).join('') || `<tr><td colspan="3">No schools registered.</td></tr>`}</tbody>
+                            <tbody>${state.schools.map(s => `<tr><td>${s.school_name}</td><td>${s.username}</td><td>${s.email}</td></tr>`).join('') || `<tr><td colspan="3">No schools registered.</td></tr>`}</tbody>
                         </table>
                     </div>`;
-                attachCommonListeners();
+            }
+            
+            function renderStudents() {
+                mainContent.innerHTML = `
+                    ${renderHeader('Manage All Students')}
+                    <div class="content-card">
+                        <h2>Student Roster</h2>
+                        <table>
+                            <thead><tr><th>Name</th><th>Grade</th><th>School</th><th>Action</th></tr></thead>
+                            <tbody>${state.allStudents.map(s => `
+                                <tr>
+                                    <td>${s.name}</td><td>${s.grade}</td><td>${s.school_name}</td>
+                                    <td><button class="delete-btn" data-type="student" data-id="${s._id}">Delete</button></td>
+                                </tr>`).join('') || `<tr><td colspan="4">No students found.</td></tr>`}
+                            </tbody>
+                        </table>
+                    </div>`;
+            }
+            
+            function renderTeachers() {
+                 mainContent.innerHTML = `
+                    ${renderHeader('Manage All Teachers')}
+                    <div class="content-card">
+                        <h2>Teacher Directory</h2>
+                        <table>
+                            <thead><tr><th>Name</th><th>Subject</th><th>School</th><th>Action</th></tr></thead>
+                            <tbody>${state.allTeachers.map(t => `
+                                <tr>
+                                    <td>${t.name}</td><td>${t.subject}</td><td>${t.school_name}</td>
+                                    <td><button class="delete-btn" data-type="teacher" data-id="${t._id}">Delete</button></td>
+                                </tr>`).join('') || `<tr><td colspan="4">No teachers found.</td></tr>`}
+                            </tbody>
+                        </table>
+                    </div>`;
             }
 
             function renderFeedback() {
@@ -205,18 +259,16 @@
                     <div class="content-card">
                         <h2>Inbox</h2>
                         <div id="feedback-list">
-                            ${feedback.map(f => `
+                            ${state.feedback.map(f => `
                                 <div class="feedback-item">
                                     <div class="feedback-header">
                                         <span>From: <strong>${f.school_name}</strong></span>
                                         <span>Subject: <strong>${f.subject}</strong></span>
                                     </div>
                                     <p class="feedback-body">${f.message}</p>
-                                </div>
-                            `).join('') || '<p>No feedback messages.</p>'}
+                                </div>`).join('') || '<p>No feedback messages.</p>'}
                         </div>
                     </div>`;
-                attachCommonListeners();
             }
             
             function renderNotifications() {
@@ -225,33 +277,14 @@
                     <div class="content-card">
                         <h2>Broadcast Message to All Schools</h2>
                         <form id="notification-form" style="margin-top: 1.5rem;">
-                            <div>
-                                <label for="notification-subject" class="form-label">Subject</label>
-                                <input type="text" id="notification-subject" name="subject" class="form-input" required>
-                            </div>
-                            <div>
-                                <label for="notification-message" class="form-label">Message</label>
-                                <textarea id="notification-message" name="message" class="form-input" required rows="6"></textarea>
-                            </div>
-                            <div style="text-align: right; margin-top: 1rem;">
-                                <button type="submit" class="action-button">Send to All Schools</button>
-                            </div>
+                            <div><label for="notification-subject" class="form-label">Subject</label><input type="text" id="notification-subject" name="subject" class="form-input" required></div>
+                            <div><label for="notification-message" class="form-label">Message</label><textarea id="notification-message" name="message" class="form-input" required rows="6"></textarea></div>
+                            <div style="text-align: right; margin-top: 1rem;"><button type="submit" class="action-button">Send to All Schools</button></div>
                         </form>
                     </div>`;
-                attachCommonListeners();
-                document.getElementById('notification-form').addEventListener('submit', handleNotificationSubmit);
-            }
-
-            function renderComparison() {
-                mainContent.innerHTML = `
-                    ${renderHeader('School Comparison')}
-                    <div class="content-card">
-                        <h2>Compare Schools</h2>
-                        <p>This feature is under development and will be available in a future update.</p>
-                    </div>`;
-                attachCommonListeners();
             }
             
+            // --- EVENT HANDLERS & LISTENERS ---
             async function handleNotificationSubmit(e) {
                 e.preventDefault();
                 const form = e.target, subject = form.elements.subject.value, message = form.elements.message.value;
@@ -270,21 +303,46 @@
                 }
             }
 
-            function signOut() {
-                localStorage.removeItem('adminAuthToken');
-                window.location.replace('admin_login.html');
+            async function handleDelete(type, id) {
+                if (confirm(`Are you sure you want to permanently delete this ${type}? This action cannot be undone.`)) {
+                    try {
+                        await apiRequest(`/admin/${type}s/${id}`, 'DELETE');
+                        alert(`${capitalize(type)} deleted successfully.`);
+                        fetchAllData(); // Refresh all data to update the UI
+                    } catch (err) {
+                        alert(`Error deleting ${type}: ${err.message}`);
+                    }
+                }
             }
             
-            function attachCommonListeners() {
-                 document.getElementById('sign-out-btn').addEventListener('click', signOut);
-            }
-
-            document.getElementById('logo-btn').addEventListener('click', (e) => {
-                e.preventDefault();
-                activeTab = 'dashboard';
-                render();
+            function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+            function signOut() { localStorage.removeItem('adminAuthToken'); window.location.replace('admin_login.html'); }
+            
+            // --- EVENT DELEGATION ---
+            mainContent.addEventListener('click', (e) => {
+                if (e.target.id === 'sign-out-btn') signOut();
+                if (e.target.matches('.delete-btn')) {
+                    const { type, id } = e.target.dataset;
+                    handleDelete(type, id);
+                }
+            });
+            mainContent.addEventListener('submit', (e) => {
+                if (e.target.id === 'notification-form') handleNotificationSubmit(e);
             });
 
+            sidebarNav.addEventListener('click', e => {
+                if (e.target.matches('a[data-tab]')) {
+                    e.preventDefault();
+                    activeTab = e.target.dataset.tab;
+                    render();
+                }
+            });
+            
+            document.getElementById('logo-btn').addEventListener('click', (e) => {
+                e.preventDefault(); activeTab = 'dashboard'; render();
+            });
+
+            // --- INITIALIZATION ---
             fetchAllData();
         });
     </script>

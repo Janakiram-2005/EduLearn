@@ -137,6 +137,94 @@ def admin_login():
     token = jwt.encode(payload, JWT_SECRET, algorithm="HS256")
     return jsonify({"message": "Admin login successful", "token": token}), 200
 
+# --- 8. ADMIN-ONLY ROUTES ---
+
+# ... (keep all your existing admin routes like get_dashboard_data, get_all_feedback, etc.) ...
+
+# NEW ROUTE: Get all students from all schools for the admin
+@app.route("/api/admin/students", methods=["GET"])
+@admin_token_required
+def get_all_students(current_admin):
+    try:
+        # Use an aggregation pipeline to join students with their school's name
+        pipeline = [
+            {
+                '$lookup': {
+                    'from': 'users', # This is your schools collection
+                    'localField': 'school_id',
+                    'foreignField': '_id',
+                    'as': 'school'
+                }
+            },
+            { '$unwind': '$school' },
+            {
+                '$project': {
+                    '_id': 1,
+                    'name': 1,
+                    'grade': 1,
+                    'school_name': '$school.school_name'
+                }
+            }
+        ]
+        all_students = list(students_collection.aggregate(pipeline))
+        for s in all_students:
+            s['_id'] = str(s['_id'])
+        return jsonify(all_students)
+    except Exception as e:
+        return jsonify({"message": f"An error occurred: {str(e)}"}), 500
+
+# NEW ROUTE: Get all teachers from all schools for the admin
+@app.route("/api/admin/teachers", methods=["GET"])
+@admin_token_required
+def get_all_teachers(current_admin):
+    try:
+        pipeline = [
+            {
+                '$lookup': {
+                    'from': 'users', # This is your schools collection
+                    'localField': 'school_id',
+                    'foreignField': '_id',
+                    'as': 'school'
+                }
+            },
+            { '$unwind': '$school' },
+            {
+                '$project': {
+                    '_id': 1,
+                    'name': 1,
+                    'subject': 1,
+                    'school_name': '$school.school_name'
+                }
+            }
+        ]
+        all_teachers = list(teachers_collection.aggregate(pipeline))
+        for t in all_teachers:
+            t['_id'] = str(t['_id'])
+        return jsonify(all_teachers)
+    except Exception as e:
+        return jsonify({"message": f"An error occurred: {str(e)}"}), 500
+
+# NEW ROUTE: Admin can delete any student
+@app.route("/api/admin/students/<student_id>", methods=["DELETE"])
+@admin_token_required
+def admin_delete_student(current_admin, student_id):
+    result = students_collection.delete_one({'_id': ObjectId(student_id)})
+    if result.deleted_count:
+        return jsonify({"message": "Student deleted successfully"})
+    return jsonify({"message": "Student not found"}), 404
+
+# NEW ROUTE: Admin can delete any teacher
+@app.route("/api/admin/teachers/<teacher_id>", methods=["DELETE"])
+@admin_token_required
+def admin_delete_teacher(current_admin, teacher_id):
+    result = teachers_collection.delete_one({'_id': ObjectId(teacher_id)})
+    if result.deleted_count:
+        return jsonify({"message": "Teacher deleted successfully"})
+    return jsonify({"message": "Teacher not found"}), 404
+
+
+# ... (keep all your other routes) ...
+
 # --- 6. DATA MANAGEMENT ROUTES (SECURED) ---
 @app.route("/api/profile", methods=["GET", "PUT"])
 @token_required

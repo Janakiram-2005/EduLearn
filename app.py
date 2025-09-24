@@ -12,7 +12,16 @@ from functools import wraps
 # --- 1. CONFIGURATION & SETUP ---
 load_dotenv()
 app = Flask(__name__, static_folder='static')
-CORS(app, resources={r"/api/*": {"origins": "https://edulearn-tekj.onrender.com"}})
+# In app.py
+
+# List of all frontend URLs that are allowed to talk to this backend
+allowed_origins = [
+    "https://edulearn-tekj.onrender.com",  # Your deployed frontend
+    "http://127.0.0.1:5001"               # Your local development server (from the error)
+]
+
+# This is the line to update
+CORS(app, resources={r"/api/*": {"origins": allowed_origins}})
 
 # --- 2. DATABASE & SECURITY CONFIG ---
 MONGO_URI = os.getenv("MONGO_URI")
